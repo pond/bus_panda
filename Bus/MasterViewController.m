@@ -8,54 +8,126 @@
 
 #import "MasterViewController.h"
 #import "DetailViewController.h"
+#import "EnterStopIDViewController.h"
+#import "FavouritesCell.h"
 
 @interface MasterViewController ()
-
+@property EnterStopIDViewController * enterIDModal;
 @end
 
 @implementation MasterViewController
 
-- (void)awakeFromNib {
-    [super awakeFromNib];
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+- ( void ) awakeFromNib
+{
+    [ super awakeFromNib ];
+
+    if ( [ [ UIDevice currentDevice ] userInterfaceIdiom ] == UIUserInterfaceIdiomPad )
+    {
         self.clearsSelectionOnViewWillAppear = NO;
-        self.preferredContentSize = CGSizeMake(320.0, 600.0);
+        self.preferredContentSize = CGSizeMake( 320.0, 600.0 );
     }
 }
 
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    // Do any additional setup after loading the view, typically from a nib.
-    self.navigationItem.leftBarButtonItem = self.editButtonItem;
+- (void)reloadFetchedResults:(NSNotification*)note {
+    NSLog(@"Underlying data changed ... refreshing!");
 
-    UIBarButtonItem *addButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(insertNewObject:)];
-    self.navigationItem.rightBarButtonItem = addButton;
-    self.detailViewController = (DetailViewController *)[[self.splitViewController.viewControllers lastObject] topViewController];
+    NSError *error = nil;
+    if (![self.fetchedResultsController performFetch:&error]) {
+        // Replace this implementation with code to handle the error appropriately.
+        // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
+        NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
+        abort();
+    }
+
+    [ self.tableView performSelectorOnMainThread: @selector( reloadData )
+                                      withObject: nil
+                                   waitUntilDone: NO ];
 }
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
+- ( void ) viewDidLoad
+{
+    [ super viewDidLoad ];
+    self.clearsSelectionOnViewWillAppear = NO; // http://stackoverflow.com/questions/19379510/uitableviewcell-doesnt-get-deselected-when-swiping-back-quickly
+
+    UIBarButtonItem * addButton =
+    [
+        [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemAdd
+                                                       target: self
+                                                       action: @selector( openEnterStopIDModal: )
+    ];
+
+    self.navigationItem.leftBarButtonItem  = self.editButtonItem;
+    self.navigationItem.rightBarButtonItem = addButton;
+
+    self.detailViewController = ( DetailViewController * )
+    [
+        [ self.splitViewController.viewControllers lastObject ] topViewController
+    ];
+
+    // Refresh this view whenever data changes in iCloud
+
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(reloadFetchedResults:)
+                                                 name:@"SomethingChanged"
+                                               object:[[UIApplication sharedApplication] delegate]];
+}
+
+- (void)viewDidUnload {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+// http://stackoverflow.com/questions/19379510/uitableviewcell-doesnt-get-deselected-when-swiping-back-quickly
+//
+- ( void ) viewWillAppear: ( BOOL ) animated
+{
+    [ super viewWillAppear: animated ];
+    [ self.tableView deselectRowAtIndexPath: [ self.tableView indexPathForSelectedRow ]
+                                   animated: animated ];
+}
+
+- ( void ) didReceiveMemoryWarning
+{
+    [ super didReceiveMemoryWarning ];
     // Dispose of any resources that can be recreated.
 }
 
-- (void)insertNewObject:(id)sender {
+- ( void ) openEnterStopIDModal: ( id ) sender
+{
+    EnterStopIDViewController * modal =
+    [
+         self.storyboard instantiateViewControllerWithIdentifier: @"EnterStopID"
+    ];
+
+    [ modal rememberPresentingMVC: self ];
+
+    [
+        self presentViewController: modal
+                          animated: YES
+                        completion: nil
+    ];
+}
+
+- ( void ) addFavourite: ( NSString * ) stopID
+        withDescription: ( NSString * ) stopDescription
+{
     NSManagedObjectContext *context = [self.fetchedResultsController managedObjectContext];
     NSEntityDescription *entity = [[self.fetchedResultsController fetchRequest] entity];
     NSManagedObject *newManagedObject = [NSEntityDescription insertNewObjectForEntityForName:[entity name] inManagedObjectContext:context];
-        
+
     // If appropriate, configure the new managed object.
     // Normally you should use accessor methods, but using KVC here avoids the need to add a custom class to the template.
-    [newManagedObject setValue:[NSDate date] forKey:@"timeStamp"];
-        
+    [ newManagedObject setValue: stopID          forKey: @"stopID"          ];
+    [ newManagedObject setValue: stopDescription forKey: @"stopDescription" ];
+
     // Save the context.
     NSError *error = nil;
     if (![context save:&error]) {
         // Replace this implementation with code to handle the error appropriately.
         // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
         NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
-        abort();
     }
 }
+
 
 #pragma mark - Segues
 
@@ -63,6 +135,7 @@
     if ([[segue identifier] isEqualToString:@"showDetail"]) {
         NSIndexPath *indexPath = [self.tableView indexPathForSelectedRow];
         NSManagedObject *object = [[self fetchedResultsController] objectAtIndexPath:indexPath];
+        NSLog(@"MANAGED OBJ: %@",object);
         DetailViewController *controller = (DetailViewController *)[[segue destinationViewController] topViewController];
         [controller setDetailItem:object];
         controller.navigationItem.leftBarButtonItem = self.splitViewController.displayModeButtonItem;
@@ -82,7 +155,7 @@
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"Cell" forIndexPath:indexPath];
+    FavouritesCell *cell = [tableView dequeueReusableCellWithIdentifier:@"Cell" forIndexPath:indexPath];
     [self configureCell:cell atIndexPath:indexPath];
     return cell;
 }
@@ -107,9 +180,12 @@
     }
 }
 
-- (void)configureCell:(UITableViewCell *)cell atIndexPath:(NSIndexPath *)indexPath {
-    NSManagedObject *object = [self.fetchedResultsController objectAtIndexPath:indexPath];
-    cell.textLabel.text = [[object valueForKey:@"timeStamp"] description];
+- ( void ) configureCell: ( FavouritesCell * ) cell atIndexPath: ( NSIndexPath * ) indexPath
+{
+    NSManagedObject *object = [ self.fetchedResultsController objectAtIndexPath: indexPath ];
+
+    cell.stopID.text          = [ [ object valueForKey: @"stopID"          ] description ];
+    cell.stopDescription.text = [ [ object valueForKey: @"stopDescription" ] description ];
 }
 
 #pragma mark - Fetched results controller
@@ -129,7 +205,7 @@
     [fetchRequest setFetchBatchSize:20];
     
     // Edit the sort key as appropriate.
-    NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:@"timeStamp" ascending:NO];
+    NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:@"stopDescription" ascending:YES];
     NSArray *sortDescriptors = @[sortDescriptor];
     
     [fetchRequest setSortDescriptors:sortDescriptors];
@@ -189,7 +265,7 @@
             break;
             
         case NSFetchedResultsChangeUpdate:
-            [self configureCell:[tableView cellForRowAtIndexPath:indexPath] atIndexPath:indexPath];
+            [self configureCell:(FavouritesCell *)[tableView cellForRowAtIndexPath:indexPath] atIndexPath:indexPath];
             break;
             
         case NSFetchedResultsChangeMove:
