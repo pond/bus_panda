@@ -93,6 +93,7 @@
                                             <outlet property="name" destination="GTF-SH-LvC" id="xWb-Hl-WMr"/>
                                             <outlet property="number" destination="ErN-qt-9QF" id="qxh-1e-AfS"/>
                                             <outlet property="when" destination="QJh-FA-COm" id="dDu-9a-i5M"/>
+                                            <segue destination="HeT-Kf-mUi" kind="show" identifier="showTimetable" id="Ngy-3Q-VTF"/>
                                         </connections>
                                     </tableViewCell>
                                     <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SectionHeader" rowHeight="38" id="rD6-Ai-1v1" customClass="ServiceDescriptionCell">
@@ -124,7 +125,6 @@
                                         <animations/>
                                         <connections>
                                             <outlet property="when" destination="cqN-2t-l6M" id="TsB-YG-nCz"/>
-                                            <segue destination="HeT-Kf-mUi" kind="show" identifier="showTimetable" id="vff-kU-19P"/>
                                         </connections>
                                     </tableViewCell>
                                 </prototypes>

@@ -600,11 +600,31 @@ typedef void ( ^ urlRequestCompletionHandler )( NSData        * data,
 {
     if ( [ [ segue identifier ] isEqualToString:@"showTimetable" ] )
     {
-        NSIndexPath  * indexPath = [ self.tableView indexPathForSelectedRow ];
-        NSUInteger     section   = indexPath.section;
-        NSUInteger     row       = indexPath.row;
-        NSArray      * services  = self.parsedSections[ section ][ @"services" ];
-        NSDictionary * entry     = services[ row ];
+        NSIndexPath * indexPath = [ self.tableView indexPathForSelectedRow ];
+        NSUInteger    section   = indexPath.section;
+        NSUInteger    row       = indexPath.row;
+        NSArray     * services  = self.parsedSections[ section ][ @"services" ];
+
+        // For timetables other than "today", the HTML from MetLink does not
+        // include a date specifier. Might be a temporary bug, so we check for
+        // that - but otherwise, we add it in.
+
+        NSMutableDictionary * entry = [ NSMutableDictionary dictionaryWithDictionary: services[ row ] ];
+
+        if (
+               NO == [ self.parsedSections[ section ][ @"title" ] isEqualToString: TODAY_SECTION_TITLE ] &&
+               NO == [ entry[ @"timetablePath" ] localizedCaseInsensitiveContainsString: @"?date" ]
+           )
+        {
+            NSString * newPath = [
+                NSString stringWithFormat: @"%@?date=%@",
+                                           entry[ @"timetablePath" ],
+                                           self.parsedSections[ section ][ @"title" ]
+            ];
+
+            newPath = [ newPath stringByAddingPercentEncodingWithAllowedCharacters: NSCharacterSet.URLQueryAllowedCharacterSet ];
+            entry[ @"timetablePath" ] = newPath;
+        }
 
         TimetableWebViewController * controller = ( TimetableWebViewController * ) [ segue destinationViewController ];
         [ controller setDetailItem: entry ];
