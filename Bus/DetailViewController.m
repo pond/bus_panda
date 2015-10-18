@@ -14,10 +14,14 @@
 #import "TimetableWebViewController.h"
 
 @interface DetailViewController ()
-@property ( strong, nonatomic ) NSMutableArray   * parsedServices;
+@property ( strong, nonatomic ) NSMutableArray   * parsedSections;
 @property ( strong, nonatomic ) UIRefreshControl * refreshControl;
 @property ( strong, nonatomic ) UIView           * activityView;
 @end
+
+// Text tile for the 'Today' section, if present.
+//
+#define TODAY_SECTION_TITLE @"Today"
 
 @implementation DetailViewController
 
@@ -196,7 +200,15 @@ static NSDictionary * routeColours = nil;
     }
 }
 
-- (void)configureView {
+// Clean up nesting in code inside method '-configureView' by assigning the
+// URL competion handler block to a strongly typed variable.
+
+typedef void ( ^ urlRequestCompletionHandler )( NSData        * data,
+                                                NSURLResponse * response,
+                                                NSError       * error);
+
+- ( void ) configureView
+{
     if ( ! self.detailItem ) return;
     if ( self.activityView != nil ) return;
 
@@ -205,8 +217,11 @@ static NSDictionary * routeColours = nil;
     if ( self.refreshControl.refreshing == NO ) [ self showActivityViewer ];
 
     // Update the user interface for the detail item.
+    //
     self.detailDescriptionLabel.text = stopID;
 
+    // Create the URL we'll use to retrieve the realtime information.
+    //
     NSString * stopInfoURL =
     [
         NSString stringWithFormat: @"https://www.metlink.org.nz/stop/%@/departures?more=1",
@@ -215,157 +230,222 @@ static NSDictionary * routeColours = nil;
 
     NSLog(@"STOP INFO: %@",stopInfoURL);
 
-    NSURL * URL = [ NSURL URLWithString: stopInfoURL ];
-    NSURLSession *session = [NSURLSession sharedSession];
-    [[session dataTaskWithURL:URL completionHandler:
-      ^(NSData *data, NSURLResponse *response, NSError *error) {
-          NSString *contentType = nil;
-          if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
-              NSDictionary *headers = [(NSHTTPURLResponse *)response allHeaderFields];
-              contentType = headers[@"Content-Type"];
-          }
+    // We will make a request to fetch the HTML at 'stopInfoURL' from above,
+    // declearing the below block as the code to run upon completion (success
+    // or failure).
+    //
+    // After this big chunk of code, at the end of this overall method, is the
+    // place where the request is actually made.
+    //
+    urlRequestCompletionHandler completionHandler = ^ ( NSData        * data,
+                                                        NSURLResponse * response,
+                                                        NSError       * error )
+    {
+        NSString * contentType = nil;
 
-          HTMLDocument * home = [ HTMLDocument documentWithData: data
-                                              contentTypeHeader: contentType];
+        if ( [ response isKindOfClass: [ NSHTTPURLResponse class ] ] )
+        {
+            NSDictionary *headers = [ ( NSHTTPURLResponse * )response allHeaderFields ];
+            contentType = headers[ @"Content-Type" ];
+        }
 
-          // The mobile site at the time of writing serves a table of class
-          // "service-list" with each row representing an individual service.
+        HTMLDocument * home = [ HTMLDocument documentWithData: data
+                                            contentTypeHeader: contentType];
 
-          HTMLElement * list     = [ home firstNodeMatchingSelector: @"div.rt-info-content table" ];
-          NSArray     * services = [ list nodesMatchingSelector: @"tr" ];
+        // The services are in an HTML table with each row representing an
+        // individual service, or a section title with a date in it.
 
-          self.parsedServices = [ [ NSMutableArray alloc ] init ];
+        HTMLElement * list     = [ home firstNodeMatchingSelector: @"div.rt-info-content table" ];
+        NSArray     * services = [ list nodesMatchingSelector: @"tr" ];
 
-          for ( HTMLElement * service in services )
-          {
-              NSCharacterSet * whitespace = [ NSCharacterSet whitespaceAndNewlineCharacterSet ];
+        self.parsedSections = [ [ NSMutableArray alloc ] init ];
 
-              // From October 2015:
-              //
-              // The service number is inside a link within a table cell that
-              // has class "routeNumber". Notes are not available. Some icons
-              // are used for e.g. wheelchair access, but they're SVG images
-              // not Unicode glyphs.
-              //
-              // Before October 2015:
-              //
-              // The service number is in a "data-code" attribute on the TR.
-              //
-              // If the service has notes (e.g. 23-S, 54-G2) then those need
-              // to be pulled from the "nb" class link.
-              //
-              // NSString    * number    = [ service.attributes valueForKey: @"data-code" ];
-              // HTMLElement * notesLink = [ service firstNodeMatchingSelector: @"a.nb" ];
-              // NSString    * notes     = nil;
+        NSMutableArray * currentServiceList = [ [ NSMutableArray alloc ] init ];
 
-              HTMLElement * numberLink = [ service firstNodeMatchingSelector: @"a.id-code-link" ];
-              NSString    * number     = nil;
+        for ( HTMLElement * service in services )
+        {
+            NSCharacterSet * whitespace = [ NSCharacterSet whitespaceAndNewlineCharacterSet ];
 
-              if ( numberLink.textContent )
-              {
-                  number = [ numberLink.textContent stringByTrimmingCharactersInSet: whitespace ];
-              }
+            // From October 2015:
+            //
+            // Added in the ability to define section tables by detecting the
+            // row dividers. Table row of class 'rowDivider', with the sole
+            // cell content containing what will become the section title.
+            //
+            // Info tables might start with a row divider for 'tomorrow', or
+            // may have entries for 'today' without a divider first. To cope
+            // with this, lazy-add a 'Today' row if we encounter a service
+            // which is not a section divider, but our section array is still
+            // empty. Otherwise, just add the new section.
 
-              // From October 2015:
-              //
-              // Services are not coloured. They're all grey. It's dreadful.
-              //
-              // Before October 2015:
-              //
-              // The service colour is set as an HTML inline style and we
-              // assume that the 6 digit hex colour is the last thing in the
-              // string, without even a semicolon. It's on a link inside the
-              // first table cell, with class name "id" (confusingly).
-              //
-              // HTMLElement * link  = [ service firstNodeMatchingSelector: @"a.id" ];
-              // NSString    * style = [ link.attributes valueForKey: @"style" ];
-              // NSString    * colour;
-              //
-              // if ( style.length == 25 )
-              // {
-              //     colour = [ style substringFromIndex: 19 ];
-              // }
-              // else
-              // {
-              //     colour = @"888888";
-              // }
+            NSString * rowClass = [ service.attributes valueForKey: @"class" ];
 
-              NSString * foundColour = number ? [ routeColours objectForKey: number ] : nil;
-              NSString * colour      = foundColour ? foundColour : @"888888";
+            NSLog(@"Service %@", service);
 
-              // From October 2015:
-              //
-              // Unchanged.
-              //
-              // Before October 2015:
-              //
-              // The first cell has a class with the long class name you can
-              // see below. This link (which goes to the full timetable)
-              // contains the service name and indicators of things like low
-              // floors (disabled support) via icons and spans.
+            if ( [ rowClass isEqualToString: @"rowDivider" ] )
+            {
+                HTMLElement * cell         = [ service firstNodeMatchingSelector: @"td" ];
+                NSString    * sectionTitle = [ cell.textContent stringByTrimmingCharactersInSet: whitespace ];
 
-              HTMLElement * infoElt       = [ service firstNodeMatchingSelector: @"a.rt-service-destination" ];
-              NSString    * timetablePath = [ infoElt.attributes valueForKey: @"href" ]; // Relative path, not absolute URL
-              NSString    * name          = [ infoElt.textContent stringByTrimmingCharactersInSet: whitespace ];
+                if ( [ sectionTitle length ] )
+                {
+                    currentServiceList = [ [ NSMutableArray alloc ] init ];
 
-              // if ( notes )
-              // {
-              //     name = [ NSString stringWithFormat: @"%@ (%@)", name, notes ];
-              // }
+                    [
+                        self.parsedSections addObject:
+                        @{
+                            @"title":    sectionTitle,
+                            @"services": currentServiceList
+                        }
+                    ];
+                }
 
-              // From October 2015:
-              //
-              // Time is on a span with class 'rt-service-time'. For an ETA,
-              // there is also class 'real', else there is not.
-              //
-              // Before October 2015:
-              //
-              // ETA / Time is found based on a table cell class 'time', then
-              // a span with class 'till' or 'actual' for "X mins" vs a time.
+                continue; // Note early exit to next loop iteration
+            }
+            else if ( [ self.parsedSections count ] == 0 )
+            {
+                [
+                    self.parsedSections addObject:
+                    @{
+                        @"title":    TODAY_SECTION_TITLE,
+                        @"services": currentServiceList
+                    }
+                ];
+            }
 
-              HTMLElement * etaElt  = [ service firstNodeMatchingSelector: @"span.rt-service-time.real" ];
-              HTMLElement * timeElt = [ service firstNodeMatchingSelector: @"span.rt-service-time"      ];
+            NSLog(@"Service expected");
 
-              // HTMLElement * etaElt  = [ service firstNodeMatchingSelector: @"td.time span.till"   ];
-              // HTMLElement * timeElt = [ service firstNodeMatchingSelector: @"td.time span.actual" ];
+            // From October 2015:
+            //
+            // The service number is inside a link within a table cell that
+            // has class "routeNumber". Notes are not available. Some icons
+            // are used for e.g. wheelchair access, but they're SVG images
+            // not Unicode glyphs.
+            //
+            // Before October 2015:
+            //
+            // The service number is in a "data-code" attribute on the TR.
+            //
+            // If the service has notes (e.g. 23-S, 54-G2) then those need
+            // to be pulled from the "nb" class link.
+            //
+            // NSString    * number    = [ service.attributes valueForKey: @"data-code" ];
+            // HTMLElement * notesLink = [ service firstNodeMatchingSelector: @"a.nb" ];
+            // NSString    * notes     = nil;
 
-              NSString * eta  = [  etaElt.textContent stringByTrimmingCharactersInSet: whitespace ];
-              NSString * time = [ timeElt.textContent stringByTrimmingCharactersInSet: whitespace ];
+            HTMLElement * numberLink = [ service firstNodeMatchingSelector: @"a.id-code-link" ];
+            NSString    * number     = nil;
 
-              if ( number && name && ( time || eta ) )
-              {
-                  [
-                      self.parsedServices addObject:
-                      @{
-                          @"colour":        colour,
-                          @"number":        number,
-                          @"name":          name,
-                          @"when":          eta ? eta : time,
-                          @"timetablePath": timetablePath ? timetablePath : @""
-                      }
-                  ];
-              }
-          }
+            if ( numberLink.textContent )
+            {
+                number = [ numberLink.textContent stringByTrimmingCharactersInSet: whitespace ];
+            }
 
-          [ self performSelectorOnMainThread: @selector( hideActivityViewer )
-                                  withObject: nil
-                               waitUntilDone: YES ];
+            // From October 2015:
+            //
+            // Services are not coloured. They're all grey. It's dreadful.
+            //
+            // Before October 2015:
+            //
+            // The service colour is set as an HTML inline style and we
+            // assume that the 6 digit hex colour is the last thing in the
+            // string, without even a semicolon. It's on a link inside the
+            // first table cell, with class name "id" (confusingly).
+            //
+            // HTMLElement * link  = [ service firstNodeMatchingSelector: @"a.id" ];
+            // NSString    * style = [ link.attributes valueForKey: @"style" ];
+            // NSString    * colour;
+            //
+            // if ( style.length == 25 )
+            // {
+            //     colour = [ style substringFromIndex: 19 ];
+            // }
+            // else
+            // {
+            //     colour = @"888888";
+            // }
 
-          [ self.refreshControl performSelectorOnMainThread: @selector( endRefreshing )
-                                                 withObject: nil
-                                              waitUntilDone: YES ];
+            NSString * foundColour = number ? [ routeColours objectForKey: number ] : nil;
+            NSString * colour      = foundColour ? foundColour : @"888888";
 
-          [ self.tableView performSelectorOnMainThread: @selector( reloadData )
-                                            withObject: nil
-                                         waitUntilDone: NO ];
+            // From October 2015:
+            //
+            // Unchanged.
+            //
+            // Before October 2015:
+            //
+            // The first cell has a class with the long class name you can
+            // see below. This link (which goes to the full timetable)
+            // contains the service name and indicators of things like low
+            // floors (disabled support) via icons and spans.
 
-      }
-    ] resume];
+            HTMLElement * infoElt       = [ service firstNodeMatchingSelector: @"a.rt-service-destination" ];
+            NSString    * timetablePath = [ infoElt.attributes valueForKey: @"href" ]; // Relative path, not absolute URL
+            NSString    * name          = [ infoElt.textContent stringByTrimmingCharactersInSet: whitespace ];
+
+            // if ( notes )
+            // {
+            //     name = [ NSString stringWithFormat: @"%@ (%@)", name, notes ];
+            // }
+
+            // From October 2015:
+            //
+            // Time is on a span with class 'rt-service-time'. For an ETA,
+            // there is also class 'real', else there is not.
+            //
+            // Before October 2015:
+            //
+            // ETA / Time is found based on a table cell class 'time', then
+            // a span with class 'till' or 'actual' for "X mins" vs a time.
+
+            HTMLElement * etaElt  = [ service firstNodeMatchingSelector: @"span.rt-service-time.real" ];
+            HTMLElement * timeElt = [ service firstNodeMatchingSelector: @"span.rt-service-time"      ];
+
+            // HTMLElement * etaElt  = [ service firstNodeMatchingSelector: @"td.time span.till"   ];
+            // HTMLElement * timeElt = [ service firstNodeMatchingSelector: @"td.time span.actual" ];
+
+            NSString * eta  = [  etaElt.textContent stringByTrimmingCharactersInSet: whitespace ];
+            NSString * time = [ timeElt.textContent stringByTrimmingCharactersInSet: whitespace ];
+
+            NSLog(@"Number %@, name %@, time/eta %@", number, name, eta ? eta : time);
+
+            if ( number && name && ( time || eta ) )
+            {
+                [
+                    currentServiceList addObject:
+                    @{
+                        @"colour":        colour,
+                        @"number":        number,
+                        @"name":          name,
+                        @"when":          eta ? eta : time,
+                        @"timetablePath": timetablePath ? timetablePath : @""
+                    }
+                ];
+            }
+        }
+
+        [ self performSelectorOnMainThread: @selector( hideActivityViewer )
+                                withObject: nil
+                             waitUntilDone: YES ];
+
+        [ self.refreshControl performSelectorOnMainThread: @selector( endRefreshing )
+                                               withObject: nil
+                                            waitUntilDone: YES ];
+
+        [ self.tableView performSelectorOnMainThread: @selector( reloadData )
+                                          withObject: nil
+                                       waitUntilDone: NO ];
+
+    };
+
+    NSURL        * URL     = [ NSURL URLWithString: stopInfoURL ];
+    NSURLSession * session = [ NSURLSession sharedSession ];
+
+    [ [ session dataTaskWithURL: URL completionHandler: completionHandler ] resume ];
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view, typically from a nib.
     [self configureView];
 
     // Pull-to-refresh
@@ -390,38 +470,90 @@ static NSDictionary * routeColours = nil;
 
 #pragma mark - Table View
 
-- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return [ self.parsedServices count ] == 0 ? 0 : 1;
+- ( NSInteger ) numberOfSectionsInTableView: ( UITableView * ) tableView
+{
+    return [ self.parsedSections count ];
 }
 
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return [ self.parsedServices count ];
+- ( NSInteger ) tableView: ( UITableView * ) tableView
+    numberOfRowsInSection: ( NSInteger     ) section
+{
+    return [ self.parsedSections[ section ][ @"services" ] count ];
 }
 
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"ServiceCell" forIndexPath:indexPath];
-    [self configureCell:cell atIndexPath:indexPath];
+- ( UITableViewCell * ) tableView: ( UITableView * ) tableView
+            cellForRowAtIndexPath: ( NSIndexPath * ) indexPath
+{
+    UITableViewCell * cell = [ tableView dequeueReusableCellWithIdentifier: @"ServiceCell"
+                                                              forIndexPath: indexPath ];
+
+    [ self configureCell: cell atIndexPath: indexPath ];
+
     return cell;
 }
 
-- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+- ( BOOL ) tableView: ( UITableView * ) tableView canEditRowAtIndexPath: ( NSIndexPath * ) indexPath
+{
     return NO;
+}
+
+// If there are only services for 'today', don't clutter up the view with
+// a single, unnecessary section. This method makes it easy to detect the
+// condition and, in so doing, clarifies calling code.
+//
+- ( BOOL ) containsATodaySectionOnly
+{
+    return [ self.parsedSections count ] == 1 &&
+    [ self.parsedSections[ 0 ][ @"title" ] isEqualToString: TODAY_SECTION_TITLE ]
+    ? YES : NO;
+}
+
+- ( UIView * ) tableView: ( UITableView * ) tableView
+  viewForHeaderInSection: ( NSInteger     ) section
+{
+    if ( [ self containsATodaySectionOnly ] ) return nil;
+
+    UIView  * cell  = [ tableView dequeueReusableCellWithIdentifier: @"SectionHeader" ];
+    UILabel * label = ( UILabel * )[ cell viewWithTag: 1 ];
+
+    [ label setText: self.parsedSections[ section ][ @"title" ] ];
+
+    return cell;
+}
+
+- ( CGFloat )    tableView: ( UITableView * ) tableView
+  heightForHeaderInSection: ( NSInteger     ) section
+{
+    if ( [ self containsATodaySectionOnly ] ) return 0.0;
+
+    UIView * cell = [ tableView dequeueReusableCellWithIdentifier: @"SectionHeader" ];
+    return [ cell bounds ].size.height;
 }
 
 // http://stackoverflow.com/questions/1560081/how-can-i-create-a-uicolor-from-a-hex-string
 
-- (UIColor *)colourFromHexString:(NSString *)hexString {
-    unsigned rgbValue = 0;
-    NSScanner *scanner = [NSScanner scannerWithString:hexString];
-    [scanner scanHexInt:&rgbValue];
-    return [UIColor colorWithRed:((rgbValue & 0xFF0000) >> 16)/255.0 green:((rgbValue & 0xFF00) >> 8)/255.0 blue:(rgbValue & 0xFF)/255.0 alpha:1.0];
+- ( UIColor * ) colourFromHexString: ( NSString * ) hexString
+{
+    unsigned    rgbValue = 0;
+    NSScanner * scanner  = [ NSScanner scannerWithString: hexString ];
+
+    [ scanner scanHexInt: &rgbValue ];
+
+    return [ UIColor colorWithRed: ( ( rgbValue & 0xFF0000 ) >> 16 ) / 255.0
+                            green: ( ( rgbValue &   0xFF00 ) >>  8 ) / 255.0
+                             blue: (   rgbValue &     0xFF )         / 255.0
+                            alpha: 1.0 ];
 }
 
-- (void)configureCell:(UITableViewCell *)cell atIndexPath:(NSIndexPath *)indexPath {
+- ( void ) configureCell: ( UITableViewCell * ) cell
+             atIndexPath: ( NSIndexPath     * ) indexPath
+{
+    ServiceDescriptionCell * sdc      = ( ServiceDescriptionCell * ) cell;
+    NSUInteger               section  = indexPath.section;
+    NSUInteger               row      = indexPath.row;
+    NSArray                * services = self.parsedSections[ section ][ @"services" ];
 
-    ServiceDescriptionCell * sdc = ( ServiceDescriptionCell * ) cell;
-
-    if ( indexPath.row > self.parsedServices.count )
+    if ( row > services.count )
     {
         sdc.number.text = @"";
         sdc.name.text   = @"";
@@ -432,19 +564,16 @@ static NSDictionary * routeColours = nil;
         return;
     }
 
-    NSDictionary * entry = ( NSDictionary * )
-    [
-        self.parsedServices objectAtIndex: indexPath.row
-    ];
+    NSDictionary * entry  = ( NSDictionary * ) services[ row ];
 
-    NSString * colour = entry[ @"colour" ];
-    NSString * number = entry[ @"number" ];
-    NSString * name   = entry[ @"name"   ];
-    NSString * when   = entry[ @"when"   ];
+    NSString     * colour = entry[ @"colour" ];
+    NSString     * number = entry[ @"number" ];
+    NSString     * name   = entry[ @"name"   ];
+    NSString     * when   = entry[ @"when"   ];
 
     sdc.number.text = number;
-    sdc.name.text = name;
-    sdc.when.text = when;
+    sdc.name.text   = name;
+    sdc.when.text   = when;
 
     UIColor * background = [ self colourFromHexString: colour ];
 
@@ -466,15 +595,16 @@ static NSDictionary * routeColours = nil;
 
 #pragma mark - Segues
 
-- ( void ) prepareForSegue: ( UIStoryboardSegue * ) segue sender: ( id ) sender
+- ( void ) prepareForSegue: ( UIStoryboardSegue * ) segue
+                    sender: ( id                  ) sender
 {
     if ( [ [ segue identifier ] isEqualToString:@"showTimetable" ] )
     {
         NSIndexPath  * indexPath = [ self.tableView indexPathForSelectedRow ];
-        NSDictionary * entry     = ( NSDictionary * )
-        [
-            self.parsedServices objectAtIndex: indexPath.row
-        ];
+        NSUInteger     section   = indexPath.section;
+        NSUInteger     row       = indexPath.row;
+        NSArray      * services  = self.parsedSections[ section ][ @"services" ];
+        NSDictionary * entry     = services[ row ];
 
         TimetableWebViewController * controller = ( TimetableWebViewController * ) [ segue destinationViewController ];
         [ controller setDetailItem: entry ];
