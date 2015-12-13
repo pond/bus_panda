@@ -1,0 +1,19 @@
+//
+//  StopMapViewController.h
+//  Bus
+//
+//  Created by Andrew Hodgkinson on 13/12/15.
+//  Copyright © 2015 Andrew Hodgkinson. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+#import <MapKit/MapKit.h>
+
+#import "AddStopAbstractViewController.h"
+
+@interface StopMapViewController : AddStopAbstractViewController
+
+@property ( weak, nonatomic ) IBOutlet MKMapView       * mapView;
+@property ( weak, nonatomic ) IBOutlet UIBarButtonItem * toolbarCancelButton;
+
+@end

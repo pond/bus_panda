@@ -9,11 +9,8 @@
 #import "MasterViewController.h"
 #import "DetailViewController.h"
 #import "EnterStopIDViewController.h"
+#import "StopMapViewController.h"
 #import "FavouritesCell.h"
-
-@interface MasterViewController ()
-@property EnterStopIDViewController * enterIDModal;
-@end
 
 @implementation MasterViewController
 
@@ -53,7 +50,7 @@
     [
         [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemAdd
                                                        target: self
-                                                       action: @selector( openEnterStopIDModal: )
+                                                       action: @selector( openAddStopModal: )
     ];
 
     self.navigationItem.leftBarButtonItem  = self.editButtonItem;
@@ -91,13 +88,8 @@
     // Dispose of any resources that can be recreated.
 }
 
-- ( void ) openEnterStopIDModal: ( id ) sender
+- ( void ) openSpecificModal: ( id ) modal
 {
-    EnterStopIDViewController * modal =
-    [
-         self.storyboard instantiateViewControllerWithIdentifier: @"EnterStopID"
-    ];
-
     [ modal rememberPresentingMVC: self ];
 
     [
@@ -107,24 +99,90 @@
     ];
 }
 
+- ( void ) openAddStopModal: ( id ) sender
+{
+    UIAlertController * actions =
+    [
+        UIAlertController alertControllerWithTitle: nil
+                                           message: nil
+                                    preferredStyle: UIAlertControllerStyleActionSheet
+    ];
+
+    UIAlertAction * stopMapAction =
+    [
+        UIAlertAction actionWithTitle: @"Add Using Map of Stops"
+                                style: UIAlertActionStyleDefault
+                              handler: ^ ( UIAlertAction * action )
+        {
+            StopMapViewController * stopMapController =
+            [
+                self.storyboard instantiateViewControllerWithIdentifier: @"StopMap"
+            ];
+
+            [ self openSpecificModal: stopMapController ];
+        }
+    ];
+
+    UIAlertAction * enterStopIDAction =
+    [
+        UIAlertAction actionWithTitle: @"Add by Stop ID"
+                                style: UIAlertActionStyleDefault
+                              handler: ^ ( UIAlertAction * action )
+        {
+            EnterStopIDViewController * enterStopIDController =
+            [
+                self.storyboard instantiateViewControllerWithIdentifier: @"EnterStopID"
+            ];
+
+            [ self openSpecificModal: enterStopIDController ];
+        }
+    ];
+
+    UIAlertAction * cancel =
+    [
+        UIAlertAction actionWithTitle: @"Cancel"
+                                style: UIAlertActionStyleCancel
+                              handler: ^ ( UIAlertAction * action )
+        {
+            [ actions dismissViewControllerAnimated: ( YES ) completion: nil ];
+        }
+    ];
+
+    [ actions addAction: stopMapAction     ];
+    [ actions addAction: enterStopIDAction ];
+    [ actions addAction: cancel            ];
+
+    [ self presentViewController: actions animated: YES completion: nil ];
+}
+
 - ( void ) addFavourite: ( NSString * ) stopID
         withDescription: ( NSString * ) stopDescription
 {
-    NSManagedObjectContext *context = [self.fetchedResultsController managedObjectContext];
-    NSEntityDescription *entity = [[self.fetchedResultsController fetchRequest] entity];
-    NSManagedObject *newManagedObject = [NSEntityDescription insertNewObjectForEntityForName:[entity name] inManagedObjectContext:context];
+    NSManagedObjectContext * context          = self.fetchedResultsController.managedObjectContext;
+    NSEntityDescription    * entity           = self.fetchedResultsController.fetchRequest.entity;
+    NSManagedObject        * newManagedObject =
+    [
+        NSEntityDescription insertNewObjectForEntityForName: entity.name
+                                     inManagedObjectContext: context
+    ];
 
     // If appropriate, configure the new managed object.
-    // Normally you should use accessor methods, but using KVC here avoids the need to add a custom class to the template.
+    //
+    // Normally you should use accessor methods, but using KVC here avoids
+    // the need to add a custom class to the template.
+
     [ newManagedObject setValue: stopID          forKey: @"stopID"          ];
     [ newManagedObject setValue: stopDescription forKey: @"stopDescription" ];
 
     // Save the context.
-    NSError *error = nil;
-    if (![context save:&error]) {
+
+    NSError * error = nil;
+
+    if ( ! [ context save: &error ] )
+    {
+        // TODO:
         // Replace this implementation with code to handle the error appropriately.
-        // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-        NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
+        NSLog( @"Unresolved error %@, %@", error, [ error userInfo ] );
     }
 }
 

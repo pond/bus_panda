@@ -349,6 +349,57 @@
             </objects>
             <point key="canvasLocation" x="1375" y="-630"/>
         </scene>
+        <!--Stop Map-->
+        <scene sceneID="7wT-wa-Uin">
+            <objects>
+                <viewController storyboardIdentifier="StopMap" title="Stop Map" id="IzI-eC-yHm" customClass="StopMapViewController" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="Ls0-HP-hXt"/>
+                        <viewControllerLayoutGuide type="bottom" id="MeH-8m-UBg"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="WZe-PC-4Re">
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <mapView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" mapType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="A4R-3L-uVn">
+                                <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                                <connections>
+                                    <outlet property="delegate" destination="IzI-eC-yHm" id="OTm-MC-c2C"/>
+                                </connections>
+                            </mapView>
+                            <toolbar opaque="NO" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="17J-5c-wdJ">
+                                <rect key="frame" x="0.0" y="556" width="600" height="44"/>
+                                <items>
+                                    <barButtonItem style="plain" systemItem="flexibleSpace" id="FvN-qh-6vJ"/>
+                                    <barButtonItem systemItem="cancel" id="GWV-eM-SBY">
+                                        <connections>
+                                            <action selector="toolbarCancelPressed:" destination="IzI-eC-yHm" id="Sl6-A3-5wT"/>
+                                        </connections>
+                                    </barButtonItem>
+                                    <barButtonItem style="plain" systemItem="flexibleSpace" id="dST-UQ-Kaz"/>
+                                </items>
+                            </toolbar>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <constraints>
+                            <constraint firstAttribute="trailing" secondItem="A4R-3L-uVn" secondAttribute="trailing" id="7p9-XV-xcR"/>
+                            <constraint firstItem="17J-5c-wdJ" firstAttribute="trailing" secondItem="A4R-3L-uVn" secondAttribute="trailing" id="8XT-zk-6RQ"/>
+                            <constraint firstItem="A4R-3L-uVn" firstAttribute="leading" secondItem="WZe-PC-4Re" secondAttribute="leading" id="8cd-g8-mHw"/>
+                            <constraint firstItem="MeH-8m-UBg" firstAttribute="top" secondItem="A4R-3L-uVn" secondAttribute="bottom" id="CyV-yi-jmo"/>
+                            <constraint firstItem="17J-5c-wdJ" firstAttribute="leading" secondItem="A4R-3L-uVn" secondAttribute="leading" id="EYA-BX-G7g"/>
+                            <constraint firstItem="17J-5c-wdJ" firstAttribute="bottom" secondItem="MeH-8m-UBg" secondAttribute="top" id="rDu-Gq-CiS"/>
+                            <constraint firstItem="A4R-3L-uVn" firstAttribute="top" secondItem="WZe-PC-4Re" secondAttribute="topMargin" id="xcn-8v-bdG"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="mapView" destination="A4R-3L-uVn" id="VPp-Ao-FE7"/>
+                        <outlet property="toolbarCancelButton" destination="GWV-eM-SBY" id="D8M-kG-l8O"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Zeb-0o-k9w" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="2049" y="-606"/>
+        </scene>
         <!--Navigation Controller-->
         <scene sceneID="r7l-gg-dq7">
             <objects>

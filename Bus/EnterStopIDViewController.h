@@ -7,13 +7,11 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "MasterViewController.h"
+#import "AddStopAbstractViewController.h"
 
-@interface EnterStopIDViewController : UIViewController
+@interface EnterStopIDViewController : AddStopAbstractViewController
 
 @property ( weak, nonatomic ) IBOutlet UITextField * numberField;
 @property ( weak, nonatomic ) IBOutlet UITextField * descriptionField;
-
-- ( void ) rememberPresentingMVC: ( MasterViewController * ) mvc;
 
 @end

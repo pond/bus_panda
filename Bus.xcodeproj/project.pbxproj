@@ -37,6 +37,8 @@
 		23D75E811AC165A70068C808 /* HTMLTokenizer.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E6D1AC165A70068C808 /* HTMLTokenizer.m */; };
 		23D75E821AC165A70068C808 /* HTMLTreeEnumerator.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E701AC165A70068C808 /* HTMLTreeEnumerator.m */; };
 		23D75E831AC165A70068C808 /* NSString+HTMLEntities.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E721AC165A70068C808 /* NSString+HTMLEntities.m */; };
+		23E102661C1D0AA300BEF3C6 /* StopMapViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E102651C1D0AA300BEF3C6 /* StopMapViewController.m */; };
+		23E102691C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E102681C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -114,6 +116,11 @@
 		23D75E711AC165A70068C808 /* NSString+HTMLEntities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSString+HTMLEntities.h"; sourceTree = "<group>"; };
 		23D75E721AC165A70068C808 /* NSString+HTMLEntities.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSString+HTMLEntities.m"; sourceTree = "<group>"; };
 		23D75E841AC165E20068C808 /* Bus.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Bus.entitlements; sourceTree = "<group>"; };
+		23E102641C1D0AA300BEF3C6 /* StopMapViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StopMapViewController.h; sourceTree = "<group>"; };
+		23E102651C1D0AA300BEF3C6 /* StopMapViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = StopMapViewController.m; sourceTree = "<group>"; };
+		23E102671C1D0B7C00BEF3C6 /* AddStopAbstractViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AddStopAbstractViewController.h; sourceTree = "<group>"; };
+		23E102681C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AddStopAbstractViewController.m; sourceTree = "<group>"; };
+		23E1026A1C1D21EA00BEF3C6 /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -137,6 +144,7 @@
 		23D75E121AC1654B0068C808 = {
 			isa = PBXGroup;
 			children = (
+				23E1026A1C1D21EA00BEF3C6 /* MapKit.framework */,
 				23D75E4A1AC165920068C808 /* Third Party */,
 				23D75E1D1AC1654B0068C808 /* Bus */,
 				23D75E3D1AC1654B0068C808 /* BusTests */,
@@ -156,25 +164,29 @@
 		23D75E1D1AC1654B0068C808 /* Bus */ = {
 			isa = PBXGroup;
 			children = (
-				23D75E841AC165E20068C808 /* Bus.entitlements */,
 				23D75E221AC1654B0068C808 /* AppDelegate.h */,
 				23D75E231AC1654B0068C808 /* AppDelegate.m */,
 				23D75E281AC1654B0068C808 /* MasterViewController.h */,
 				23D75E291AC1654B0068C808 /* MasterViewController.m */,
 				23D75E2B1AC1654B0068C808 /* DetailViewController.h */,
 				23D75E2C1AC1654B0068C808 /* DetailViewController.m */,
-				23C937961ACDF51E00EF1441 /* TimetableWebViewController.h */,
-				23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */,
 				23063B031ACBF0BC00C063DC /* FavouritesCell.h */,
 				23063B041ACBF0BC00C063DC /* FavouritesCell.m */,
 				23063AF81AC7DAAC00C063DC /* ServiceDescriptionCell.h */,
 				23063AF91AC7DAAC00C063DC /* ServiceDescriptionCell.m */,
+				23C937961ACDF51E00EF1441 /* TimetableWebViewController.h */,
+				23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */,
+				23E102671C1D0B7C00BEF3C6 /* AddStopAbstractViewController.h */,
+				23E102681C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m */,
 				23063AF51AC7A4C800C063DC /* EnterStopIDViewController.h */,
 				23063AF61AC7A4C800C063DC /* EnterStopIDViewController.m */,
+				23E102641C1D0AA300BEF3C6 /* StopMapViewController.h */,
+				23E102651C1D0AA300BEF3C6 /* StopMapViewController.m */,
 				23D75E311AC1654B0068C808 /* Images.xcassets */,
 				23D75E331AC1654B0068C808 /* LaunchScreen.xib */,
 				23D75E2E1AC1654B0068C808 /* Main.storyboard */,
 				23D75E251AC1654B0068C808 /* Bus.xcdatamodeld */,
+				23D75E841AC165E20068C808 /* Bus.entitlements */,
 				23D75E1E1AC1654B0068C808 /* Supporting Files */,
 			);
 			path = Bus;
@@ -315,6 +327,9 @@
 							com.apple.GameCenter = {
 								enabled = 0;
 							};
+							com.apple.Maps.iOS = {
+								enabled = 1;
+							};
 							com.apple.iCloud = {
 								enabled = 1;
 							};
@@ -382,8 +397,10 @@
 				23D75E751AC165A70068C808 /* HTMLDocumentType.m in Sources */,
 				23D75E7B1AC165A70068C808 /* HTMLParser.m in Sources */,
 				23063AFA1AC7DAAC00C063DC /* ServiceDescriptionCell.m in Sources */,
+				23E102691C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m in Sources */,
 				23D75E761AC165A70068C808 /* HTMLElement.m in Sources */,
 				23D75E771AC165A70068C808 /* HTMLEncoding.m in Sources */,
+				23E102661C1D0AA300BEF3C6 /* StopMapViewController.m in Sources */,
 				23D75E7A1AC165A70068C808 /* HTMLOrderedDictionary.m in Sources */,
 				23063B051ACBF0BC00C063DC /* FavouritesCell.m in Sources */,
 				23D75E831AC165A70068C808 /* NSString+HTMLEntities.m in Sources */,

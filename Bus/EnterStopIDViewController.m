@@ -9,19 +9,7 @@
 #import "EnterStopIDViewController.h"
 #import "MasterViewController.h"
 
-@interface EnterStopIDViewController ()
-@property ( weak, nonatomic ) MasterViewController * presentingMVC;
-@end
-
 @implementation EnterStopIDViewController
-
-// Remember the presenting controller so that we can tell it to add a stop
-// if the user enters details and hits the relevant button.
-//
-- ( void ) rememberPresentingMVC: ( MasterViewController * ) mvc
-{
-    self.presentingMVC = mvc;
-}
 
 // Dismiss the 'add stop' view without adding anything.
 //
@@ -37,7 +25,7 @@
     [ self.descriptionField setText: @"" ];
     [ self.descriptionField resignFirstResponder ];
 
-    [ self dismissViewControllerAnimated: YES completion: nil ];
+    [ self dismissAdditionView ];
 }
 
 // Add a stop (provided the stop ID has 4 digits in it, else just ignore the
@@ -52,8 +40,8 @@
     NSString * stopID          = self.numberField.text;
     NSString * stopDescription = self.descriptionField.text;
 
-    if ( stopID.length == 4 ) [ self.presentingMVC addFavourite: stopID
-                                                withDescription: stopDescription];
+    if ( stopID.length == 4 ) [ self addFavourite: stopID
+                                  withDescription: stopDescription ];
 
     [ self dismissAdditionView: nil ];
 }
