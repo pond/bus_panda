@@ -19,6 +19,9 @@
  */
 @interface HTMLSelector : NSObject
 
+/// http://stackoverflow.com/questions/32741123/objective-c-warning-method-override-for-the-designated-initializer-of-the-superc
+- (instancetype)init NS_UNAVAILABLE;
+
 /// Creates and initializes a new selector by parsing a string representation.
 + (instancetype)selectorForString:(NSString *)selectorString;
 

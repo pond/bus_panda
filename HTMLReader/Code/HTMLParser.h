@@ -16,6 +16,9 @@
  */
 @interface HTMLParser : NSObject
 
+/// http://stackoverflow.com/questions/32741123/objective-c-warning-method-override-for-the-designated-initializer-of-the-superc
+- (instancetype)init NS_UNAVAILABLE;
+
 /**
     Initializes a parser with what appears to be some HTML.
  

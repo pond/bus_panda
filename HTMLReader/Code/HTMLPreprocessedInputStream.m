@@ -5,6 +5,11 @@
 #import "HTMLPreprocessedInputStream.h"
 #import "HTMLString.h"
 
+// http://stackoverflow.com/questions/32741123/objective-c-warning-method-override-for-the-designated-initializer-of-the-superc
+@interface HTMLPreprocessedInputStream ()
+- (instancetype)init NS_DESIGNATED_INITIALIZER;
+@end
+
 @implementation HTMLPreprocessedInputStream
 {
     NSUInteger _scanLocation;
@@ -12,6 +17,9 @@
     BOOL _reconsume;
     UTF32Char _currentInputCharacter;
 }
+
+// http://stackoverflow.com/questions/32741123/objective-c-warning-method-override-for-the-designated-initializer-of-the-superc
+- (instancetype)init { @throw nil; }
 
 - (instancetype)initWithString:(NSString *)string
 {

@@ -778,9 +778,14 @@ static HTMLSelectorPredicate SelectorFunctionForString(NSString *selectorString,
 @property (strong, nonatomic) NSError *error;
 @property (copy, nonatomic) HTMLSelectorPredicate predicate;
 
+// http://stackoverflow.com/questions/32741123/objective-c-warning-method-override-for-the-designated-initializer-of-the-superc
+- (instancetype) init NS_DESIGNATED_INITIALIZER;
 @end
 
 @implementation HTMLSelector
+
+// http://stackoverflow.com/questions/32741123/objective-c-warning-method-override-for-the-designated-initializer-of-the-superc
+- (instancetype)init { @throw nil; }
 
 + (instancetype)selectorForString:(NSString *)selectorString
 {

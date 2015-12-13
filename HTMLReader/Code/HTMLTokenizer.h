@@ -14,6 +14,9 @@
  */
 @interface HTMLTokenizer : NSEnumerator
 
+/// http://stackoverflow.com/questions/32741123/objective-c-warning-method-override-for-the-designated-initializer-of-the-superc
+- (instancetype)init NS_UNAVAILABLE;
+
 /// Initializes a tokenizer.
 - (instancetype)initWithString:(NSString *)string NS_DESIGNATED_INITIALIZER;
 

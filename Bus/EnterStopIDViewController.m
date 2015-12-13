@@ -15,14 +15,19 @@
 
 @implementation EnterStopIDViewController
 
+// Remember the presenting controller so that we can tell it to add a stop
+// if the user enters details and hits the relevant button.
+//
 - ( void ) rememberPresentingMVC: ( MasterViewController * ) mvc
 {
     self.presentingMVC = mvc;
 }
 
-// "sender" is ignored
+// Dismiss the 'add stop' view without adding anything.
 //
-- ( IBAction ) cancelNumberPad: ( id ) sender
+// "sender" is ignored.
+//
+- ( IBAction ) dismissAdditionView: ( id ) sender
 {
     ( void ) sender;
 
@@ -35,9 +40,12 @@
     [ self dismissViewControllerAnimated: YES completion: nil ];
 }
 
-// "sender" is ignored
+// Add a stop (provided the stop ID has 4 digits in it, else just ignore the
+// stop information) and dismiss the view.
 //
-- ( IBAction ) acceptNumberPad: ( id ) sender
+// "sender" is ignored.
+//
+- ( IBAction ) addStop: ( id ) sender
 {
     ( void ) sender;
 
@@ -47,12 +55,22 @@
     if ( stopID.length == 4 ) [ self.presentingMVC addFavourite: stopID
                                                 withDescription: stopDescription];
 
-    [ self cancelNumberPad: nil ];
+    [ self dismissAdditionView: nil ];
+}
+
+// Move input focus to the 'description' field.
+//
+// "sender" is ignored.
+//
+- ( IBAction ) moveToDescription: ( id ) sender
+{
+    ( void ) sender;
+    [ self.descriptionField becomeFirstResponder ];
 }
 
 - ( BOOL ) textFieldShouldReturn: ( UITextField * ) textField
 {
-    [ self acceptNumberPad: textField ];
+    [ self dismissAdditionView: textField ];
     return NO;
 }
 
@@ -60,27 +78,89 @@
 {
     [super viewDidLoad];
 
-    UIToolbar* numberToolbar = [[UIToolbar alloc]initWithFrame:CGRectMake(0, 0, 320, 50)];
-    numberToolbar.barStyle = UIBarStyleDefault;
-    numberToolbar.items = [NSArray arrayWithObjects:
-                           [[UIBarButtonItem alloc]initWithTitle:@"Cancel" style:UIBarButtonItemStylePlain target:self action:@selector(cancelNumberPad:)],
-                           [[UIBarButtonItem alloc]initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil],
-                           [[UIBarButtonItem alloc]initWithTitle:@"Add Stop ID" style:UIBarButtonItemStyleDone target:self action:@selector(acceptNumberPad:)],
-                           nil];
-    [numberToolbar sizeToFit];
-    self.numberField.inputAccessoryView = numberToolbar;
+    UIToolbar *      numberToolbar = [ [ UIToolbar alloc ] initWithFrame: CGRectMake( 0, 0, 320, 50 ) ];
+    UIToolbar * descriptionToolbar = [ [ UIToolbar alloc ] initWithFrame: CGRectMake( 0, 0, 320, 50 ) ];
+
+         numberToolbar.barStyle = UIBarStyleDefault;
+    descriptionToolbar.barStyle = UIBarStyleDefault;
+
+    numberToolbar.items =
+    [
+        NSArray arrayWithObjects:
+
+        [ [ UIBarButtonItem alloc ] initWithTitle: @"Cancel"
+                                            style: UIBarButtonItemStylePlain
+                                           target: self
+                                           action: @selector( dismissAdditionView: ) ],
+
+        [ [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemFlexibleSpace
+                                                         target: nil
+                                                         action: nil ],
+
+        [ [ UIBarButtonItem alloc ] initWithTitle: @"Next"
+                                            style: UIBarButtonItemStylePlain
+                                           target: self
+                                           action: @selector( moveToDescription: ) ],
+        nil
+    ];
+
+    descriptionToolbar.items =
+    [
+        NSArray arrayWithObjects:
+
+        [ [ UIBarButtonItem alloc ] initWithTitle: @"Cancel"
+                                            style: UIBarButtonItemStylePlain
+                                           target: self
+                                           action: @selector( dismissAdditionView: ) ],
+
+        [ [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemFlexibleSpace
+                                                         target: nil
+                                                         action: nil ],
+
+        [ [ UIBarButtonItem alloc ] initWithTitle: @"Add Stop ID"
+                                            style: UIBarButtonItemStyleDone
+                                           target: self
+                                           action: @selector( addStop: ) ],
+        nil
+    ];
+
+    [      numberToolbar sizeToFit ];
+    [ descriptionToolbar sizeToFit ];
+
+         self.numberField.inputAccessoryView = numberToolbar;
+    self.descriptionField.inputAccessoryView = descriptionToolbar;
 }
 
-- (void) viewDidAppear:(BOOL)animated
+- ( void ) viewDidAppear: ( BOOL ) animated
 {
     [ super viewDidAppear: animated ];
     [ self.numberField becomeFirstResponder ];
 }
 
-- (void)didReceiveMemoryWarning
+// From the UITextFieldDelegate protocol and called because the numerical
+// entry field has been given the Enter Stop ID object as its delegate in the
+// storyboard. The description field has no delegate at the time of writing.
+// but just in case it does end up wired to here one day, the method makes
+// sure it is dealing with the right field.
+//
+// The sole aim is to limit the numeric stop ID entry to 4 digits. Via:
+//
+//   http://stackoverflow.com/questions/433337/set-the-maximum-character-length-of-a-uitextfield
+//
+- ( BOOL ) textField: ( UITextField * ) textField shouldChangeCharactersInRange: ( NSRange    ) range
+                                                              replacementString: ( NSString * ) string
 {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+    if ( textField == self.descriptionField ) return YES;
+
+    // Prevent crashing undo bug (see StackOverflow link above).
+    //
+    if ( range.length + range.location > textField.text.length )
+    {
+        return NO;
+    }
+
+    NSUInteger newLength = [ textField.text length ] + [ string length ] - range.length;
+    return newLength <= 4 ? YES : NO;
 }
 
 /*

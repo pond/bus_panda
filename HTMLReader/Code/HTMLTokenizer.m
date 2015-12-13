@@ -2593,7 +2593,15 @@ static inline BOOL is_lower(NSInteger c)
 
 @end
 
+// http://stackoverflow.com/questions/32741123/objective-c-warning-method-override-for-the-designated-initializer-of-the-superc
+@interface HTMLCharacterToken ()
+- (instancetype)init NS_DESIGNATED_INITIALIZER;
+@end
+
 @implementation HTMLCharacterToken
+
+// http://stackoverflow.com/questions/32741123/objective-c-warning-method-override-for-the-designated-initializer-of-the-superc
+- (instancetype)init { @throw nil; }
 
 - (instancetype)initWithString:(NSString *)string
 {

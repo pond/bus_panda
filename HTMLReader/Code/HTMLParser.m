@@ -45,6 +45,9 @@ typedef NS_ENUM(NSInteger, HTMLInsertionMode)
 
 @property (readonly, strong, nonatomic) HTMLElement *currentNode;
 
+// http://stackoverflow.com/questions/32741123/objective-c-warning-method-override-for-the-designated-initializer-of-the-superc
+- (instancetype)init NS_DESIGNATED_INITIALIZER;
+
 @end
 
 @implementation HTMLParser
@@ -66,6 +69,9 @@ typedef NS_ENUM(NSInteger, HTMLInsertionMode)
     BOOL _done;
     BOOL _fragmentParsingAlgorithm;
 }
+
+// http://stackoverflow.com/questions/32741123/objective-c-warning-method-override-for-the-designated-initializer-of-the-superc
+- (instancetype)init { @throw nil; }
 
 - (instancetype)initWithString:(NSString *)string encoding:(HTMLStringEncoding)encoding context:(HTMLElement *)context
 {

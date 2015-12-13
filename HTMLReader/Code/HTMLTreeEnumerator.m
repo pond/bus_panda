@@ -17,12 +17,20 @@ typedef struct {
     NSUInteger capacity;
 } IndexPath;
 
+// http://stackoverflow.com/questions/32741123/objective-c-warning-method-override-for-the-designated-initializer-of-the-superc
+@interface HTMLTreeEnumerator ()
+- (instancetype)init NS_DESIGNATED_INITIALIZER;
+@end
+
 @implementation HTMLTreeEnumerator
 {
     HTMLNode *_nextNode;
 	BOOL _reversed;
     IndexPath _indexPath;
 }
+
+// http://stackoverflow.com/questions/32741123/objective-c-warning-method-override-for-the-designated-initializer-of-the-superc
+- (instancetype)init { @throw nil; }
 
 - (void)dealloc
 {
