@@ -90,8 +90,6 @@
 
 - ( void ) openSpecificModal: ( id ) modal
 {
-    [ modal rememberPresentingMVC: self ];
-
     [
         self presentViewController: modal
                           animated: YES
@@ -151,6 +149,13 @@
     [ actions addAction: stopMapAction     ];
     [ actions addAction: enterStopIDAction ];
     [ actions addAction: cancel            ];
+
+    // On the iPhone (at the time of writing) modal action sheets implicitly
+    // always pop up over the whole screen. On an iPad, you need to tell the
+    // system where to ground the popover - in this case the "+" button that
+    // caused the action method here to be run in the first place.
+    //
+    actions.popoverPresentationController.barButtonItem = sender;
 
     [ self presentViewController: actions animated: YES completion: nil ];
 }

@@ -11,9 +11,8 @@
 
 #import "AddStopAbstractViewController.h"
 
-@interface StopMapViewController : AddStopAbstractViewController
+@interface StopMapViewController : AddStopAbstractViewController <MKMapViewDelegate>
 
-@property ( weak, nonatomic ) IBOutlet MKMapView       * mapView;
-@property ( weak, nonatomic ) IBOutlet UIBarButtonItem * toolbarCancelButton;
+@property ( weak, nonatomic ) IBOutlet MKMapView * mapView;
 
 @end

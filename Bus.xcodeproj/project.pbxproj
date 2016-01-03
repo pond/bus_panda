@@ -10,6 +10,8 @@
 		23063AF71AC7A4C800C063DC /* EnterStopIDViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23063AF61AC7A4C800C063DC /* EnterStopIDViewController.m */; };
 		23063AFA1AC7DAAC00C063DC /* ServiceDescriptionCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 23063AF91AC7DAAC00C063DC /* ServiceDescriptionCell.m */; };
 		23063B051ACBF0BC00C063DC /* FavouritesCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 23063B041ACBF0BC00C063DC /* FavouritesCell.m */; };
+		233CD79B1C37A58B00E0B6D6 /* 1024 Lauch.png in Resources */ = {isa = PBXBuildFile; fileRef = 233CD79A1C37A58B00E0B6D6 /* 1024 Lauch.png */; };
+		233CD79C1C37AB8000E0B6D6 /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23E1026A1C1D21EA00BEF3C6 /* MapKit.framework */; };
 		23C937981ACDF51E00EF1441 /* TimetableWebViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */; };
 		23D75E211AC1654B0068C808 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E201AC1654B0068C808 /* main.m */; };
 		23D75E241AC1654B0068C808 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E231AC1654B0068C808 /* AppDelegate.m */; };
@@ -39,6 +41,7 @@
 		23D75E831AC165A70068C808 /* NSString+HTMLEntities.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E721AC165A70068C808 /* NSString+HTMLEntities.m */; };
 		23E102661C1D0AA300BEF3C6 /* StopMapViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E102651C1D0AA300BEF3C6 /* StopMapViewController.m */; };
 		23E102691C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E102681C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m */; };
+		23E1026F1C1D3A8700BEF3C6 /* StopLocation.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E1026E1C1D3A8700BEF3C6 /* StopLocation.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,6 +61,7 @@
 		23063AF91AC7DAAC00C063DC /* ServiceDescriptionCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ServiceDescriptionCell.m; sourceTree = "<group>"; };
 		23063B031ACBF0BC00C063DC /* FavouritesCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FavouritesCell.h; sourceTree = "<group>"; };
 		23063B041ACBF0BC00C063DC /* FavouritesCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FavouritesCell.m; sourceTree = "<group>"; };
+		233CD79A1C37A58B00E0B6D6 /* 1024 Lauch.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "1024 Lauch.png"; sourceTree = "<group>"; };
 		23C937961ACDF51E00EF1441 /* TimetableWebViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TimetableWebViewController.h; sourceTree = "<group>"; };
 		23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TimetableWebViewController.m; sourceTree = "<group>"; };
 		23D75E1B1AC1654B0068C808 /* Bus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Bus.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -121,6 +125,9 @@
 		23E102671C1D0B7C00BEF3C6 /* AddStopAbstractViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AddStopAbstractViewController.h; sourceTree = "<group>"; };
 		23E102681C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AddStopAbstractViewController.m; sourceTree = "<group>"; };
 		23E1026A1C1D21EA00BEF3C6 /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
+		23E1026C1C1D2A7100BEF3C6 /* UsefulTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UsefulTypes.h; sourceTree = "<group>"; };
+		23E1026D1C1D3A8700BEF3C6 /* StopLocation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StopLocation.h; sourceTree = "<group>"; };
+		23E1026E1C1D3A8700BEF3C6 /* StopLocation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = StopLocation.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -128,6 +135,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				233CD79C1C37AB8000E0B6D6 /* MapKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -170,6 +178,7 @@
 				23D75E291AC1654B0068C808 /* MasterViewController.m */,
 				23D75E2B1AC1654B0068C808 /* DetailViewController.h */,
 				23D75E2C1AC1654B0068C808 /* DetailViewController.m */,
+				23E1026C1C1D2A7100BEF3C6 /* UsefulTypes.h */,
 				23063B031ACBF0BC00C063DC /* FavouritesCell.h */,
 				23063B041ACBF0BC00C063DC /* FavouritesCell.m */,
 				23063AF81AC7DAAC00C063DC /* ServiceDescriptionCell.h */,
@@ -182,6 +191,8 @@
 				23063AF61AC7A4C800C063DC /* EnterStopIDViewController.m */,
 				23E102641C1D0AA300BEF3C6 /* StopMapViewController.h */,
 				23E102651C1D0AA300BEF3C6 /* StopMapViewController.m */,
+				23E1026D1C1D3A8700BEF3C6 /* StopLocation.h */,
+				23E1026E1C1D3A8700BEF3C6 /* StopLocation.m */,
 				23D75E311AC1654B0068C808 /* Images.xcassets */,
 				23D75E331AC1654B0068C808 /* LaunchScreen.xib */,
 				23D75E2E1AC1654B0068C808 /* Main.storyboard */,
@@ -195,6 +206,7 @@
 		23D75E1E1AC1654B0068C808 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				233CD79A1C37A58B00E0B6D6 /* 1024 Lauch.png */,
 				23D75E1F1AC1654B0068C808 /* Info.plist */,
 				23D75E201AC1654B0068C808 /* main.m */,
 			);
@@ -366,6 +378,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				23D75E301AC1654B0068C808 /* Main.storyboard in Resources */,
+				233CD79B1C37A58B00E0B6D6 /* 1024 Lauch.png in Resources */,
 				23D75E351AC1654B0068C808 /* LaunchScreen.xib in Resources */,
 				23D75E321AC1654B0068C808 /* Images.xcassets in Resources */,
 			);
@@ -403,6 +416,7 @@
 				23E102661C1D0AA300BEF3C6 /* StopMapViewController.m in Sources */,
 				23D75E7A1AC165A70068C808 /* HTMLOrderedDictionary.m in Sources */,
 				23063B051ACBF0BC00C063DC /* FavouritesCell.m in Sources */,
+				23E1026F1C1D3A8700BEF3C6 /* StopLocation.m in Sources */,
 				23D75E831AC165A70068C808 /* NSString+HTMLEntities.m in Sources */,
 				23C937981ACDF51E00EF1441 /* TimetableWebViewController.m in Sources */,
 				23D75E2A1AC1654B0068C808 /* MasterViewController.m in Sources */,
@@ -489,7 +503,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 8.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -525,7 +539,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 8.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -543,7 +557,7 @@
 				INFOPLIST_FILE = Bus/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 			};
@@ -559,7 +573,7 @@
 				INFOPLIST_FILE = Bus/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 			};

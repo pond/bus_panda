@@ -13,6 +13,8 @@
 #import "ServiceDescriptionCell.h"
 #import "TimetableWebViewController.h"
 
+#import "UsefulTypes.h"
+
 @interface DetailViewController ()
 @property ( strong, nonatomic ) NSMutableArray   * parsedSections;
 @property ( strong, nonatomic ) UIRefreshControl * refreshControl;
@@ -180,40 +182,36 @@ static NSDictionary * routeColours = nil;
     [[[self.activityView subviews] objectAtIndex:0] startAnimating];
 }
 
--(void)hideActivityViewer
+-( void ) hideActivityViewer
 {
     if ( ! self.activityView ) return;
 
-    [[[self.activityView subviews] objectAtIndex:0] stopAnimating];
-    [self.activityView removeFromSuperview];
+    [ [ [ self.activityView subviews ] objectAtIndex: 0 ] stopAnimating ];
+    [ self.activityView removeFromSuperview ];
+
     self.activityView = nil;
 }
 
 #pragma mark - Managing the detail item
 
-- (void)setDetailItem:(id)newDetailItem {
-    if (_detailItem != newDetailItem) {
+- ( void ) setDetailItem: ( id ) newDetailItem
+{
+    if ( _detailItem != newDetailItem )
+    {
         _detailItem = newDetailItem;
-            
-        // Update the view.
-        [self configureView];
+        [ self configureView ];
     }
 }
-
-// Clean up nesting in code inside method '-configureView' by assigning the
-// URL competion handler block to a strongly typed variable.
-
-typedef void ( ^ urlRequestCompletionHandler )( NSData        * data,
-                                                NSURLResponse * response,
-                                                NSError       * error);
 
 - ( void ) configureView
 {
     if ( ! self.detailItem ) return;
     if ( self.activityView != nil ) return;
 
-    NSString * stopID = [ self.detailItem valueForKey: @"stopID" ];
+    NSString * stopID          = [ self.detailItem valueForKey: @"stopID"          ];
+    NSString * stopDescription = [ self.detailItem valueForKey: @"stopDescription" ];
 
+    self.title = stopDescription;
     if ( self.refreshControl.refreshing == NO ) [ self showActivityViewer ];
 
     // Update the user interface for the detail item.
@@ -228,8 +226,6 @@ typedef void ( ^ urlRequestCompletionHandler )( NSData        * data,
                                    stopID
     ];
 
-    NSLog(@"STOP INFO: %@",stopInfoURL);
-
     // We will make a request to fetch the HTML at 'stopInfoURL' from above,
     // declearing the below block as the code to run upon completion (success
     // or failure).
@@ -237,11 +233,12 @@ typedef void ( ^ urlRequestCompletionHandler )( NSData        * data,
     // After this big chunk of code, at the end of this overall method, is the
     // place where the request is actually made.
     //
-    urlRequestCompletionHandler completionHandler = ^ ( NSData        * data,
+    URLRequestCompletionHandler completionHandler = ^ ( NSData        * data,
                                                         NSURLResponse * response,
                                                         NSError       * error )
     {
-        NSString * contentType = nil;
+        HTMLDocument * home;
+        NSString     * contentType = nil;
 
         if ( [ response isKindOfClass: [ NSHTTPURLResponse class ] ] )
         {
@@ -249,8 +246,16 @@ typedef void ( ^ urlRequestCompletionHandler )( NSData        * data,
             contentType = headers[ @"Content-Type" ];
         }
 
-        HTMLDocument * home = [ HTMLDocument documentWithData: data
-                                            contentTypeHeader: contentType];
+
+        if ( error != nil || contentType == nil )
+        {
+            home = nil;
+        }
+        else
+        {
+            home = [ HTMLDocument documentWithData: data
+                                 contentTypeHeader: contentType];
+        }
 
         // The services are in an HTML table with each row representing an
         // individual service, or a section title with a date in it.
@@ -422,6 +427,36 @@ typedef void ( ^ urlRequestCompletionHandler )( NSData        * data,
                     }
                 ];
             }
+        }
+
+        // If anything failed then e.g. the "home" document would've been nil,
+        // or other such cascaded failures would have resulted ultimately in an
+        // empty services list.
+
+        if ( [ services count ] == 0 )
+        {
+            NSString * message = ( error == nil )
+                               ? @"No live info available"
+                               : @"Network access failure";
+
+            [
+                currentServiceList addObject:
+                @{
+                    @"colour":        @"888888",
+                    @"number":        @"N/A",
+                    @"name":          message,
+                    @"when":          @"—",
+                    @"timetablePath": @""
+                }
+            ];
+
+            [
+                self.parsedSections addObject:
+                @{
+                    @"title":    TODAY_SECTION_TITLE,
+                    @"services": currentServiceList
+                }
+            ];
         }
 
         [ self performSelectorOnMainThread: @selector( hideActivityViewer )
@@ -598,7 +633,7 @@ typedef void ( ^ urlRequestCompletionHandler )( NSData        * data,
 - ( void ) prepareForSegue: ( UIStoryboardSegue * ) segue
                     sender: ( id                  ) sender
 {
-    if ( [ [ segue identifier ] isEqualToString:@"showTimetable" ] )
+    if ( [ [ segue identifier ] isEqualToString: @"showTimetable" ] )
     {
         NSIndexPath * indexPath = [ self.tableView indexPathForSelectedRow ];
         NSUInteger    section   = indexPath.section;
@@ -616,7 +651,8 @@ typedef void ( ^ urlRequestCompletionHandler )( NSData        * data,
                NO == [ entry[ @"timetablePath" ] localizedCaseInsensitiveContainsString: @"?date" ]
            )
         {
-            NSString * newPath = [
+            NSString * newPath =
+            [
                 NSString stringWithFormat: @"%@?date=%@",
                                            entry[ @"timetablePath" ],
                                            self.parsedSections[ section ][ @"title" ]

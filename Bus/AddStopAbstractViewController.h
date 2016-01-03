@@ -18,14 +18,8 @@
 
 @interface AddStopAbstractViewController : UIViewController
 
-// Remember the presenting MVC, for -addFavourite:withDescription. When an
-// MVC shows one of the subclasses of this class, it must call this method
-// to let the instance know from whence it came.
-//
-- ( void ) rememberPresentingMVC: ( MasterViewController * ) mvc;
-
 // Subclasses should call here to add a new stop. Proxies to a presenting MVC
-// via -rememberPresentingMVC:.
+// via view controller hierarchy introspection.
 //
 - ( void ) addFavourite: ( NSString * ) stopID
         withDescription: ( NSString * ) stopDescription;
