@@ -10,7 +10,6 @@
 		23063AF71AC7A4C800C063DC /* EnterStopIDViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23063AF61AC7A4C800C063DC /* EnterStopIDViewController.m */; };
 		23063AFA1AC7DAAC00C063DC /* ServiceDescriptionCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 23063AF91AC7DAAC00C063DC /* ServiceDescriptionCell.m */; };
 		23063B051ACBF0BC00C063DC /* FavouritesCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 23063B041ACBF0BC00C063DC /* FavouritesCell.m */; };
-		233CD79B1C37A58B00E0B6D6 /* 1024 Lauch.png in Resources */ = {isa = PBXBuildFile; fileRef = 233CD79A1C37A58B00E0B6D6 /* 1024 Lauch.png */; };
 		233CD79C1C37AB8000E0B6D6 /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23E1026A1C1D21EA00BEF3C6 /* MapKit.framework */; };
 		233CD79F1C3BDB7D00E0B6D6 /* ErrorPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 233CD79E1C3BDB7D00E0B6D6 /* ErrorPresenter.m */; };
 		23C937981ACDF51E00EF1441 /* TimetableWebViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */; };
@@ -62,7 +61,6 @@
 		23063AF91AC7DAAC00C063DC /* ServiceDescriptionCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ServiceDescriptionCell.m; sourceTree = "<group>"; };
 		23063B031ACBF0BC00C063DC /* FavouritesCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FavouritesCell.h; sourceTree = "<group>"; };
 		23063B041ACBF0BC00C063DC /* FavouritesCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FavouritesCell.m; sourceTree = "<group>"; };
-		233CD79A1C37A58B00E0B6D6 /* 1024 Lauch.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "1024 Lauch.png"; sourceTree = "<group>"; };
 		233CD79D1C3BDB7D00E0B6D6 /* ErrorPresenter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ErrorPresenter.h; sourceTree = "<group>"; };
 		233CD79E1C3BDB7D00E0B6D6 /* ErrorPresenter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ErrorPresenter.m; sourceTree = "<group>"; };
 		23C937961ACDF51E00EF1441 /* TimetableWebViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TimetableWebViewController.h; sourceTree = "<group>"; };
@@ -211,7 +209,6 @@
 		23D75E1E1AC1654B0068C808 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
-				233CD79A1C37A58B00E0B6D6 /* 1024 Lauch.png */,
 				23D75E1F1AC1654B0068C808 /* Info.plist */,
 				23D75E201AC1654B0068C808 /* main.m */,
 			);
@@ -383,7 +380,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				23D75E301AC1654B0068C808 /* Main.storyboard in Resources */,
-				233CD79B1C37A58B00E0B6D6 /* 1024 Lauch.png in Resources */,
 				23D75E351AC1654B0068C808 /* LaunchScreen.xib in Resources */,
 				23D75E321AC1654B0068C808 /* Images.xcassets in Resources */,
 			);
