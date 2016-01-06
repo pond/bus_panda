@@ -12,10 +12,11 @@
 		23063B051ACBF0BC00C063DC /* FavouritesCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 23063B041ACBF0BC00C063DC /* FavouritesCell.m */; };
 		233CD79B1C37A58B00E0B6D6 /* 1024 Lauch.png in Resources */ = {isa = PBXBuildFile; fileRef = 233CD79A1C37A58B00E0B6D6 /* 1024 Lauch.png */; };
 		233CD79C1C37AB8000E0B6D6 /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23E1026A1C1D21EA00BEF3C6 /* MapKit.framework */; };
+		233CD79F1C3BDB7D00E0B6D6 /* ErrorPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 233CD79E1C3BDB7D00E0B6D6 /* ErrorPresenter.m */; };
 		23C937981ACDF51E00EF1441 /* TimetableWebViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */; };
 		23D75E211AC1654B0068C808 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E201AC1654B0068C808 /* main.m */; };
 		23D75E241AC1654B0068C808 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E231AC1654B0068C808 /* AppDelegate.m */; };
-		23D75E271AC1654B0068C808 /* Bus.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E251AC1654B0068C808 /* Bus.xcdatamodeld */; };
+		23D75E271AC1654B0068C808 /* Bus-Panda.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E251AC1654B0068C808 /* Bus-Panda.xcdatamodeld */; };
 		23D75E2A1AC1654B0068C808 /* MasterViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E291AC1654B0068C808 /* MasterViewController.m */; };
 		23D75E2D1AC1654B0068C808 /* DetailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E2C1AC1654B0068C808 /* DetailViewController.m */; };
 		23D75E301AC1654B0068C808 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 23D75E2E1AC1654B0068C808 /* Main.storyboard */; };
@@ -62,6 +63,8 @@
 		23063B031ACBF0BC00C063DC /* FavouritesCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FavouritesCell.h; sourceTree = "<group>"; };
 		23063B041ACBF0BC00C063DC /* FavouritesCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FavouritesCell.m; sourceTree = "<group>"; };
 		233CD79A1C37A58B00E0B6D6 /* 1024 Lauch.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "1024 Lauch.png"; sourceTree = "<group>"; };
+		233CD79D1C3BDB7D00E0B6D6 /* ErrorPresenter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ErrorPresenter.h; sourceTree = "<group>"; };
+		233CD79E1C3BDB7D00E0B6D6 /* ErrorPresenter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ErrorPresenter.m; sourceTree = "<group>"; };
 		23C937961ACDF51E00EF1441 /* TimetableWebViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TimetableWebViewController.h; sourceTree = "<group>"; };
 		23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TimetableWebViewController.m; sourceTree = "<group>"; };
 		23D75E1B1AC1654B0068C808 /* Bus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Bus.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -69,7 +72,7 @@
 		23D75E201AC1654B0068C808 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		23D75E221AC1654B0068C808 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		23D75E231AC1654B0068C808 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
-		23D75E261AC1654B0068C808 /* Bus.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Bus.xcdatamodel; sourceTree = "<group>"; };
+		23D75E261AC1654B0068C808 /* Bus-Panda.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Bus-Panda.xcdatamodel"; sourceTree = "<group>"; };
 		23D75E281AC1654B0068C808 /* MasterViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MasterViewController.h; sourceTree = "<group>"; };
 		23D75E291AC1654B0068C808 /* MasterViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MasterViewController.m; sourceTree = "<group>"; };
 		23D75E2B1AC1654B0068C808 /* DetailViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DetailViewController.h; sourceTree = "<group>"; };
@@ -119,7 +122,7 @@
 		23D75E701AC165A70068C808 /* HTMLTreeEnumerator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = HTMLTreeEnumerator.m; sourceTree = "<group>"; };
 		23D75E711AC165A70068C808 /* NSString+HTMLEntities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSString+HTMLEntities.h"; sourceTree = "<group>"; };
 		23D75E721AC165A70068C808 /* NSString+HTMLEntities.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSString+HTMLEntities.m"; sourceTree = "<group>"; };
-		23D75E841AC165E20068C808 /* Bus.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Bus.entitlements; sourceTree = "<group>"; };
+		23D75E841AC165E20068C808 /* Bus-Panda.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "Bus-Panda.entitlements"; sourceTree = "<group>"; };
 		23E102641C1D0AA300BEF3C6 /* StopMapViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StopMapViewController.h; sourceTree = "<group>"; };
 		23E102651C1D0AA300BEF3C6 /* StopMapViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = StopMapViewController.m; sourceTree = "<group>"; };
 		23E102671C1D0B7C00BEF3C6 /* AddStopAbstractViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AddStopAbstractViewController.h; sourceTree = "<group>"; };
@@ -179,6 +182,8 @@
 				23D75E2B1AC1654B0068C808 /* DetailViewController.h */,
 				23D75E2C1AC1654B0068C808 /* DetailViewController.m */,
 				23E1026C1C1D2A7100BEF3C6 /* UsefulTypes.h */,
+				233CD79D1C3BDB7D00E0B6D6 /* ErrorPresenter.h */,
+				233CD79E1C3BDB7D00E0B6D6 /* ErrorPresenter.m */,
 				23063B031ACBF0BC00C063DC /* FavouritesCell.h */,
 				23063B041ACBF0BC00C063DC /* FavouritesCell.m */,
 				23063AF81AC7DAAC00C063DC /* ServiceDescriptionCell.h */,
@@ -196,8 +201,8 @@
 				23D75E311AC1654B0068C808 /* Images.xcassets */,
 				23D75E331AC1654B0068C808 /* LaunchScreen.xib */,
 				23D75E2E1AC1654B0068C808 /* Main.storyboard */,
-				23D75E251AC1654B0068C808 /* Bus.xcdatamodeld */,
-				23D75E841AC165E20068C808 /* Bus.entitlements */,
+				23D75E251AC1654B0068C808 /* Bus-Panda.xcdatamodeld */,
+				23D75E841AC165E20068C808 /* Bus-Panda.entitlements */,
 				23D75E1E1AC1654B0068C808 /* Supporting Files */,
 			);
 			path = Bus;
@@ -399,6 +404,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				23D75E781AC165A70068C808 /* HTMLEntities.m in Sources */,
+				233CD79F1C3BDB7D00E0B6D6 /* ErrorPresenter.m in Sources */,
 				23D75E7C1AC165A70068C808 /* HTMLPreprocessedInputStream.m in Sources */,
 				23D75E811AC165A70068C808 /* HTMLTokenizer.m in Sources */,
 				23063AF71AC7A4C800C063DC /* EnterStopIDViewController.m in Sources */,
@@ -423,7 +429,7 @@
 				23D75E791AC165A70068C808 /* HTMLNode.m in Sources */,
 				23D75E7E1AC165A70068C808 /* HTMLSerialization.m in Sources */,
 				23D75E801AC165A70068C808 /* HTMLTextNode.m in Sources */,
-				23D75E271AC1654B0068C808 /* Bus.xcdatamodeld in Sources */,
+				23D75E271AC1654B0068C808 /* Bus-Panda.xcdatamodeld in Sources */,
 				23D75E241AC1654B0068C808 /* AppDelegate.m in Sources */,
 				23D75E211AC1654B0068C808 /* main.m in Sources */,
 				23D75E7D1AC165A70068C808 /* HTMLSelector.m in Sources */,
@@ -551,7 +557,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = Bus/Bus.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Bus/Bus-Panda.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				INFOPLIST_FILE = Bus/Info.plist;
@@ -567,7 +573,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = Bus/Bus.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Bus/Bus-Panda.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				INFOPLIST_FILE = Bus/Info.plist;
@@ -642,13 +648,13 @@
 /* End XCConfigurationList section */
 
 /* Begin XCVersionGroup section */
-		23D75E251AC1654B0068C808 /* Bus.xcdatamodeld */ = {
+		23D75E251AC1654B0068C808 /* Bus-Panda.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
-				23D75E261AC1654B0068C808 /* Bus.xcdatamodel */,
+				23D75E261AC1654B0068C808 /* Bus-Panda.xcdatamodel */,
 			);
-			currentVersion = 23D75E261AC1654B0068C808 /* Bus.xcdatamodel */;
-			path = Bus.xcdatamodeld;
+			currentVersion = 23D75E261AC1654B0068C808 /* Bus-Panda.xcdatamodel */;
+			path = "Bus-Panda.xcdatamodeld";
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
 		};

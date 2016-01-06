@@ -1,40 +1,58 @@
 //
 //  TimetableWebViewController.m
-//  Bus
+//  Bus Panda
 //
 //  Created by Andrew Hodgkinson on 3/04/15.
 //  Copyright (c) 2015 Andrew Hodgkinson. All rights reserved.
 //
 
+#import "ErrorPresenter.h"
 #import "TimetableWebViewController.h"
-
-@interface TimetableWebViewController ()
-
-@end
 
 @implementation TimetableWebViewController
 
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    // Do any additional setup after loading the view.
+#pragma mark - Spinner
+
+// Turn on an activity indicator of some sort. At the time of writing this
+// comment, the network activity indicator in the status bar is used. See
+// also -spinnerOff.
+//
+- ( void ) spinnerOn
+{
+    UIApplication.sharedApplication.networkActivityIndicatorVisible = YES;
+}
+
+// Turn off the activity indicator started with -spinnerOn.
+//
+- ( void ) spinnerOff
+{
+    UIApplication.sharedApplication.networkActivityIndicatorVisible = NO;
+}
+
+#pragma mark - View lifecycle
+
+- ( void ) viewDidLoad
+{
+    [ super viewDidLoad ];
     if ( _detailItem ) [ self configureView ];
 }
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+- ( void ) viewWillDisappear: ( BOOL ) animated
+{
+    [ super viewWillDisappear: animated ];
+    [ self spinnerOff ];
 }
 
 #pragma mark - Managing the detail item
 
 // Detail item should be a parent detail view table row item (dictionary).
 
-- (void)setDetailItem:(id)newDetailItem {
-    if (_detailItem != newDetailItem) {
+- ( void ) setDetailItem: ( id ) newDetailItem
+{
+    if ( _detailItem != newDetailItem )
+    {
         _detailItem = newDetailItem;
-
-        // Update the view.
-        [self configureView];
+        [ self configureView ];
     }
 }
 
@@ -52,24 +70,40 @@
 
 #pragma mark - Optional UIWebViewDelegate delegate methods
 
-- (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType
+- ( BOOL )           webView: ( UIWebView               * ) webView
+  shouldStartLoadWithRequest: ( NSURLRequest            * ) request
+              navigationType: ( UIWebViewNavigationType   )navigationType
 {
     return YES;
 }
 
-- (void)webViewDidStartLoad:(UIWebView *)webView
+- ( void ) webViewDidStartLoad: ( UIWebView * ) webView
 {
-    [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
+    [ self spinnerOn ];
 }
 
-- (void)webViewDidFinishLoad:(UIWebView *)webView
+- ( void ) webViewDidFinishLoad: ( UIWebView * ) webView
 {
-    [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
+    [ self spinnerOff ];
 }
 
-- (void)webView:(UIWebView *)webView didFailLoadWithError:(NSError *)error
+- ( void )     webView: ( UIWebView * ) webView
+  didFailLoadWithError: ( NSError   * ) error
 {
-    [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
+    [ self spinnerOff ];
+
+    if ( error )
+    {
+        [
+            ErrorPresenter showModalAlertFor: self
+                                   withError: error
+                                       title: @"Timetable not available"
+                                  andHandler: ^( UIAlertAction *action )
+            {
+                [ self.navigationController popViewControllerAnimated: YES ];
+            }
+        ];
+    }
 }
 
 @end

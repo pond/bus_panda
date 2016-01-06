@@ -1,11 +1,13 @@
 //
 //  MasterViewController.m
-//  Bus
+//  Bus Panda
 //
 //  Created by Andrew Hodgkinson on 24/03/15.
 //  Copyright (c) 2015 Andrew Hodgkinson. All rights reserved.
 //
 
+#import "AppDelegate.h"
+#import "ErrorPresenter.h"
 #import "MasterViewController.h"
 #import "DetailViewController.h"
 #import "EnterStopIDViewController.h"
@@ -14,6 +16,8 @@
 
 @implementation MasterViewController
 
+#pragma mark - View lifecycle
+
 - ( void ) awakeFromNib
 {
     [ super awakeFromNib ];
@@ -21,30 +25,17 @@
     if ( [ [ UIDevice currentDevice ] userInterfaceIdiom ] == UIUserInterfaceIdiomPad )
     {
         self.clearsSelectionOnViewWillAppear = NO;
-        self.preferredContentSize = CGSizeMake( 320.0, 600.0 );
+        self.preferredContentSize            = CGSizeMake( 320.0, 600.0 );
     }
-}
-
-- (void)reloadFetchedResults:(NSNotification*)note {
-    NSLog(@"Underlying data changed ... refreshing!");
-
-    NSError *error = nil;
-    if (![self.fetchedResultsController performFetch:&error]) {
-        // Replace this implementation with code to handle the error appropriately.
-        // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-        NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
-        abort();
-    }
-
-    [ self.tableView performSelectorOnMainThread: @selector( reloadData )
-                                      withObject: nil
-                                   waitUntilDone: NO ];
 }
 
 - ( void ) viewDidLoad
 {
     [ super viewDidLoad ];
-    self.clearsSelectionOnViewWillAppear = NO; // http://stackoverflow.com/questions/19379510/uitableviewcell-doesnt-get-deselected-when-swiping-back-quickly
+
+    // http://stackoverflow.com/questions/19379510/uitableviewcell-doesnt-get-deselected-when-swiping-back-quickly
+    //
+    self.clearsSelectionOnViewWillAppear = NO;
 
     UIBarButtonItem * addButton =
     [
@@ -61,16 +52,20 @@
         [ self.splitViewController.viewControllers lastObject ] topViewController
     ];
 
-    // Refresh this view whenever data changes in iCloud
-
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(reloadFetchedResults:)
-                                                 name:@"SomethingChanged"
-                                               object:[[UIApplication sharedApplication] delegate]];
+    // Force an initial fetch of the results (initialising the fetched results
+    // controller and populating it); add a notification handler to refresh the
+    // data whenever it changes in iCloud.
+    //
+    [ self reloadFetchedResults: nil ];
+    [ [ NSNotificationCenter defaultCenter ] addObserver: self
+                                                selector: @selector( reloadFetchedResults: )
+                                                    name: DATA_CHANGED_NOTIFICATION_NAME // AppDelegate.h
+                                                  object: [ [ UIApplication sharedApplication ] delegate ] ];
 }
 
-- (void)viewDidUnload {
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
+- ( void ) viewDidUnload
+{
+    [ [ NSNotificationCenter defaultCenter ] removeObserver: self ];
 }
 
 // http://stackoverflow.com/questions/19379510/uitableviewcell-doesnt-get-deselected-when-swiping-back-quickly
@@ -82,11 +77,7 @@
                                    animated: animated ];
 }
 
-- ( void ) didReceiveMemoryWarning
-{
-    [ super didReceiveMemoryWarning ];
-    // Dispose of any resources that can be recreated.
-}
+#pragma mark - Modal handling
 
 - ( void ) openSpecificModal: ( id ) modal
 {
@@ -160,6 +151,8 @@
     [ self presentViewController: actions animated: YES completion: nil ];
 }
 
+#pragma mark - Adding favourites
+
 - ( void ) addFavourite: ( NSString * ) stopID
         withDescription: ( NSString * ) stopDescription
 {
@@ -185,22 +178,27 @@
 
     if ( ! [ context save: &error ] )
     {
-        // TODO:
-        // Replace this implementation with code to handle the error appropriately.
-        NSLog( @"Unresolved error %@, %@", error, [ error userInfo ] );
+        [
+            ErrorPresenter showModalAlertFor: self
+                                   withError: error
+                                       title: @"Could not save favourites"
+                                  andHandler: ^( UIAlertAction *action ) {}
+        ];
     }
 }
 
-
 #pragma mark - Segues
 
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    if ([[segue identifier] isEqualToString:@"showDetail"]) {
-        NSIndexPath *indexPath = [self.tableView indexPathForSelectedRow];
-        NSManagedObject *object = [[self fetchedResultsController] objectAtIndexPath:indexPath];
-        NSLog(@"MANAGED OBJ: %@",object);
-        DetailViewController *controller = (DetailViewController *)[[segue destinationViewController] topViewController];
-        [controller setDetailItem:object];
+- ( void ) prepareForSegue: ( UIStoryboardSegue * ) segue sender: ( id ) sender
+{
+    if ( [ [ segue identifier ] isEqualToString: @"showDetail" ] )
+    {
+        NSIndexPath          * indexPath  = [ self.tableView indexPathForSelectedRow ];
+        NSManagedObject      * object     = [ [ self fetchedResultsController ] objectAtIndexPath: indexPath ];
+        DetailViewController * controller = ( DetailViewController * ) [ [ segue destinationViewController ] topViewController ];
+
+        [ controller setDetailItem: object ];
+
         controller.navigationItem.leftBarButtonItem = self.splitViewController.displayModeButtonItem;
         controller.navigationItem.leftItemsSupplementBackButton = YES;
     }
@@ -208,37 +206,54 @@
 
 #pragma mark - Table View
 
-- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return [[self.fetchedResultsController sections] count];
+- ( NSInteger ) numberOfSectionsInTableView: ( UITableView * ) tableView
+{
+    return [ [ self.fetchedResultsController sections ] count ];
 }
 
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    id <NSFetchedResultsSectionInfo> sectionInfo = [self.fetchedResultsController sections][section];
-    return [sectionInfo numberOfObjects];
+- ( NSInteger ) tableView: ( UITableView * ) tableView
+    numberOfRowsInSection: ( NSInteger ) section
+{
+    id <NSFetchedResultsSectionInfo> sectionInfo = [ self.fetchedResultsController sections ][ section ];
+    return [ sectionInfo numberOfObjects ];
 }
 
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    FavouritesCell *cell = [tableView dequeueReusableCellWithIdentifier:@"Cell" forIndexPath:indexPath];
-    [self configureCell:cell atIndexPath:indexPath];
+- ( UITableViewCell * ) tableView: ( UITableView * ) tableView
+            cellForRowAtIndexPath: ( NSIndexPath * ) indexPath
+{
+    FavouritesCell * cell = [ tableView dequeueReusableCellWithIdentifier: @"Cell"
+                                                             forIndexPath: indexPath ];
+
+    [ self configureCell: cell atIndexPath: indexPath ];
+
     return cell;
 }
 
-- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
-    // Return NO if you do not want the specified item to be editable.
+- ( BOOL )    tableView: ( UITableView * ) tableView
+  canEditRowAtIndexPath: ( NSIndexPath * ) indexPath
+{
     return YES;
 }
 
-- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
-    if (editingStyle == UITableViewCellEditingStyleDelete) {
-        NSManagedObjectContext *context = [self.fetchedResultsController managedObjectContext];
-        [context deleteObject:[self.fetchedResultsController objectAtIndexPath:indexPath]];
+- ( void ) tableView: ( UITableView                 * ) tableView
+  commitEditingStyle: ( UITableViewCellEditingStyle   ) editingStyle
+   forRowAtIndexPath: ( NSIndexPath                 * ) indexPath
+{
+    if ( editingStyle == UITableViewCellEditingStyleDelete )
+    {
+        NSManagedObjectContext * context = [ self.fetchedResultsController managedObjectContext ];
+        [ context deleteObject: [ self.fetchedResultsController objectAtIndexPath: indexPath ] ];
             
-        NSError *error = nil;
-        if (![context save:&error]) {
-            // Replace this implementation with code to handle the error appropriately.
-            // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-            NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
-            abort();
+        NSError * error = nil;
+
+        if ( ! [ context save: &error ] )
+        {
+            [
+                ErrorPresenter showModalAlertFor: self
+                                       withError: error
+                                           title: @"Could not delete favourite"
+                                      andHandler: ^( UIAlertAction *action ) {}
+            ];
         }
     }
 }
@@ -251,106 +266,159 @@
     cell.stopDescription.text = [ [ object valueForKey: @"stopDescription" ] description ];
 }
 
-#pragma mark - Fetched results controller
+#pragma mark - Fetched results management
 
-- (NSFetchedResultsController *)fetchedResultsController
+// Returns an existing NSFetchedResultsController instance or generates a new
+// one when called for the first time.
+//
+- ( NSFetchedResultsController * ) fetchedResultsController
 {
-    if (_fetchedResultsController != nil) {
+    if ( _fetchedResultsController != nil )
+    {
         return _fetchedResultsController;
     }
     
-    NSFetchRequest *fetchRequest = [[NSFetchRequest alloc] init];
-    // Edit the entity name as appropriate.
-    NSEntityDescription *entity = [NSEntityDescription entityForName:@"Event" inManagedObjectContext:self.managedObjectContext];
-    [fetchRequest setEntity:entity];
+    NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init];
+    NSEntityDescription * entity       = [ NSEntityDescription entityForName: @"BusStop"
+                                                      inManagedObjectContext: self.managedObjectContext ];
+
+    [ fetchRequest setEntity:         entity ];
+    [ fetchRequest setFetchBatchSize: 50     ];
     
-    // Set the batch size to a suitable number.
-    [fetchRequest setFetchBatchSize:20];
+    NSSortDescriptor * sortDescriptor  = [ [ NSSortDescriptor alloc] initWithKey: @"stopDescription"
+                                                                       ascending: YES ];
+    [ fetchRequest setSortDescriptors: @[ sortDescriptor ] ];
     
-    // Edit the sort key as appropriate.
-    NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:@"stopDescription" ascending:YES];
-    NSArray *sortDescriptors = @[sortDescriptor];
-    
-    [fetchRequest setSortDescriptors:sortDescriptors];
-    
-    // Edit the section name key path and cache name if appropriate.
-    // nil for section name key path means "no sections".
-    NSFetchedResultsController *aFetchedResultsController = [[NSFetchedResultsController alloc] initWithFetchRequest:fetchRequest managedObjectContext:self.managedObjectContext sectionNameKeyPath:nil cacheName:@"Master"];
-    aFetchedResultsController.delegate = self;
-    self.fetchedResultsController = aFetchedResultsController;
-    
-	NSError *error = nil;
-	if (![self.fetchedResultsController performFetch:&error]) {
-	     // Replace this implementation with code to handle the error appropriately.
-	     // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development. 
-	    NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
-	    abort();
-	}
+    // "nil" for section name key path means "no sections".
+    //
+    NSFetchedResultsController * frc = [ [ NSFetchedResultsController alloc ] initWithFetchRequest: fetchRequest
+                                                                              managedObjectContext: self.managedObjectContext
+                                                                                sectionNameKeyPath: nil
+                                                                                         cacheName: @"BusStops" ];
+    frc.delegate = self;
+    self.fetchedResultsController = frc;
     
     return _fetchedResultsController;
 }    
 
-- (void)controllerWillChangeContent:(NSFetchedResultsController *)controller
+// Reload results (i.e. favourites) from iCloud / local storage; "notification"
+// parameter is ignored.
+//
+- ( void ) reloadFetchedResults: ( NSNotification * ) notification
 {
-    [self.tableView beginUpdates];
+    NSLog( @"Underlying data changed... Refreshing" );
+
+    NSError *error = nil;
+
+    if ( ! [ self.fetchedResultsController performFetch: &error ] )
+    {
+        [
+            ErrorPresenter showModalAlertFor: self
+                                   withError: error
+                                       title: @"Could not load favourites"
+                                  andHandler: ^( UIAlertAction *action ) {}
+        ];
+    }
+
+    [ self.tableView performSelectorOnMainThread: @selector( reloadData )
+                                      withObject: nil
+                                   waitUntilDone: NO ];
 }
 
-- (void)controller:(NSFetchedResultsController *)controller didChangeSection:(id <NSFetchedResultsSectionInfo>)sectionInfo
-           atIndex:(NSUInteger)sectionIndex forChangeType:(NSFetchedResultsChangeType)type
+
+#pragma mark - Table updates from the controller
+
+- ( void ) controllerWillChangeContent: ( NSFetchedResultsController * ) controller
 {
-    switch(type) {
+    [ self.tableView beginUpdates ];
+}
+
+- ( void ) controller: ( NSFetchedResultsController     * ) controller
+     didChangeSection: ( id <NSFetchedResultsSectionInfo> ) sectionInfo
+              atIndex: ( NSUInteger                       ) sectionIndex
+        forChangeType: ( NSFetchedResultsChangeType       ) type
+{
+    switch ( type )
+    {
         case NSFetchedResultsChangeInsert:
-            [self.tableView insertSections:[NSIndexSet indexSetWithIndex:sectionIndex] withRowAnimation:UITableViewRowAnimationFade];
-            break;
+        {
+            [ self.tableView insertSections: [ NSIndexSet indexSetWithIndex: sectionIndex ]
+                           withRowAnimation: UITableViewRowAnimationFade ];
+        }
+        break;
             
         case NSFetchedResultsChangeDelete:
-            [self.tableView deleteSections:[NSIndexSet indexSetWithIndex:sectionIndex] withRowAnimation:UITableViewRowAnimationFade];
-            break;
-            
+        {
+            [ self.tableView deleteSections: [ NSIndexSet indexSetWithIndex: sectionIndex ]
+                           withRowAnimation: UITableViewRowAnimationFade ];
+        }
+        break;
+
         default:
+        {
             return;
+        }
     }
 }
 
-- (void)controller:(NSFetchedResultsController *)controller didChangeObject:(id)anObject
-       atIndexPath:(NSIndexPath *)indexPath forChangeType:(NSFetchedResultsChangeType)type
-      newIndexPath:(NSIndexPath *)newIndexPath
+- ( void ) controller: ( NSFetchedResultsController * ) controller
+      didChangeObject: ( id                           ) anObject
+          atIndexPath: ( NSIndexPath                * ) indexPath
+        forChangeType: ( NSFetchedResultsChangeType   ) type
+         newIndexPath: ( NSIndexPath                * ) newIndexPath
 {
-    UITableView *tableView = self.tableView;
+    UITableView * tableView = self.tableView;
     
-    switch(type) {
+    switch ( type )
+    {
         case NSFetchedResultsChangeInsert:
-            [tableView insertRowsAtIndexPaths:@[newIndexPath] withRowAnimation:UITableViewRowAnimationFade];
-            break;
+        {
+            [ tableView insertRowsAtIndexPaths: @[ newIndexPath ]
+                              withRowAnimation: UITableViewRowAnimationFade ];
+        }
+        break;
             
         case NSFetchedResultsChangeDelete:
-            [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
-            break;
+        {
+            [ tableView deleteRowsAtIndexPaths: @[ indexPath ]
+                              withRowAnimation: UITableViewRowAnimationFade ];
+        }
+        break;
             
         case NSFetchedResultsChangeUpdate:
-            [self configureCell:(FavouritesCell *)[tableView cellForRowAtIndexPath:indexPath] atIndexPath:indexPath];
-            break;
+        {
+            [ self configureCell: ( FavouritesCell * ) [ tableView cellForRowAtIndexPath: indexPath ]
+                     atIndexPath: indexPath ];
+        }
+        break;
             
         case NSFetchedResultsChangeMove:
-            [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
-            [tableView insertRowsAtIndexPaths:@[newIndexPath] withRowAnimation:UITableViewRowAnimationFade];
-            break;
+        {
+            [ tableView deleteRowsAtIndexPaths: @[ indexPath    ] withRowAnimation: UITableViewRowAnimationFade ];
+            [ tableView insertRowsAtIndexPaths: @[ newIndexPath ] withRowAnimation: UITableViewRowAnimationFade ];
+        }
+        break;
     }
 }
 
-- (void)controllerDidChangeContent:(NSFetchedResultsController *)controller
+- ( void ) controllerDidChangeContent: ( NSFetchedResultsController * ) controller
 {
-    [self.tableView endUpdates];
+    [ self.tableView endUpdates ];
 }
 
-/*
-// Implementing the above methods to update the table view in response to individual changes may have performance implications if a large number of changes are made simultaneously. If this proves to be an issue, you can instead just implement controllerDidChangeContent: which notifies the delegate that all section and object changes have been processed. 
- 
- - (void)controllerDidChangeContent:(NSFetchedResultsController *)controller
-{
-    // In the simplest, most efficient, case, reload the table view.
-    [self.tableView reloadData];
-}
- */
+// TODO possibly:
+//
+// Implementing the above methods to update the table view in response to
+// individual changes may have performance implications if a large number
+// of changes are made simultaneously. If this proves to be an issue,
+// notify the delegate that all section and object changes have been processed.
+// by uncommenting the method below in place of the implementation above.
+//
+//- ( void ) controllerDidChangeContent: ( NSFetchedResultsController * ) controller
+//{
+//    // In the simplest, most efficient, case, reload the table view.
+//    //
+//    [ self.tableView reloadData ];
+//}
 
 @end

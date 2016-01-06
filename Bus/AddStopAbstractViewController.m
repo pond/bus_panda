@@ -1,6 +1,6 @@
 //
 //  AddStopAbstractViewController.m
-//  Bus
+//  Bus Panda
 //
 //  Created by Andrew Hodgkinson on 13/12/15.
 //  Copyright © 2015 Andrew Hodgkinson. All rights reserved.

@@ -1,6 +1,6 @@
 //
 //  DetailViewController.m
-//  Bus
+//  Bus Panda
 //
 //  Created by Andrew Hodgkinson on 24/03/15.
 //  Copyright (c) 2015 Andrew Hodgkinson. All rights reserved.
@@ -160,28 +160,51 @@ static NSDictionary * routeColours = nil;
     );
 }
 
--(void)showActivityViewer
+// This shows a full-screen modal activity spinner which stops the user doing
+// actions in the underlying application that might result in state confusion.
+//
+// See also: -hideActivityViewer
+//
+- ( void ) showActivityViewer
 {
     if ( self.activityView ) return;
 
-    AppDelegate *delegate = [[UIApplication sharedApplication] delegate];
-    UIWindow *window = delegate.window;
-    self.activityView = [[UIView alloc] initWithFrame: CGRectMake(0, 0, window.bounds.size.width, window.bounds.size.height)];
-    self.activityView.backgroundColor = [UIColor blackColor];
-    self.activityView.alpha = 0.5;
+    AppDelegate * delegate = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
+    UIWindow    * window   = delegate.window;
 
-    UIActivityIndicatorView *activityWheel = [[UIActivityIndicatorView alloc] initWithFrame: CGRectMake(window.bounds.size.width / 2 - 12, window.bounds.size.height / 2 - 12, 24, 24)];
+    self.activityView =
+    [
+        [ UIView alloc ] initWithFrame: CGRectMake( 0,
+                                                    0,
+                                                    window.bounds.size.width,
+                                                    window.bounds.size.height )
+    ];
+
+    self.activityView.backgroundColor = [ UIColor blackColor ];
+    self.activityView.alpha           = 0.5;
+
+    UIActivityIndicatorView * activityWheel =
+    [
+       [ UIActivityIndicatorView alloc ] initWithFrame: CGRectMake( window.bounds.size.width  / 2 - 12,
+                                                                    window.bounds.size.height / 2 - 12,
+                                                                    24,
+                                                                    24 )
+    ];
+
     activityWheel.activityIndicatorViewStyle = UIActivityIndicatorViewStyleWhite;
-    activityWheel.autoresizingMask = (UIViewAutoresizingFlexibleLeftMargin |
-                                      UIViewAutoresizingFlexibleRightMargin |
-                                      UIViewAutoresizingFlexibleTopMargin |
-                                      UIViewAutoresizingFlexibleBottomMargin);
-    [self.activityView addSubview:activityWheel];
-    [window addSubview: self.activityView];
+    activityWheel.autoresizingMask           = ( UIViewAutoresizingFlexibleLeftMargin  |
+                                                 UIViewAutoresizingFlexibleRightMargin |
+                                                 UIViewAutoresizingFlexibleTopMargin   |
+                                                 UIViewAutoresizingFlexibleBottomMargin );
 
-    [[[self.activityView subviews] objectAtIndex:0] startAnimating];
+    [ self.activityView addSubview: activityWheel ];
+    [ window addSubview: self.activityView ];
+
+    [ [ [ self.activityView subviews ] objectAtIndex: 0 ] startAnimating ];
 }
 
+// For details, see -showActivityViewer.
+//
 -( void ) hideActivityViewer
 {
     if ( ! self.activityView ) return;

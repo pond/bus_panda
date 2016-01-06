@@ -1,6 +1,6 @@
 //
 //  StopMapViewController.m
-//  Bus
+//  Bus Panda
 //
 //  Created by Andrew Hodgkinson on 13/12/15.
 //  Copyright © 2015 Andrew Hodgkinson. All rights reserved.
@@ -8,6 +8,7 @@
 
 #import "StopMapViewController.h"
 
+#import "ErrorPresenter.h"
 #import "StopLocation.h"
 #import "DetailViewController.h"
 #import "UsefulTypes.h"
@@ -176,9 +177,17 @@
     {
         if ( error != nil || [ response isKindOfClass: [ NSHTTPURLResponse class ] ] == NO )
         {
-            // TODO: Error handling
-            //
             [ self spinnerOff ];
+
+            [
+                ErrorPresenter showModalAlertFor: self
+                                       withError: error
+                                           title: @"Cannot show stops"
+                                      andHandler: ^( UIAlertAction *action )
+                {
+                    [ self dismissAdditionView ];
+                }
+            ];
         }
         else
         {
@@ -216,14 +225,32 @@
 
     @try
     {
-        stops = [ NSJSONSerialization JSONObjectWithData: data options: 0 error: nil ];
+        stops = [ NSJSONSerialization JSONObjectWithData: data
+                                                 options: 0
+                                                   error: nil ];
 
     }
     @catch ( NSException * exception ) // Assumed JSON processing error
     {
-        // TODO: Error handling
+        [ self spinnerOff ];
 
-        return [ self spinnerOff ];
+        NSDictionary * details = @{
+            NSLocalizedDescriptionKey: @"Bus stops retrieved from the Internet were sent in a way that Bus Panda does not understand."
+        };
+
+        NSError * error = [ NSError errorWithDomain: @"bus_panda_stops" code: 200 userInfo: details ];
+
+        [
+            ErrorPresenter showModalAlertFor: self
+                                   withError: error
+                                       title: @"Cannot show stops"
+                                  andHandler: ^( UIAlertAction *action )
+            {
+                [ self dismissAdditionView ];
+            }
+        ];
+
+        return;
     }
 
     // Lazy-initialise the local stop location store, then process the new
@@ -317,10 +344,7 @@
     // when the views-were-all-added call happens' thing won't work, obviously.
     // So stop it here instead.
 
-    if ( anyAdded == NO )
-    {
-        UIApplication.sharedApplication.networkActivityIndicatorVisible = false;
-    };
+    if ( anyAdded == NO ) [ self spinnerOff ];
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -335,7 +359,7 @@
 - ( void )    mapView: ( MKMapView                            * ) mapView
 didAddAnnotationViews: ( nonnull NSArray <MKAnnotationView *> * ) views
 {
-    UIApplication.sharedApplication.networkActivityIndicatorVisible = false;
+    [ self spinnerOff ];
 }
 
 // MKMapViewDelegate protocol. Called when the map changes position / zoom.

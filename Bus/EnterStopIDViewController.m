@@ -1,6 +1,6 @@
 //
 //  EnterStopIDViewController.m
-//  Bus
+//  Bus Panda
 //
 //  Created by Andrew Hodgkinson on 29/03/15.
 //  Copyright (c) 2015 Andrew Hodgkinson. All rights reserved.
@@ -58,13 +58,20 @@
 
 - ( BOOL ) textFieldShouldReturn: ( UITextField * ) textField
 {
-    [ self dismissAdditionView: textField ];
-    return NO;
+    if ( textField == self.descriptionField )
+    {
+        [ self addStop: nil ];
+        return YES;
+    }
+    else
+    {
+        return NO;
+    }
 }
 
-- (void)viewDidLoad
+- ( void ) viewDidLoad
 {
-    [super viewDidLoad];
+    [ super viewDidLoad ];
 
     UIToolbar *      numberToolbar = [ [ UIToolbar alloc ] initWithFrame: CGRectMake( 0, 0, 320, 50 ) ];
     UIToolbar * descriptionToolbar = [ [ UIToolbar alloc ] initWithFrame: CGRectMake( 0, 0, 320, 50 ) ];
@@ -150,15 +157,5 @@
     NSUInteger newLength = [ textField.text length ] + [ string length ] - range.length;
     return newLength <= 4 ? YES : NO;
 }
-
-/*
-#pragma mark - Navigation
-
-// In a storyboard-based application, you will often want to do a little preparation before navigation
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    // Get the new view controller using [segue destinationViewController].
-    // Pass the selected object to the new view controller.
-}
-*/
 
 @end
