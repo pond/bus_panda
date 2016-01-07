@@ -71,6 +71,8 @@
         [ defaults removeObjectForKey: @"uk.org.pond.Bus-Panda.UbiquityIdentityToken" ];
     }
 
+    [ defaults synchronize ];
+
     NSLog( @"iCloud ubiquity token now: %@", currentiCloudToken );
 }
 

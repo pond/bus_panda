@@ -61,6 +61,45 @@
                                                 selector: @selector( reloadFetchedResults: )
                                                     name: DATA_CHANGED_NOTIFICATION_NAME // AppDelegate.h
                                                   object: [ [ UIApplication sharedApplication ] delegate ] ];
+
+    // If this is the first time the application has ever been run, set up a
+    // collection of predefined useful stops.
+    //
+
+    NSUserDefaults * defaults     = [ NSUserDefaults standardUserDefaults ];
+    BOOL             hasRunBefore = [ defaults boolForKey: @"hasRunBefore" ];
+
+    if ( hasRunBefore != YES )
+    {
+        [ defaults setBool: YES forKey: @"hasRunBefore" ];
+        [ defaults synchronize ];
+
+        NSDictionary * cannedStops = @{
+            @"5000": @"Courtenay Aroy",
+            @"5516": @"Courtenay Blair",
+            @"5514": @"Courtenay Reading",
+            @"7418": @"Express",
+            @"5513": @"Manners BK",
+            @"5515": @"Manners Body",
+            @"4113": @"Murphy Wellington Girls",
+            @"7018": @"Riddiford At Hall",
+            @"1200": @"Sparse",
+            @"6000": @"Station A",
+            @"6001": @"Station B",
+            @"5500": @"Station C",
+            @"7120": @"Rintoul At Stoke",
+            @"TALA": @"Talavera - Cable Car Station"
+        };
+
+        [
+            cannedStops enumerateKeysAndObjectsUsingBlock: ^ ( NSString * stopID,
+                                                               NSString * stopDescription,
+                                                               BOOL     * stop )
+            {
+                [ self addFavourite: stopID withDescription: stopDescription ];
+            }
+        ];
+    }
 }
 
 - ( void ) viewDidUnload
