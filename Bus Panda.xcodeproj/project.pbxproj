@@ -65,7 +65,7 @@
 		233CD79E1C3BDB7D00E0B6D6 /* ErrorPresenter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ErrorPresenter.m; sourceTree = "<group>"; };
 		23C937961ACDF51E00EF1441 /* TimetableWebViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TimetableWebViewController.h; sourceTree = "<group>"; };
 		23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TimetableWebViewController.m; sourceTree = "<group>"; };
-		23D75E1B1AC1654B0068C808 /* Bus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Bus.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		23D75E1B1AC1654B0068C808 /* Bus Panda.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Bus Panda.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		23D75E1F1AC1654B0068C808 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		23D75E201AC1654B0068C808 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		23D75E221AC1654B0068C808 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -153,9 +153,8 @@
 		23D75E121AC1654B0068C808 = {
 			isa = PBXGroup;
 			children = (
-				23E1026A1C1D21EA00BEF3C6 /* MapKit.framework */,
 				23D75E4A1AC165920068C808 /* Third Party */,
-				23D75E1D1AC1654B0068C808 /* Bus */,
+				23D75E1D1AC1654B0068C808 /* Bus Panda */,
 				23D75E3D1AC1654B0068C808 /* BusTests */,
 				23D75E1C1AC1654B0068C808 /* Products */,
 			);
@@ -164,13 +163,13 @@
 		23D75E1C1AC1654B0068C808 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				23D75E1B1AC1654B0068C808 /* Bus.app */,
+				23D75E1B1AC1654B0068C808 /* Bus Panda.app */,
 				23D75E3A1AC1654B0068C808 /* BusTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		23D75E1D1AC1654B0068C808 /* Bus */ = {
+		23D75E1D1AC1654B0068C808 /* Bus Panda */ = {
 			isa = PBXGroup;
 			children = (
 				23D75E221AC1654B0068C808 /* AppDelegate.h */,
@@ -203,6 +202,7 @@
 				23D75E841AC165E20068C808 /* Bus-Panda.entitlements */,
 				23D75E1E1AC1654B0068C808 /* Supporting Files */,
 			);
+			name = "Bus Panda";
 			path = Bus;
 			sourceTree = "<group>";
 		};
@@ -236,6 +236,7 @@
 			isa = PBXGroup;
 			children = (
 				23D75E4B1AC165A70068C808 /* HTMLReader */,
+				23E1026A1C1D21EA00BEF3C6 /* MapKit.framework */,
 			);
 			name = "Third Party";
 			sourceTree = "<group>";
@@ -290,9 +291,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		23D75E1A1AC1654B0068C808 /* Bus */ = {
+		23D75E1A1AC1654B0068C808 /* Bus Panda */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 23D75E441AC1654B0068C808 /* Build configuration list for PBXNativeTarget "Bus" */;
+			buildConfigurationList = 23D75E441AC1654B0068C808 /* Build configuration list for PBXNativeTarget "Bus Panda" */;
 			buildPhases = (
 				23D75E171AC1654B0068C808 /* Sources */,
 				23D75E181AC1654B0068C808 /* Frameworks */,
@@ -302,9 +303,9 @@
 			);
 			dependencies = (
 			);
-			name = Bus;
+			name = "Bus Panda";
 			productName = Bus;
-			productReference = 23D75E1B1AC1654B0068C808 /* Bus.app */;
+			productReference = 23D75E1B1AC1654B0068C808 /* Bus Panda.app */;
 			productType = "com.apple.product-type.application";
 		};
 		23D75E391AC1654B0068C808 /* BusTests */ = {
@@ -355,7 +356,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 23D75E161AC1654B0068C808 /* Build configuration list for PBXProject "Bus" */;
+			buildConfigurationList = 23D75E161AC1654B0068C808 /* Build configuration list for PBXProject "Bus Panda" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
@@ -368,7 +369,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				23D75E1A1AC1654B0068C808 /* Bus */,
+				23D75E1A1AC1654B0068C808 /* Bus Panda */,
 				23D75E391AC1654B0068C808 /* BusTests */,
 			);
 		};
@@ -445,7 +446,7 @@
 /* Begin PBXTargetDependency section */
 		23D75E3C1AC1654B0068C808 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 23D75E1A1AC1654B0068C808 /* Bus */;
+			target = 23D75E1A1AC1654B0068C808 /* Bus Panda */;
 			targetProxy = 23D75E3B1AC1654B0068C808 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -614,7 +615,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		23D75E161AC1654B0068C808 /* Build configuration list for PBXProject "Bus" */ = {
+		23D75E161AC1654B0068C808 /* Build configuration list for PBXProject "Bus Panda" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				23D75E421AC1654B0068C808 /* Debug */,
@@ -623,7 +624,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		23D75E441AC1654B0068C808 /* Build configuration list for PBXNativeTarget "Bus" */ = {
+		23D75E441AC1654B0068C808 /* Build configuration list for PBXNativeTarget "Bus Panda" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				23D75E451AC1654B0068C808 /* Debug */,

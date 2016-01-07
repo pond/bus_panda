@@ -243,7 +243,7 @@
     {
         NSManagedObjectContext * context = [ self.fetchedResultsController managedObjectContext ];
         [ context deleteObject: [ self.fetchedResultsController objectAtIndexPath: indexPath ] ];
-            
+
         NSError * error = nil;
 
         if ( ! [ context save: &error ] )
@@ -277,18 +277,18 @@
     {
         return _fetchedResultsController;
     }
-    
+
     NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init];
     NSEntityDescription * entity       = [ NSEntityDescription entityForName: @"BusStop"
                                                       inManagedObjectContext: self.managedObjectContext ];
 
     [ fetchRequest setEntity:         entity ];
     [ fetchRequest setFetchBatchSize: 50     ];
-    
+
     NSSortDescriptor * sortDescriptor  = [ [ NSSortDescriptor alloc] initWithKey: @"stopDescription"
                                                                        ascending: YES ];
     [ fetchRequest setSortDescriptors: @[ sortDescriptor ] ];
-    
+
     // "nil" for section name key path means "no sections".
     //
     NSFetchedResultsController * frc = [ [ NSFetchedResultsController alloc ] initWithFetchRequest: fetchRequest
@@ -297,9 +297,9 @@
                                                                                          cacheName: @"BusStops" ];
     frc.delegate = self;
     self.fetchedResultsController = frc;
-    
+
     return _fetchedResultsController;
-}    
+}
 
 // Reload results (i.e. favourites) from iCloud / local storage; "notification"
 // parameter is ignored.
@@ -346,7 +346,7 @@
                            withRowAnimation: UITableViewRowAnimationFade ];
         }
         break;
-            
+
         case NSFetchedResultsChangeDelete:
         {
             [ self.tableView deleteSections: [ NSIndexSet indexSetWithIndex: sectionIndex ]
@@ -368,7 +368,7 @@
          newIndexPath: ( NSIndexPath                * ) newIndexPath
 {
     UITableView * tableView = self.tableView;
-    
+
     switch ( type )
     {
         case NSFetchedResultsChangeInsert:
@@ -377,21 +377,21 @@
                               withRowAnimation: UITableViewRowAnimationFade ];
         }
         break;
-            
+
         case NSFetchedResultsChangeDelete:
         {
             [ tableView deleteRowsAtIndexPaths: @[ indexPath ]
                               withRowAnimation: UITableViewRowAnimationFade ];
         }
         break;
-            
+
         case NSFetchedResultsChangeUpdate:
         {
             [ self configureCell: ( FavouritesCell * ) [ tableView cellForRowAtIndexPath: indexPath ]
                      atIndexPath: indexPath ];
         }
         break;
-            
+
         case NSFetchedResultsChangeMove:
         {
             [ tableView deleteRowsAtIndexPaths: @[ indexPath    ] withRowAnimation: UITableViewRowAnimationFade ];

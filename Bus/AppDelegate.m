@@ -50,6 +50,8 @@
 {
     ( void ) notification;
 
+    NSLog( @"iCloud ubiquity token has changed" );
+
     NSUserDefaults * defaults           = [ NSUserDefaults standardUserDefaults ];
     NSFileManager  * fileManager        = [ NSFileManager defaultManager ];
     id               currentiCloudToken = fileManager.ubiquityIdentityToken;
@@ -66,10 +68,10 @@
     }
     else
     {
-        [ defaults removeObjectForKey: @"uk.org.pond.Bus-Panda.UbiquityIdentityToken"];
+        [ defaults removeObjectForKey: @"uk.org.pond.Bus-Panda.UbiquityIdentityToken" ];
     }
 
-    NSLog( @"iCloud ubiquity token: %@", currentiCloudToken );
+    NSLog( @"iCloud ubiquity token now: %@", currentiCloudToken );
 }
 
 # pragma mark - Termination
@@ -128,8 +130,6 @@
 
     NSURL * modelURL = [ [ NSBundle mainBundle ] URLForResource: @"Bus-Panda" withExtension: @"momd" ];
 
-    NSLog(@"Load with %@",modelURL);
-
     _managedObjectModel = [ [ NSManagedObjectModel alloc ] initWithContentsOfURL: modelURL ];
     return _managedObjectModel;
 }
@@ -147,14 +147,14 @@
 
     NSPersistentStoreCoordinator * psc = _persistentStoreCoordinator;
 
-    // Set up iCloud in another thread.
-    //
-    dispatch_async
-    (
-        dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0 ), ^
-        {
+//    // Set up iCloud in another thread.
+//    //
+//    dispatch_async
+//    (
+//        dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0 ), ^
+//        {
             NSString * iCloudContainerID  = @"iCloud.uk.org.pond.Bus-Panda";
-            NSString * iCloudEnabledAppID = @"XT4V976D8Y~uk~org~pond~Bus-Panda";
+            NSString * iCloudEnabledAppID = @"XT4V976D8Y.uk.org.pond.Bus-Panda";
             NSString * dataFileName       = @"Bus-Panda.sqlite";
 
             NSFileManager * fileManager = [ NSFileManager defaultManager ];
@@ -171,11 +171,11 @@
                     NSURL fileURLWithPath: [ [ iCloud path ] stringByAppendingPathComponent: iCloudLogsDirectoryName ]
                 ];
 
-                NSLog( @"dataFileName = %@",            dataFileName);
-                NSLog( @"iCloudEnabledAppID = %@",      iCloudEnabledAppID);
-                NSLog( @"iCloudDataDirectoryName = %@", iCloudDataDirectoryName);
-                NSLog( @"iCloudLogsDirectoryName = %@", iCloudLogsDirectoryName);
-                NSLog( @"iCloudLogsPath = %@",          iCloudLogsPath);
+                NSLog( @"dataFileName = %@",            dataFileName            );
+                NSLog( @"iCloudEnabledAppID = %@",      iCloudEnabledAppID      );
+                NSLog( @"iCloudDataDirectoryName = %@", iCloudDataDirectoryName );
+                NSLog( @"iCloudLogsDirectoryName = %@", iCloudLogsDirectoryName );
+                NSLog( @"iCloudLogsPath = %@",          iCloudLogsPath          );
 
                 NSString * iCloudDataDirectoryPath =
                 [
@@ -266,9 +266,9 @@
                 }
             );
 
-        }
-     );
-    
+//        }
+//     );
+
     return _persistentStoreCoordinator;
 }
 
