@@ -9,6 +9,7 @@
 #import <UIKit/UIKit.h>
 #import <CoreData/CoreData.h>
 
+#define ICLOUD_TOKEN_ID_DEFAULTS_KEY   @"uk.org.pond.Bus-Panda.UbiquityIdentityToken"
 #define DATA_CHANGED_NOTIFICATION_NAME @"BusPandaDataChanged"
 
 @interface AppDelegate : UIResponder <UIApplicationDelegate, UISplitViewControllerDelegate>

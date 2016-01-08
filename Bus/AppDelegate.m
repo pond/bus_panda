@@ -6,6 +6,8 @@
 //  Copyright (c) 2015 Andrew Hodgkinson. All rights reserved.
 //
 
+#import <unistd.h> // For usleep() only
+
 #import "AppDelegate.h"
 #import "DetailViewController.h"
 #import "MasterViewController.h"
@@ -25,6 +27,9 @@
     navigationController.topViewController.navigationItem.leftBarButtonItem = splitViewController.displayModeButtonItem;
     splitViewController.delegate = self;
 
+    UINavigationController * masterNavigationController = splitViewController.viewControllers.firstObject;
+    MasterViewController   * masterViewController       = ( MasterViewController * ) masterNavigationController.topViewController;
+
     // Set up iCloud and the associated data storage managed object context
 
     [ self iCloudAccountAvailabilityChanged: nil ];
@@ -36,10 +41,7 @@
                                                     object: nil
     ];
 
-    UINavigationController * masterNavigationController = splitViewController.viewControllers.firstObject;
-    MasterViewController   * controller                 = ( MasterViewController * ) masterNavigationController.topViewController;
-
-    controller.managedObjectContext = self.managedObjectContext;
+    masterViewController.managedObjectContext = self.managedObjectContext;
 
     return YES;
 }
@@ -58,17 +60,33 @@
 
     if ( currentiCloudToken )
     {
-        NSData * newTokenData =
-        [
-            NSKeyedArchiver archivedDataWithRootObject: currentiCloudToken
-        ];
+        // The iCloud token may have changed. Read whatever old value was
+        // stored ("nil" if not). If there's a change, record the new value
+        // and send the 'data changed' notification. If there's no change in
+        // the token, do nothing.
 
-        [ defaults setObject: newTokenData
-                      forKey: @"uk.org.pond.Bus-Panda.UbiquityIdentityToken" ];
+        id oldiCloudToken = [ defaults objectForKey: ICLOUD_TOKEN_ID_DEFAULTS_KEY ];
+
+        if ( [ currentiCloudToken isEqual: oldiCloudToken ] == NO )
+        {
+            NSData * currentTokenData =
+            [
+                NSKeyedArchiver archivedDataWithRootObject: currentiCloudToken
+            ];
+
+            [ defaults setObject: currentTokenData
+                          forKey: ICLOUD_TOKEN_ID_DEFAULTS_KEY ];
+
+            [ self sendDataHasChangedNotification ];
+        }
     }
     else
     {
-        [ defaults removeObjectForKey: @"uk.org.pond.Bus-Panda.UbiquityIdentityToken" ];
+        // iCloud seems to no longer be available. Remove any stored iCloud
+        // token and send the 'data changed' notification.
+
+        [ defaults removeObjectForKey: ICLOUD_TOKEN_ID_DEFAULTS_KEY ];
+        [ self sendDataHasChangedNotification ];
     }
 
     [ defaults synchronize ];
@@ -110,10 +128,44 @@
 @synthesize managedObjectModel         = _managedObjectModel;
 @synthesize persistentStoreCoordinator = _persistentStoreCoordinator;
 
+// Send a notification saying that the iCloud data has changed. A listener is
+// set up in MasterViewController.m. The notification is sent via GCD on a
+// separate thread.
+//
+- ( void ) sendDataHasChangedNotification
+{
+    dispatch_async
+    (
+        dispatch_get_main_queue(),
+        ^ ( void )
+        {
+            // TODO: Can this hack be removed?
+            //
+            // This is a hack to avoid potential race conditions. For example,
+            // AppDelegate has to wake up iCloud (because it needs the various
+            // state variables available for when 'will terminate' happens and
+            // it has to quickly try and save context), but it's the
+            // MasterViewController which registers for data change
+            // notifications. Conceivably, AppDelegate could set up the iCloud
+            // wakeup thread and have it run before the MVC gets to whatever
+            // stage of initialisation is needed to register that handler. It
+            // is very unlikely, but might happen. A short sleep here reduces
+            // that chance to effectively zero by forcing a definite context
+            // switch to what will be at that time a very busy main thread.
+            //
+            usleep( 100 ); // 100 microseconds => 0.1 seconds
+
+            [ [ NSNotificationCenter defaultCenter ] postNotificationName: DATA_CHANGED_NOTIFICATION_NAME
+                                                                   object: self
+                                                                 userInfo: nil ];
+        }
+    );
+}
+
 // The directory the application uses to store the Core Data store file. This
 // code uses a directory named "uk.org.pond.Bus-Panda" in the application's
 // documents directory.
-
+//
 - ( NSURL * ) applicationDocumentsDirectory
 {
     return [ [ [ NSFileManager defaultManager ] URLsForDirectory: NSDocumentDirectory
@@ -145,78 +197,50 @@
         return _persistentStoreCoordinator;
     }
 
-    _persistentStoreCoordinator = [ [ NSPersistentStoreCoordinator alloc ] initWithManagedObjectModel: [ self managedObjectModel ] ];
+    _persistentStoreCoordinator = [
+        [ NSPersistentStoreCoordinator alloc ]
+        initWithManagedObjectModel: [ self managedObjectModel ]
+    ];
 
     NSPersistentStoreCoordinator * psc = _persistentStoreCoordinator;
 
-//    // Set up iCloud in another thread.
-//    //
-//    dispatch_async
-//    (
-//        dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0 ), ^
-//        {
-            NSString * iCloudContainerID  = @"iCloud.uk.org.pond.Bus-Panda";
-            NSString * iCloudEnabledAppID = @"XT4V976D8Y.uk.org.pond.Bus-Panda";
+    // Set up iCloud in another thread: "In iOS, apps that use document storage
+    // must call the URLForUbiquityContainerIdentifier: method of the
+    // NSFileManager method for each supported iCloud container. Always call
+    // the URLForUbiquityContainerIdentifier: method from a background thread -
+    // not from your app’s main thread. This method depends on local and remote
+    // services and, for this reason, does not always return immediately"
+    //
+    // https://developer.apple.com/library/ios/documentation/General/Conceptual/iCloudDesignGuide/Chapters/iCloudFundametals.html#//apple_ref/doc/uid/TP40012094-CH6-SW1
+    //
+    dispatch_async
+    (
+        dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0 ), ^
+        {
+            NSString * iCloudEnabledAppID = @"XT4V976D8Y~uk~org~pond~Bus-Panda";
             NSString * dataFileName       = @"Bus-Panda.sqlite";
 
+            // "nil" for container identifier => choose the first from the entitlements
+            // file's com.apple.developer.ubiquity-container-identifiers array. That's
+            // nice as it avoids duplicating info there and here.
+            //
             NSFileManager * fileManager = [ NSFileManager defaultManager ];
-            NSURL         * iCloud      = [ fileManager URLForUbiquityContainerIdentifier: iCloudContainerID ];
+            NSURL         * iCloud      = [ fileManager URLForUbiquityContainerIdentifier: nil ];
 
             if ( iCloud )
             {
-                NSLog( @"iCloud is working: %@", iCloud );
+                NSURL * iCloudDataURL = [ [ self applicationDocumentsDirectory ] URLByAppendingPathComponent: dataFileName ];
 
-                NSString * iCloudDataDirectoryName = @"Data.nosync";
-                NSString * iCloudLogsDirectoryName = @"Logs";
-                NSURL    * iCloudLogsPath          =
-                [
-                    NSURL fileURLWithPath: [ [ iCloud path ] stringByAppendingPathComponent: iCloudLogsDirectoryName ]
-                ];
-
-                NSLog( @"dataFileName = %@",            dataFileName            );
-                NSLog( @"iCloudEnabledAppID = %@",      iCloudEnabledAppID      );
-                NSLog( @"iCloudDataDirectoryName = %@", iCloudDataDirectoryName );
-                NSLog( @"iCloudLogsDirectoryName = %@", iCloudLogsDirectoryName );
-                NSLog( @"iCloudLogsPath = %@",          iCloudLogsPath          );
-
-                NSString * iCloudDataDirectoryPath =
-                [
-                    [ iCloud path ] stringByAppendingPathComponent: iCloudDataDirectoryName
-                ];
-
-                if ( [ fileManager fileExistsAtPath: iCloudDataDirectoryPath ] == NO )
-                {
-                    NSError * fileSystemError;
-
-                    [ fileManager createDirectoryAtPath: iCloudDataDirectoryPath
-                            withIntermediateDirectories: YES
-                                             attributes: nil
-                                                  error: &fileSystemError ];
-
-                    if ( fileSystemError != nil )
-                    {
-                        // TODO: This is in a GCD thread. What can we possibly
-                        // do about such errors? If the folder can't be created
-                        // because the pathname is wrong we've code bugs that
-                        // retries won't solve. If the filesystem is full or
-                        // corrupted, iOS couldn't handle a local store anyway
-                        // so attempting to disable iCloud and fall back would
-                        // fail.
-                        //
-                        NSLog( @"Error creating database directory %@", fileSystemError );
-                    }
-                }
-
-                NSString *iCloudData = [ iCloudDataDirectoryPath stringByAppendingPathComponent: dataFileName ];
-
-                NSLog( @"iCloudData = %@", iCloudData );
+                NSLog( @"iCloud is working: %@",  iCloud             );
+                NSLog( @"dataFileName: %@",       dataFileName       );
+                NSLog( @"iCloudEnabledAppID: %@", iCloudEnabledAppID );
+                NSLog( @"iCloudDataURL: %@",      iCloudDataURL      );
 
                 NSDictionary *options =
                 @{
                     NSMigratePersistentStoresAutomaticallyOption: @YES,
                     NSInferMappingModelAutomaticallyOption:       @YES,
-                    NSPersistentStoreUbiquitousContentNameKey:    iCloudEnabledAppID,
-                    NSPersistentStoreUbiquitousContentURLKey:     iCloudLogsPath
+                    NSPersistentStoreUbiquitousContentNameKey:    iCloudEnabledAppID
                 };
 
                 [
@@ -224,7 +248,7 @@
                     {
                         [ psc addPersistentStoreWithType: NSSQLiteStoreType
                                            configuration: nil
-                                                     URL: [ NSURL fileURLWithPath: iCloudData ]
+                                                     URL: iCloudDataURL
                                                  options: options
                                                    error: nil ];
                     }
@@ -236,8 +260,8 @@
 
                 NSURL * localStore = [ [ self applicationDocumentsDirectory ] URLByAppendingPathComponent: dataFileName ];
 
-                NSLog( @"dataFileName = %@", dataFileName);
-                NSLog( @"localStore URL = %@", localStore);
+                NSLog( @"dataFileName = %@",   dataFileName );
+                NSLog( @"localStore URL = %@", localStore   );
 
                 NSDictionary * options =
                 @{
@@ -257,19 +281,9 @@
                 ];
             }
 
-            dispatch_async
-            (
-                dispatch_get_main_queue(),
-                ^ ( void )
-                {
-                    [ [ NSNotificationCenter defaultCenter ] postNotificationName: DATA_CHANGED_NOTIFICATION_NAME
-                                                                           object: self
-                                                                         userInfo: nil ];
-                }
-            );
-
-//        }
-//     );
+            [ self sendDataHasChangedNotification ];
+        }
+     );
 
     return _persistentStoreCoordinator;
 }
@@ -298,8 +312,20 @@
                                                             selector: @selector( mergeChangesFromiCloud: )
                                                                 name: NSPersistentStoreDidImportUbiquitousContentChangesNotification
                                                               object: psc ];
+
+                [ [ NSNotificationCenter defaultCenter ] addObserver: self
+                                                            selector: @selector( storesWillChange: )
+                                                                name: NSPersistentStoreCoordinatorStoresWillChangeNotification
+                                                              object: psc ];
+
+                [ [ NSNotificationCenter defaultCenter ] addObserver: self
+                                                            selector: @selector( storesDidChange: )
+                                                                name: NSPersistentStoreCoordinatorStoresDidChangeNotification
+                                                              object: psc ];
             }
         ];
+
+        moc.mergePolicy = NSMergeByPropertyStoreTrumpMergePolicy;
 
         _managedObjectContext = moc;
     }
@@ -313,7 +339,7 @@
 {
     NSLog( @"Merging changes from iCloud..." );
 
-    NSManagedObjectContext * moc = [ self managedObjectContext ];
+    NSManagedObjectContext * moc = self.managedObjectContext;
 
     [
         moc performBlock: ^ ( void )
@@ -329,24 +355,82 @@
     ];
 }
 
+- ( void ) storesWillChange: ( NSNotification * ) notification
+{
+    NSLog( @"Stores will change..." );
+
+    // Close to copy-and-paste on 'savContext', except for the 'reset' call
+    // needed *inside* the atomicity wrapper of 'perform block and wait'.
+
+    NSManagedObjectContext * moc = self.managedObjectContext;
+
+    [
+        moc performBlockAndWait: ^
+        {
+            NSError * error = nil;
+
+            if ( [ moc hasChanges ] && ![ moc save: &error ] )
+            {
+                // Nothing much we can do here other than log the fault.
+                //
+                NSLog( @"Unresolved error %@, %@", error, [ error userInfo ] );
+            }
+
+            [ moc reset ];
+        }
+    ];
+
+    // Reset the GUI but don't load any new data yet - have to wait for 'stores
+    // did change' for that.
+
+    UISplitViewController  * splitViewController  = ( UISplitViewController * ) self.window.rootViewController;
+    UINavigationController * navigationController = splitViewController.viewControllers.lastObject;
+
+    [ navigationController popToRootViewControllerAnimated: YES ];
+}
+
+- ( void ) storesDidChange: ( NSNotification * ) notification
+{
+    NSLog( @"Stores did change..." );
+
+    // Close to copy-and-paste on 'mergeChangesFromiCloud', except it just
+    // posts the 'changed' notification for other bits of the app, rather than
+    // also trying to merge in changes.
+
+    NSManagedObjectContext * moc = self.managedObjectContext;
+
+    [
+        moc performBlock: ^ ( void )
+        {
+            NSNotification * refreshNotification = [ NSNotification notificationWithName: DATA_CHANGED_NOTIFICATION_NAME
+                                                                                  object: self
+                                                                                userInfo: [ notification userInfo ] ];
+
+            [ [ NSNotificationCenter defaultCenter ] postNotification: refreshNotification];
+        }
+    ];
+}
+
 #pragma mark - Core Data saving support
 
 - ( void ) saveContext
 {
     NSManagedObjectContext * managedObjectContext = self.managedObjectContext;
 
-    if ( managedObjectContext != nil )
-    {
-        NSError * error = nil;
-
-        if ( [ managedObjectContext hasChanges ] && ![ managedObjectContext save: &error ] )
+    [
+        managedObjectContext performBlockAndWait: ^
         {
-            // This is called from -applicationWillTerminate, so there is
-            // really nothing much we can do here other than log the fault.
-            //
-            NSLog( @"Unresolved error %@, %@", error, [ error userInfo ] );
+            NSError * error = nil;
+
+            if ( [ managedObjectContext hasChanges ] && ![ managedObjectContext save: &error ] )
+            {
+                // This is called from -applicationWillTerminate, so there is
+                // really nothing much we can do here other than log the fault.
+                //
+                NSLog( @"Unresolved error %@, %@", error, [ error userInfo ] );
+            }
         }
-    }
+    ];
 }
 
 @end

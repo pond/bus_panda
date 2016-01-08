@@ -52,11 +52,9 @@
         [ self.splitViewController.viewControllers lastObject ] topViewController
     ];
 
-    // Force an initial fetch of the results (initialising the fetched results
-    // controller and populating it); add a notification handler to refresh the
-    // data whenever it changes in iCloud.
+    // Add a custom notification handler to refresh data. This is triggered
+    // when, for example, data changes in iCloud.
     //
-    [ self reloadFetchedResults: nil ];
     [ [ NSNotificationCenter defaultCenter ] addObserver: self
                                                 selector: @selector( reloadFetchedResults: )
                                                     name: DATA_CHANGED_NOTIFICATION_NAME // AppDelegate.h
@@ -74,31 +72,43 @@
         [ defaults setBool: YES forKey: @"hasRunBefore" ];
         [ defaults synchronize ];
 
-        NSDictionary * cannedStops = @{
-            @"5000": @"Courtenay Aroy",
-            @"5516": @"Courtenay Blair",
-            @"5514": @"Courtenay Reading",
-            @"7418": @"Express",
-            @"5513": @"Manners BK",
-            @"5515": @"Manners Body",
-            @"4113": @"Murphy Wellington Girls",
-            @"7018": @"Riddiford At Hall",
-            @"1200": @"Sparse",
-            @"6000": @"Station A",
-            @"6001": @"Station B",
-            @"5500": @"Station C",
-            @"7120": @"Rintoul At Stoke",
-            @"TALA": @"Talavera - Cable Car Station"
-        };
+        // TODO: The below is used for screenshots in the simulator; for the
+        // real world, something similar to load a sensible set of first-time
+        // stops would be good. But a first-install on your *local* device
+        // does not mean you have a first-install for *any* of your devices;
+        // we have to check the ever-difficult, flaky, badly documented and
+        // hard to understand (especially in view of iOS 5/6 vs 7 vs 8 major
+        // changes) iCloud.
+        //
+        // There are a few online blogs which discuss possible approaches but
+        // until the most basic Core Data / iCloud stuff seems to actually
+        // work properly, I'm steering well clear.
 
-        [
-            cannedStops enumerateKeysAndObjectsUsingBlock: ^ ( NSString * stopID,
-                                                               NSString * stopDescription,
-                                                               BOOL     * stop )
-            {
-                [ self addFavourite: stopID withDescription: stopDescription ];
-            }
-        ];
+//        NSDictionary * cannedStops = @{
+//            @"5000": @"Courtenay Aroy",
+//            @"5516": @"Courtenay Blair",
+//            @"5514": @"Courtenay Reading",
+//            @"7418": @"Express",
+//            @"5513": @"Manners BK",
+//            @"5515": @"Manners Body",
+//            @"4113": @"Murphy Wellington Girls",
+//            @"7018": @"Riddiford At Hall",
+//            @"1200": @"Sparse",
+//            @"6000": @"Station A",
+//            @"6001": @"Station B",
+//            @"5500": @"Station C",
+//            @"7120": @"Rintoul At Stoke",
+//            @"TALA": @"Talavera - Cable Car Station"
+//        };
+//
+//        [
+//            cannedStops enumerateKeysAndObjectsUsingBlock: ^ ( NSString * stopID,
+//                                                               NSString * stopDescription,
+//                                                               BOOL     * stop )
+//            {
+//                [ self addFavourite: stopID withDescription: stopDescription ];
+//            }
+//        ];
     }
 }
 
@@ -393,10 +403,7 @@
         }
         break;
 
-        default:
-        {
-            return;
-        }
+        default: return;
     }
 }
 
@@ -437,6 +444,8 @@
             [ tableView insertRowsAtIndexPaths: @[ newIndexPath ] withRowAnimation: UITableViewRowAnimationFade ];
         }
         break;
+
+        default: return;
     }
 }
 
