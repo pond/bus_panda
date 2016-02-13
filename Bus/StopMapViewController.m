@@ -8,6 +8,7 @@
 
 #import "StopMapViewController.h"
 
+#import "AppDelegate.h"
 #import "ErrorPresenter.h"
 #import "StopLocation.h"
 #import "DetailViewController.h"
@@ -15,15 +16,17 @@
 
 @interface StopMapViewController ()
 
+@property ( strong ) NSMutableDictionary * stopsAddedToMap;
 @property ( weak   ) NSTimer             * stopLocationUpdateTimer;
-@property ( strong ) NSMutableDictionary * stopLocations;
 
+- ( void ) updateMapWithOrWithoutLocation;
 - ( void ) spinnerOn;
 - ( void ) spinnerOff;
 - ( void ) cancelStopLocationUpdate;
 - ( void ) scheduleStopLocationUpdate;
 - ( void ) getStopsForCurrentMapRange;
 - ( void ) addStopsToMapUsingData: ( NSData * ) data;
+- ( void ) addCachedStopsToMap;
 
 @end
 
@@ -31,6 +34,10 @@
 // map view, in seconds.
 //
 #define STOP_LOCATION_UPDATE_TIMER_DELAY ( double ) 0.5
+
+// Radius (m) for the typical starting view of the map view.
+//
+#define DEFAULT_RADIUS_OF_VIEW 2500
 
 @implementation StopMapViewController
 
@@ -42,24 +49,20 @@
 // first loads, but not every time it appears; that happens when another view
 // controller is pushed on top of it in the stack, but subsequently closes. It
 // would be wrong to reset the map position and reload stops in such cases.
+// Likewise only request location updates and update the map view according to
+// user location on that first load, not subsequent appearances.
 //
 - ( void ) viewDidLoad
 {
     [ super viewDidLoad ];
 
-    CLLocationCoordinate2D zoomLocation;
+    self.locationManager          = [ [ CLLocationManager alloc ] init ];
+    self.locationManager.delegate = self;
 
-    zoomLocation.latitude  = -41.294649;
-    zoomLocation.longitude = 174.772871;
+    [ self.locationManager requestWhenInUseAuthorization ];
 
-    MKCoordinateRegion viewRegion = MKCoordinateRegionMakeWithDistance(
-      zoomLocation,
-      5000,
-      5000
-    );
-
-    [ self.mapView setRegion: viewRegion animated: YES ];
-    [ self scheduleStopLocationUpdate ];
+    [ self updateMapWithOrWithoutLocation ];
+    [ self scheduleStopLocationUpdate     ];
 }
 
 // The detail view used for showing schedules when previewing a stop for
@@ -67,21 +70,36 @@
 // when pushed onto the stack in this context for an 'Add stop' button.
 // When the map is visible, though, the stack's toolbar should be hidden.
 //
+// This is also a good time to ask Location Services to start updates.
+//
 - ( void ) viewWillAppear: ( BOOL ) animated
 {
     [ super viewWillAppear: animated ];
+
     [ self.navigationController setToolbarHidden: YES animated: NO ];
+
+    if ( [ CLLocationManager authorizationStatus ] == kCLAuthorizationStatusAuthorizedWhenInUse )
+    {
+        [ self.locationManager startUpdatingLocation ];
+    }
 }
 
 // As a precaution, make sure the network spinner is definitely cancelled
 // when the application is closed.
+//
+// This is also a good time to ask Location Services to stop updates.
 //
 - ( void ) viewWillDisappear: ( BOOL ) animated
 {
     [ super viewWillDisappear: animated ];
 
     [ self cancelStopLocationUpdate ];
-    [ self spinnerOff ];
+    [ self spinnerOff               ];
+
+    if ( [ CLLocationManager authorizationStatus ] == kCLAuthorizationStatusAuthorizedWhenInUse )
+    {
+        [ self.locationManager stopUpdatingLocation ];
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -107,9 +125,16 @@
 // In STOP_LOCATION_UPDATE_TIMER_DELAY seconds, call method
 // -getStopsForCurrentMapRange. Cancels any prior scheduled calls first.
 //
+// In passing, any cached stops within the map's visible range are added
+// immediately. This gives the user near-instant feedback if prior data is
+// available but does not prevent the (time-delayed) background update which
+// might add in additional coverage, or update the location of any stops that
+// turn out to have moved.
+//
 - ( void ) scheduleStopLocationUpdate
 {
     [ self cancelStopLocationUpdate ];
+    [ self addCachedStopsToMap      ];
 
     self.stopLocationUpdateTimer =
     [
@@ -149,9 +174,9 @@
 //
 - ( void ) getStopsForCurrentMapRange
 {
-    MKMapRect  mRect         = self.mapView.visibleMapRect;
-    MKMapPoint minCorner     = MKMapPointMake( MKMapRectGetMinX( mRect ), MKMapRectGetMinY( mRect ) );
-    MKMapPoint maxCorner     = MKMapPointMake( MKMapRectGetMaxX( mRect ), MKMapRectGetMaxY( mRect ) );
+    MKMapRect  mRect     = self.mapView.visibleMapRect;
+    MKMapPoint minCorner = MKMapPointMake( MKMapRectGetMinX( mRect ), MKMapRectGetMinY( mRect ) );
+    MKMapPoint maxCorner = MKMapPointMake( MKMapRectGetMaxX( mRect ), MKMapRectGetMaxY( mRect ) );
 
     CLLocationDistance     viewDiagonal   = MKMetersBetweenMapPoints( minCorner, maxCorner );
     CLLocationCoordinate2D centerLocation = self.mapView.region.center;
@@ -218,8 +243,8 @@
 //
 - ( void ) addStopsToMapUsingData: ( NSData * ) data
 {
-    NSDictionary * stops;
-    BOOL           anyAdded = NO;
+    NSArray * stops;
+    BOOL      anyAdded = NO;
 
     // Try to parse what *should* be a JSON5 array.
 
@@ -253,13 +278,25 @@
         return;
     }
 
-    // Lazy-initialise the local stop location store, then process the new
-    // array of items.
+    // Lazy-initialise the local stop-added-to-map flag store and get hold of
+    // the AppDelegate's full stop information cache.
 
-    if ( self.stopLocations == nil )
+    if ( self.stopsAddedToMap == nil )
     {
-        self.stopLocations = [ [ NSMutableDictionary alloc ] init ];
+        self.stopsAddedToMap = [ [ NSMutableDictionary alloc ] init ];
     }
+
+    AppDelegate * appDelegate = ( AppDelegate * )
+    [
+        [ UIApplication sharedApplication ] delegate
+    ];
+
+    NSMutableDictionary * stopLocations =
+    [
+        appDelegate getCachedStopLocationDictionary
+    ];
+
+    // Now processes all the (possibly) new stops from the parsed JSON data.
 
     for ( NSDictionary * stop in stops )
     {
@@ -284,7 +321,7 @@
 
         // Examine any existing annotation info for this stop ID.
 
-        NSDictionary * existingAnnotationInfo = self.stopLocations[ stopID ];
+        NSDictionary * existingAnnotationInfo = stopLocations[ stopID ];
 
         // If there seems to be an existing annotation for this stop, make
         // sure that it hasn't either moved or changed description. If it has,
@@ -303,16 +340,19 @@
             {
                 StopLocation * existingAnnotation = existingAnnotationInfo[ @"annotation" ];
 
+                [ stopLocations removeObjectForKey: stopID ];
+
                 [ self.mapView removeAnnotation: existingAnnotation ];
-                [ self.stopLocations removeObjectForKey: stopID ];
+                [ self.stopsAddedToMap removeObjectForKey: stopID ];
 
                 existingAnnotationInfo = nil;
             }
         }
 
         // If there is no existing annotation for this stop, or if an outdated
-        // existing annotation was removed by the code above, add it now.
-
+        // existing annotation was removed by the code above, add it to the
+        // cache now.
+        //
         if ( existingAnnotationInfo == nil )
         {
             StopLocation * annotation =
@@ -322,19 +362,28 @@
                                            coordinate: stopCoordinate
             ];
 
-            if ( stopDescription && annotation )
+            if ( annotation )
             {
-                NSDictionary * stopInfo = @{
+                NSDictionary * stopInfo =
+                @{
                     @"latitude":    @( latitude  ),
                     @"longitude":   @( longitude ),
                     @"description": stopDescription,
                     @"annotation":  annotation
                 };
 
-                self.stopLocations[ stopID ] = stopInfo;
-
-                [ self.mapView addAnnotation: annotation ];
+                stopLocations[ stopID ] = existingAnnotationInfo = stopInfo;
             }
+        }
+
+        // Hopefully we've either a previously cached or new set of full stop
+        // and annotation information available. If this hasn't been added to
+        // this local map view yet, add it now.
+        //
+        if ( existingAnnotationInfo != nil && self.stopsAddedToMap[ stopID ] == nil )
+        {
+            [ self.mapView addAnnotation: existingAnnotationInfo[ @"annotation" ] ];
+            self.stopsAddedToMap[ stopID ] = @( YES );
 
             anyAdded = YES;
         }
@@ -347,6 +396,90 @@
     if ( anyAdded == NO ) [ self spinnerOff ];
 }
 
+// Add any stops cached in the AppDelegate's storage via a prior call to
+// "-addStopsToMapUsingData:" to the current map view, for any stops that have
+// not yet been added. Only stops in the map's visible range are added, only
+// stops in the cache will be considered and only stops that aren't internally
+// marked as already added to 'this' map view instance will be processed.
+//
+- ( void ) addCachedStopsToMap
+{
+    if ( self.stopsAddedToMap == nil )
+    {
+        self.stopsAddedToMap = [ [ NSMutableDictionary alloc ] init ];
+    }
+
+    AppDelegate * appDelegate = ( AppDelegate * )
+    [
+        [ UIApplication sharedApplication ] delegate
+    ];
+
+    NSMutableDictionary * stopLocations =
+    [
+        appDelegate getCachedStopLocationDictionary
+    ];
+
+    for ( id stopID in stopLocations )
+    {
+        if ( self.stopsAddedToMap[ stopID ] != nil ) continue;
+
+        NSDictionary           * stopInfo = stopLocations[ stopID ];
+        CLLocationCoordinate2D   stopCoordinate;
+
+        stopCoordinate.latitude  = [ stopInfo[ @"latitude"  ] doubleValue ];
+        stopCoordinate.longitude = [ stopInfo[ @"longitude" ] doubleValue ];
+
+        if (
+               MKMapRectContainsPoint
+               (
+                   self.mapView.visibleMapRect,
+                   MKMapPointForCoordinate( stopCoordinate )
+               )
+           )
+        {
+            [ self.mapView addAnnotation: stopLocations[ stopID ][ @"annotation" ] ];
+            self.stopsAddedToMap[ stopID ] = @( YES );
+        }
+    }
+}
+
+// Update the map view to show a default radius region either centred around
+// a map that's expecting location updates and shows the user's location or,
+// if authorisation for that is not available, has a default location around
+// the Wellington CBD and does not show the user's position. Call any time
+// you think that location information authorisation might have changed.
+//
+- ( void ) updateMapWithOrWithoutLocation
+{
+    CLLocationCoordinate2D zoomLocation;
+
+    if ( [ CLLocationManager authorizationStatus ] == kCLAuthorizationStatusAuthorizedWhenInUse )
+    {
+        [ self.mapView setShowsUserLocation: YES ];
+
+        self.locationManager.distanceFilter  = kCLDistanceFilterNone;
+        self.locationManager.desiredAccuracy = kCLLocationAccuracyBest;
+
+        zoomLocation.latitude  = self.locationManager.location.coordinate.latitude;
+        zoomLocation.longitude = self.locationManager.location.coordinate.longitude;
+    }
+    else
+    {
+        [ self.mapView setShowsUserLocation: NO ];
+
+        zoomLocation.latitude  = -41.294649;
+        zoomLocation.longitude = 174.772871;
+    }
+
+    MKCoordinateRegion viewRegion = MKCoordinateRegionMakeWithDistance(
+        zoomLocation,
+        DEFAULT_RADIUS_OF_VIEW,
+        DEFAULT_RADIUS_OF_VIEW
+    );
+    
+    [ self.mapView setRegion: [ self.mapView regionThatFits: viewRegion ] animated: YES ];
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 #pragma mark MKMapViewDelegate protocol
 ///////////////////////////////////////////////////////////////////////////////
@@ -356,8 +489,8 @@
 // completes, while iOS's map engine crunches through the additions; so we use
 // this as a last-possible time to stop the network indicator.
 //
-- ( void )    mapView: ( MKMapView                            * ) mapView
-didAddAnnotationViews: ( nonnull NSArray <MKAnnotationView *> * ) views
+- ( void )      mapView: ( MKMapView                            * ) mapView
+  didAddAnnotationViews: ( nonnull NSArray <MKAnnotationView *> * ) views
 {
     [ self spinnerOff ];
 }
@@ -442,6 +575,55 @@ calloutAccessoryControlTapped: ( UIControl        * ) control
     [ self.navigationController pushViewController: controller animated: YES ];
 }
 
+// MKMapViewDelegate protocol. Called if user location data is available and
+// that user's location has changed; we update the view to keep the location
+// roughly central.
+//
+// This is only done once; otherwise, location updates would "argue with" any
+// manual scroll/zoom set by the user and keep resetting the map. Infruiating.
+//
+- ( void )      mapView: ( MKMapView      * ) mapView
+  didUpdateUserLocation: ( MKUserLocation * ) userLocation
+{
+    static dispatch_once_t mapLocationUpdateOnceToken;
+
+    dispatch_once(
+        &mapLocationUpdateOnceToken,
+        ^
+        {
+            MKCoordinateRegion viewRegion = MKCoordinateRegionMakeWithDistance(
+                userLocation.coordinate,
+                DEFAULT_RADIUS_OF_VIEW,
+                DEFAULT_RADIUS_OF_VIEW
+            );
+            
+            [ self.mapView setRegion: [ self.mapView regionThatFits: viewRegion ] animated: YES ];
+        }
+    );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+#pragma mark CLLocationManagerDelegate protocol
+///////////////////////////////////////////////////////////////////////////////
+
+// CLLocationManagerDelegate protocol. Called if authorisation to use the
+// user's location changes. We update the map to either show that location,
+// or reset it to the default 'centre of wellington' coordinates.
+//
+- ( void )     locationManager: ( CLLocationManager     * ) manager
+  didChangeAuthorizationStatus: ( CLAuthorizationStatus   ) status
+{
+    [ self updateMapWithOrWithoutLocation ];
+}
+
+///////////////////////////////////////////////////////////////////////////////
+#pragma mark Actions
+///////////////////////////////////////////////////////////////////////////////
+
+// Add a new favourite stop based on the assumption that a DetailViewController
+// is at the top of the navigation stack and its detail item has information on
+// the Stop ID and Stop Description.
+//
 - ( IBAction ) addStop: ( id ) sender
 {
     DetailViewController * controller = [ [ self.navigationController viewControllers ] lastObject ];
@@ -452,10 +634,6 @@ calloutAccessoryControlTapped: ( UIControl        * ) control
 
     [ self dismissAdditionView ];
 }
-
-///////////////////////////////////////////////////////////////////////////////
-#pragma mark Actions
-///////////////////////////////////////////////////////////////////////////////
 
 // Via the superclass, cancel this view.
 //
@@ -470,8 +648,14 @@ calloutAccessoryControlTapped: ( UIControl        * ) control
 {
     [ self cancelStopLocationUpdate ];
 
-    self.stopLocations = nil;
     [ self.mapView removeAnnotations: self.mapView.annotations ];
+
+    AppDelegate * appDelegate = ( AppDelegate * )
+    [
+        [ UIApplication sharedApplication ] delegate
+    ];
+
+    [ appDelegate clearCachedStops ];
 
     [ self getStopsForCurrentMapRange ];
 }

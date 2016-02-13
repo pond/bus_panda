@@ -11,8 +11,10 @@
 
 #import "AddStopAbstractViewController.h"
 
-@interface StopMapViewController : AddStopAbstractViewController <MKMapViewDelegate>
+@interface StopMapViewController : AddStopAbstractViewController < MKMapViewDelegate,
+                                                                   CLLocationManagerDelegate >
 
-@property ( weak, nonatomic ) IBOutlet MKMapView * mapView;
+@property ( weak, nonatomic         ) IBOutlet MKMapView         * mapView;
+@property (       nonatomic, retain )          CLLocationManager * locationManager;
 
 @end

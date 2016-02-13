@@ -22,5 +22,8 @@
 - ( void    ) saveContext;
 - ( NSURL * ) applicationDocumentsDirectory;
 
+- ( NSMutableDictionary * ) getCachedStopLocationDictionary;
+- ( void                  ) clearCachedStops;
+
 @end
 

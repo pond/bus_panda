@@ -12,6 +12,17 @@
 #import "DetailViewController.h"
 #import "MasterViewController.h"
 
+@interface AppDelegate ()
+
+// An application-wide cache of bus stop locations for the map view.
+// This is updated or cleared and refreshed via StopMapViewController,
+// but retained by the AppDelegate so that any number of new instances
+// of the map view's controller will be able to reuse the same data.
+
+@property ( strong ) NSMutableDictionary * cachedStopLocations;
+
+@end
+
 @implementation AppDelegate
 
 # pragma mark - Initialisation
@@ -42,6 +53,10 @@
     ];
 
     masterViewController.managedObjectContext = self.managedObjectContext;
+
+    // Initialse the cached bus stop location data
+
+    [ self clearCachedStops ];
 
     return YES;
 }
@@ -431,6 +446,25 @@
             }
         }
     ];
+}
+
+#pragma mark - Cached bus stop location management
+
+// The stops are managed by StopMapViewController entirely, so all we do here
+// is return a reference to the mutable dictionary that's being held by the
+// AppDelegate for reuse across multiple map view instances.
+//
+- ( NSMutableDictionary * ) getCachedStopLocationDictionary
+{
+    return self.cachedStopLocations;
+}
+
+// We still need to provide a way to clear out / reinitialise the set of
+// stops though.
+//
+- ( void ) clearCachedStops
+{
+    self.cachedStopLocations = [ [ NSMutableDictionary alloc ] init ];
 }
 
 @end
