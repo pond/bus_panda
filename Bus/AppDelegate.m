@@ -11,6 +11,7 @@
 #import "AppDelegate.h"
 #import "DetailViewController.h"
 #import "MasterViewController.h"
+#import "BusInfoFetcher.h"
 
 @interface AppDelegate ()
 
@@ -57,6 +58,71 @@
     // Initialse the cached bus stop location data
 
     [ self clearCachedStops ];
+
+    // If this is the first time the application has ever been run, set up a
+    // collection of predefined useful stops.
+    //
+    NSUserDefaults * defaults     = [ NSUserDefaults standardUserDefaults ];
+    BOOL             hasRunBefore = [ defaults boolForKey: @"hasRunBefore" ];
+
+    if ( hasRunBefore != YES )
+    {
+        [ defaults setBool: YES forKey: @"hasRunBefore" ];
+        [ defaults synchronize ];
+
+        // TODO: The below is used for screenshots in the simulator; for the
+        // real world, something similar to load a sensible set of first-time
+        // stops would be good. But a first-install on your *local* device
+        // does not mean you have a first-install for *any* of your devices;
+        // we have to check the ever-difficult, flaky, badly documented and
+        // hard to understand (especially in view of iOS 5/6 vs 7 vs 8 major
+        // changes) iCloud.
+        //
+        // There are a few online blogs which discuss possible approaches but
+        // until the most basic Core Data / iCloud stuff seems to actually
+        // work properly, I'm steering well clear.
+
+        //        NSDictionary * cannedStops = @{
+        //            @"5000": @"Courtenay Aroy",
+        //            @"5516": @"Courtenay Blair",
+        //            @"5514": @"Courtenay Reading",
+        //            @"7418": @"Express",
+        //            @"5513": @"Manners BK",
+        //            @"5515": @"Manners Body",
+        //            @"4113": @"Murphy Wellington Girls",
+        //            @"7018": @"Riddiford At Hall",
+        //            @"1200": @"Sparse",
+        //            @"6000": @"Station A",
+        //            @"6001": @"Station B",
+        //            @"5500": @"Station C",
+        //            @"7120": @"Rintoul At Stoke",
+        //            @"TALA": @"Talavera - Cable Car Station"
+        //        };
+        //
+        //        [
+        //            cannedStops enumerateKeysAndObjectsUsingBlock: ^ ( NSString * stopID,
+        //                                                               NSString * stopDescription,
+        //                                                               BOOL     * stop )
+        //            {
+        //                [ self addFavourite: stopID withDescription: stopDescription ];
+        //            }
+        //        ];
+    }
+    
+    // Wake up the WatchKit extension and this applicaftion via WCSession.
+    //
+    if ( [ WCSession isSupported ] )
+    {
+        WCSession * session = [ WCSession defaultSession ];
+
+        session.delegate = self;
+        [ session activateSession ];
+
+        // Leaning on the WCSessionDelegate method to check session details and
+        // send an update is a reliable way to get the ball rolling.
+        //
+        [ self sessionWatchStateDidChange: session ];
+    }
 
     return YES;
 }
@@ -134,6 +200,90 @@
     else
     {
         return NO;
+    }
+}
+
+# pragma mark - WCSessionDelegate support
+
+// WCSessionDelegate.
+//
+// In iOS 9.3, a delegate must support this method for multiple Apple watches
+// to be used. Since the companion application is read-only, we don't need to
+// do anything here other than provide an empty implementation.
+//
+- ( void )               session: ( WCSession                * ) session
+  activationDidCompleteWithState: ( WCSessionActivationState   ) activationState
+                           error: ( NSError                  * ) error
+{
+}
+
+// WCSessionDelegate.
+//
+// In iOS 9.3, a delegate must support this method for multiple Apple watches
+// to be used. Since the companion application is read-only, we don't need to
+// do anything here other than provide an empty implementation.
+//
+- ( void ) sessionDidBecomeInactive: ( WCSession * ) session
+{
+}
+
+// WCSessionDelegate.
+//
+// In iOS 9.3, a delegate must support this method for multiple Apple watches
+// to be used. Since the companion application is read-only, we don't need to
+// do anything here other than provide an empty implementation.
+//
+- ( void ) sessionDidDeactivate: ( WCSession * ) session
+{
+    [ [ WCSession defaultSession ] activateSession ];
+}
+
+// WCSessionDelegate.
+//
+// A state change has occurred with a Watch; it has paired, and/or the Bus
+// Panda companion application has been installed (or vice versa). Check the
+// session details and prompt a data update if need be.
+//
+- ( void ) sessionWatchStateDidChange: ( WCSession * ) session
+{
+    if ( session.paired && session.watchAppInstalled )
+    {
+        UISplitViewController  * splitViewController  = ( UISplitViewController * ) self.window.rootViewController;
+        UINavigationController * masterNavigationController = splitViewController.viewControllers.firstObject;
+        MasterViewController   * masterViewController       = ( MasterViewController * ) masterNavigationController.topViewController;
+
+        [ masterViewController updateWatch: nil ];
+    }
+}
+
+// WCSessionDelegate.
+//
+// The Watch app is asking us to do something and expects a reply.
+//
+- ( void ) session: ( WCSession                     * ) session
+ didReceiveMessage: ( NSDictionary <NSString *, id> * ) message
+      replyHandler: ( void (^)( NSDictionary <NSString *, id> * _Nonnull ) ) replyHandler
+{
+    NSString * action = message[ @"action" ];
+
+    if ( [ action isEqualToString: @"getBuses" ] == YES )
+    {
+        NSString * stopID = message[ @"data" ];
+
+        if ( stopID != nil )
+        {
+            [
+                BusInfoFetcher getAllBusesForStop: stopID
+                                completionHandler: ^ ( NSMutableArray * allBuses )
+                {
+                    replyHandler( @{ @"allBuses": allBuses } );
+                }
+            ];
+        }
+    }
+    else
+    {
+        replyHandler( @{} );
     }
 }
 

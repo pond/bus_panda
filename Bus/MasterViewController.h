@@ -18,7 +18,9 @@
 @property ( strong, nonatomic ) NSFetchedResultsController * fetchedResultsController;
 @property ( strong, nonatomic ) NSManagedObjectContext     * managedObjectContext;
 
-- ( void ) addFavourite: ( NSString * ) stopID
-        withDescription: ( NSString * ) stopDescription;
+- ( void ) addFavourite: ( NSString       * ) stopID
+        withDescription: ( NSString       * ) stopDescription;
+
+- ( void )  updateWatch: ( NSNotification * ) ignoredNotification;
 
 @end

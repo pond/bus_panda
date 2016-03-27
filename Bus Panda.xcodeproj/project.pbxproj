@@ -11,7 +11,17 @@
 		23063AFA1AC7DAAC00C063DC /* ServiceDescriptionCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 23063AF91AC7DAAC00C063DC /* ServiceDescriptionCell.m */; };
 		23063B051ACBF0BC00C063DC /* FavouritesCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 23063B041ACBF0BC00C063DC /* FavouritesCell.m */; };
 		233CD79C1C37AB8000E0B6D6 /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23E1026A1C1D21EA00BEF3C6 /* MapKit.framework */; };
-		233CD79F1C3BDB7D00E0B6D6 /* ErrorPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 233CD79E1C3BDB7D00E0B6D6 /* ErrorPresenter.m */; };
+		23420A891C8EC7DD009F40F9 /* ErrorPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23420A881C8EC7DD009F40F9 /* ErrorPresenter.swift */; };
+		23420A9A1C92A34E009F40F9 /* Interface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 23420A981C92A34E009F40F9 /* Interface.storyboard */; };
+		23420A9C1C92A34E009F40F9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 23420A9B1C92A34E009F40F9 /* Assets.xcassets */; };
+		23420AA31C92A34E009F40F9 /* watchkit Extension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 23420AA21C92A34E009F40F9 /* watchkit Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		23420AAA1C92A34E009F40F9 /* StopsInterfaceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23420AA91C92A34E009F40F9 /* StopsInterfaceController.swift */; };
+		23420AAC1C92A34E009F40F9 /* ExtensionDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23420AAB1C92A34E009F40F9 /* ExtensionDelegate.swift */; };
+		23420AAE1C92A34E009F40F9 /* NotificationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23420AAD1C92A34E009F40F9 /* NotificationController.swift */; };
+		23420AB01C92A34E009F40F9 /* GlanceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23420AAF1C92A34E009F40F9 /* GlanceController.swift */; };
+		23420AB21C92A34E009F40F9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 23420AB11C92A34E009F40F9 /* Assets.xcassets */; };
+		23420AB61C92A34E009F40F9 /* watchkit.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 23420A961C92A34E009F40F9 /* watchkit.app */; };
+		235AA1981CA2A272006143B9 /* StopsRowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 235AA1961CA2A055006143B9 /* StopsRowController.swift */; };
 		23C937981ACDF51E00EF1441 /* TimetableWebViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */; };
 		23D75E211AC1654B0068C808 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E201AC1654B0068C808 /* main.m */; };
 		23D75E241AC1654B0068C808 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E231AC1654B0068C808 /* AppDelegate.m */; };
@@ -42,9 +52,28 @@
 		23E102661C1D0AA300BEF3C6 /* StopMapViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E102651C1D0AA300BEF3C6 /* StopMapViewController.m */; };
 		23E102691C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E102681C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m */; };
 		23E1026F1C1D3A8700BEF3C6 /* StopLocation.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E1026E1C1D3A8700BEF3C6 /* StopLocation.m */; };
+		23E341631CA6915100EDB581 /* RouteColours.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E341621CA6915100EDB581 /* RouteColours.swift */; };
+		23E341641CA6A10600EDB581 /* BusesInterfaceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E3415D1CA681A000EDB581 /* BusesInterfaceController.swift */; };
+		23E341651CA6A11400EDB581 /* RouteColours.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E341621CA6915100EDB581 /* RouteColours.swift */; };
+		23E341661CA6A1DF00EDB581 /* BusesRowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E3415F1CA68F5F00EDB581 /* BusesRowController.swift */; };
+		23E341691CA79F1A00EDB581 /* BusInfoFetcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E341681CA79F1A00EDB581 /* BusInfoFetcher.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		23420AA41C92A34E009F40F9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 23D75E131AC1654B0068C808 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 23420AA11C92A34E009F40F9;
+			remoteInfo = "watchkit Extension";
+		};
+		23420AB41C92A34E009F40F9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 23D75E131AC1654B0068C808 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 23420A951C92A34E009F40F9;
+			remoteInfo = watchkit;
+		};
 		23D75E3B1AC1654B0068C808 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 23D75E131AC1654B0068C808 /* Project object */;
@@ -54,6 +83,31 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		23420ABA1C92A34F009F40F9 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				23420AA31C92A34E009F40F9 /* watchkit Extension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		23420ABE1C92A34F009F40F9 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				23420AB61C92A34E009F40F9 /* watchkit.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		23063AF51AC7A4C800C063DC /* EnterStopIDViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EnterStopIDViewController.h; sourceTree = "<group>"; };
 		23063AF61AC7A4C800C063DC /* EnterStopIDViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EnterStopIDViewController.m; sourceTree = "<group>"; };
@@ -62,7 +116,21 @@
 		23063B031ACBF0BC00C063DC /* FavouritesCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FavouritesCell.h; sourceTree = "<group>"; };
 		23063B041ACBF0BC00C063DC /* FavouritesCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FavouritesCell.m; sourceTree = "<group>"; };
 		233CD79D1C3BDB7D00E0B6D6 /* ErrorPresenter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ErrorPresenter.h; sourceTree = "<group>"; };
-		233CD79E1C3BDB7D00E0B6D6 /* ErrorPresenter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ErrorPresenter.m; sourceTree = "<group>"; };
+		23420A871C8EC7DC009F40F9 /* Bus Panda-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Bus Panda-Bridging-Header.h"; sourceTree = "<group>"; };
+		23420A881C8EC7DD009F40F9 /* ErrorPresenter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ErrorPresenter.swift; sourceTree = "<group>"; };
+		23420A961C92A34E009F40F9 /* watchkit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = watchkit.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		23420A991C92A34E009F40F9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Interface.storyboard; sourceTree = "<group>"; };
+		23420A9B1C92A34E009F40F9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		23420A9D1C92A34E009F40F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		23420AA21C92A34E009F40F9 /* watchkit Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "watchkit Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		23420AA81C92A34E009F40F9 /* PushNotificationPayload.apns */ = {isa = PBXFileReference; lastKnownFileType = text; path = PushNotificationPayload.apns; sourceTree = "<group>"; };
+		23420AA91C92A34E009F40F9 /* StopsInterfaceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsInterfaceController.swift; sourceTree = "<group>"; };
+		23420AAB1C92A34E009F40F9 /* ExtensionDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionDelegate.swift; sourceTree = "<group>"; };
+		23420AAD1C92A34E009F40F9 /* NotificationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationController.swift; sourceTree = "<group>"; };
+		23420AAF1C92A34E009F40F9 /* GlanceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlanceController.swift; sourceTree = "<group>"; };
+		23420AB11C92A34E009F40F9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		23420AB31C92A34E009F40F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		235AA1961CA2A055006143B9 /* StopsRowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StopsRowController.swift; sourceTree = "<group>"; };
 		23C937961ACDF51E00EF1441 /* TimetableWebViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TimetableWebViewController.h; sourceTree = "<group>"; };
 		23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TimetableWebViewController.m; sourceTree = "<group>"; };
 		23D75E1B1AC1654B0068C808 /* Bus Panda.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Bus Panda.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -129,9 +197,21 @@
 		23E1026C1C1D2A7100BEF3C6 /* UsefulTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UsefulTypes.h; sourceTree = "<group>"; };
 		23E1026D1C1D3A8700BEF3C6 /* StopLocation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StopLocation.h; sourceTree = "<group>"; };
 		23E1026E1C1D3A8700BEF3C6 /* StopLocation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = StopLocation.m; sourceTree = "<group>"; };
+		23E3415D1CA681A000EDB581 /* BusesInterfaceController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BusesInterfaceController.swift; sourceTree = "<group>"; };
+		23E3415F1CA68F5F00EDB581 /* BusesRowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BusesRowController.swift; sourceTree = "<group>"; };
+		23E341621CA6915100EDB581 /* RouteColours.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = RouteColours.swift; path = Bus/RouteColours.swift; sourceTree = "<group>"; };
+		23E341671CA79F1A00EDB581 /* BusInfoFetcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BusInfoFetcher.h; sourceTree = "<group>"; };
+		23E341681CA79F1A00EDB581 /* BusInfoFetcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BusInfoFetcher.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		23420A9F1C92A34E009F40F9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		23D75E181AC1654B0068C808 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -150,12 +230,52 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		23420A971C92A34E009F40F9 /* Bus Panda Watch App */ = {
+			isa = PBXGroup;
+			children = (
+				23420A981C92A34E009F40F9 /* Interface.storyboard */,
+				23420A9B1C92A34E009F40F9 /* Assets.xcassets */,
+				23420A9D1C92A34E009F40F9 /* Info.plist */,
+			);
+			name = "Bus Panda Watch App";
+			path = watchkit;
+			sourceTree = "<group>";
+		};
+		23420AA61C92A34E009F40F9 /* Bus Panda WatchKit Extension */ = {
+			isa = PBXGroup;
+			children = (
+				23420AAB1C92A34E009F40F9 /* ExtensionDelegate.swift */,
+				23420AA91C92A34E009F40F9 /* StopsInterfaceController.swift */,
+				235AA1961CA2A055006143B9 /* StopsRowController.swift */,
+				23E3415D1CA681A000EDB581 /* BusesInterfaceController.swift */,
+				23E3415F1CA68F5F00EDB581 /* BusesRowController.swift */,
+				23420AAD1C92A34E009F40F9 /* NotificationController.swift */,
+				23420AAF1C92A34E009F40F9 /* GlanceController.swift */,
+				23420AB11C92A34E009F40F9 /* Assets.xcassets */,
+				23420AB31C92A34E009F40F9 /* Info.plist */,
+				23420AA71C92A34E009F40F9 /* Supporting Files */,
+			);
+			name = "Bus Panda WatchKit Extension";
+			path = "watchkit Extension";
+			sourceTree = "<group>";
+		};
+		23420AA71C92A34E009F40F9 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				23420AA81C92A34E009F40F9 /* PushNotificationPayload.apns */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
 		23D75E121AC1654B0068C808 = {
 			isa = PBXGroup;
 			children = (
 				23D75E4A1AC165920068C808 /* Third Party */,
+				23E341611CA690EC00EDB581 /* Shared */,
 				23D75E1D1AC1654B0068C808 /* Bus Panda */,
-				23D75E3D1AC1654B0068C808 /* BusTests */,
+				23420AA61C92A34E009F40F9 /* Bus Panda WatchKit Extension */,
+				23420A971C92A34E009F40F9 /* Bus Panda Watch App */,
+				23D75E3D1AC1654B0068C808 /* Bus Panda Tests */,
 				23D75E1C1AC1654B0068C808 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -165,6 +285,8 @@
 			children = (
 				23D75E1B1AC1654B0068C808 /* Bus Panda.app */,
 				23D75E3A1AC1654B0068C808 /* BusTests.xctest */,
+				23420A961C92A34E009F40F9 /* watchkit.app */,
+				23420AA21C92A34E009F40F9 /* watchkit Extension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -180,11 +302,13 @@
 				23D75E2C1AC1654B0068C808 /* DetailViewController.m */,
 				23E1026C1C1D2A7100BEF3C6 /* UsefulTypes.h */,
 				233CD79D1C3BDB7D00E0B6D6 /* ErrorPresenter.h */,
-				233CD79E1C3BDB7D00E0B6D6 /* ErrorPresenter.m */,
+				23420A881C8EC7DD009F40F9 /* ErrorPresenter.swift */,
 				23063B031ACBF0BC00C063DC /* FavouritesCell.h */,
 				23063B041ACBF0BC00C063DC /* FavouritesCell.m */,
 				23063AF81AC7DAAC00C063DC /* ServiceDescriptionCell.h */,
 				23063AF91AC7DAAC00C063DC /* ServiceDescriptionCell.m */,
+				23E341671CA79F1A00EDB581 /* BusInfoFetcher.h */,
+				23E341681CA79F1A00EDB581 /* BusInfoFetcher.m */,
 				23C937961ACDF51E00EF1441 /* TimetableWebViewController.h */,
 				23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */,
 				23E102671C1D0B7C00BEF3C6 /* AddStopAbstractViewController.h */,
@@ -211,16 +335,18 @@
 			children = (
 				23D75E1F1AC1654B0068C808 /* Info.plist */,
 				23D75E201AC1654B0068C808 /* main.m */,
+				23420A871C8EC7DC009F40F9 /* Bus Panda-Bridging-Header.h */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
-		23D75E3D1AC1654B0068C808 /* BusTests */ = {
+		23D75E3D1AC1654B0068C808 /* Bus Panda Tests */ = {
 			isa = PBXGroup;
 			children = (
 				23D75E401AC1654B0068C808 /* BusTests.m */,
 				23D75E3E1AC1654B0068C808 /* Supporting Files */,
 			);
+			name = "Bus Panda Tests";
 			path = BusTests;
 			sourceTree = "<group>";
 		};
@@ -288,9 +414,51 @@
 			path = HTMLReader/Code;
 			sourceTree = "<group>";
 		};
+		23E341611CA690EC00EDB581 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				23E341621CA6915100EDB581 /* RouteColours.swift */,
+			);
+			name = Shared;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		23420A951C92A34E009F40F9 /* watchkit */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 23420ABB1C92A34F009F40F9 /* Build configuration list for PBXNativeTarget "watchkit" */;
+			buildPhases = (
+				23420A941C92A34E009F40F9 /* Resources */,
+				23420ABA1C92A34F009F40F9 /* Embed App Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				23420AA51C92A34E009F40F9 /* PBXTargetDependency */,
+			);
+			name = watchkit;
+			productName = watchkit;
+			productReference = 23420A961C92A34E009F40F9 /* watchkit.app */;
+			productType = "com.apple.product-type.application.watchapp2";
+		};
+		23420AA11C92A34E009F40F9 /* watchkit Extension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 23420AB71C92A34F009F40F9 /* Build configuration list for PBXNativeTarget "watchkit Extension" */;
+			buildPhases = (
+				23420A9E1C92A34E009F40F9 /* Sources */,
+				23420A9F1C92A34E009F40F9 /* Frameworks */,
+				23420AA01C92A34E009F40F9 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "watchkit Extension";
+			productName = "watchkit Extension";
+			productReference = 23420AA21C92A34E009F40F9 /* watchkit Extension.appex */;
+			productType = "com.apple.product-type.watchkit2-extension";
+		};
 		23D75E1A1AC1654B0068C808 /* Bus Panda */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 23D75E441AC1654B0068C808 /* Build configuration list for PBXNativeTarget "Bus Panda" */;
@@ -298,10 +466,12 @@
 				23D75E171AC1654B0068C808 /* Sources */,
 				23D75E181AC1654B0068C808 /* Frameworks */,
 				23D75E191AC1654B0068C808 /* Resources */,
+				23420ABE1C92A34F009F40F9 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				23420AB51C92A34E009F40F9 /* PBXTargetDependency */,
 			);
 			name = "Bus Panda";
 			productName = Bus;
@@ -332,9 +502,17 @@
 		23D75E131AC1654B0068C808 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastSwiftUpdateCheck = 0720;
 				LastUpgradeCheck = 0700;
 				ORGANIZATIONNAME = "Andrew Hodgkinson";
 				TargetAttributes = {
+					23420A951C92A34E009F40F9 = {
+						CreatedOnToolsVersion = 7.2.1;
+						DevelopmentTeam = XT4V976D8Y;
+					};
+					23420AA11C92A34E009F40F9 = {
+						CreatedOnToolsVersion = 7.2.1;
+					};
 					23D75E1A1AC1654B0068C808 = {
 						CreatedOnToolsVersion = 6.2;
 						DevelopmentTeam = XT4V976D8Y;
@@ -371,11 +549,30 @@
 			targets = (
 				23D75E1A1AC1654B0068C808 /* Bus Panda */,
 				23D75E391AC1654B0068C808 /* BusTests */,
+				23420A951C92A34E009F40F9 /* watchkit */,
+				23420AA11C92A34E009F40F9 /* watchkit Extension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		23420A941C92A34E009F40F9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				23420A9C1C92A34E009F40F9 /* Assets.xcassets in Resources */,
+				23420A9A1C92A34E009F40F9 /* Interface.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		23420AA01C92A34E009F40F9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				23420AB21C92A34E009F40F9 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		23D75E191AC1654B0068C808 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -396,17 +593,33 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		23420A9E1C92A34E009F40F9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				235AA1981CA2A272006143B9 /* StopsRowController.swift in Sources */,
+				23E341661CA6A1DF00EDB581 /* BusesRowController.swift in Sources */,
+				23420AAE1C92A34E009F40F9 /* NotificationController.swift in Sources */,
+				23420AAC1C92A34E009F40F9 /* ExtensionDelegate.swift in Sources */,
+				23E341651CA6A11400EDB581 /* RouteColours.swift in Sources */,
+				23420AAA1C92A34E009F40F9 /* StopsInterfaceController.swift in Sources */,
+				23E341641CA6A10600EDB581 /* BusesInterfaceController.swift in Sources */,
+				23420AB01C92A34E009F40F9 /* GlanceController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		23D75E171AC1654B0068C808 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				23D75E781AC165A70068C808 /* HTMLEntities.m in Sources */,
-				233CD79F1C3BDB7D00E0B6D6 /* ErrorPresenter.m in Sources */,
 				23D75E7C1AC165A70068C808 /* HTMLPreprocessedInputStream.m in Sources */,
+				23E341691CA79F1A00EDB581 /* BusInfoFetcher.m in Sources */,
 				23D75E811AC165A70068C808 /* HTMLTokenizer.m in Sources */,
 				23063AF71AC7A4C800C063DC /* EnterStopIDViewController.m in Sources */,
 				23D75E741AC165A70068C808 /* HTMLDocument.m in Sources */,
 				23D75E7F1AC165A70068C808 /* HTMLString.m in Sources */,
+				23420A891C8EC7DD009F40F9 /* ErrorPresenter.swift in Sources */,
 				23D75E731AC165A70068C808 /* HTMLComment.m in Sources */,
 				23D75E821AC165A70068C808 /* HTMLTreeEnumerator.m in Sources */,
 				23D75E2D1AC1654B0068C808 /* DetailViewController.m in Sources */,
@@ -428,6 +641,7 @@
 				23D75E801AC165A70068C808 /* HTMLTextNode.m in Sources */,
 				23D75E271AC1654B0068C808 /* Bus-Panda.xcdatamodeld in Sources */,
 				23D75E241AC1654B0068C808 /* AppDelegate.m in Sources */,
+				23E341631CA6915100EDB581 /* RouteColours.swift in Sources */,
 				23D75E211AC1654B0068C808 /* main.m in Sources */,
 				23D75E7D1AC165A70068C808 /* HTMLSelector.m in Sources */,
 			);
@@ -444,6 +658,16 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		23420AA51C92A34E009F40F9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 23420AA11C92A34E009F40F9 /* watchkit Extension */;
+			targetProxy = 23420AA41C92A34E009F40F9 /* PBXContainerItemProxy */;
+		};
+		23420AB51C92A34E009F40F9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 23420A951C92A34E009F40F9 /* watchkit */;
+			targetProxy = 23420AB41C92A34E009F40F9 /* PBXContainerItemProxy */;
+		};
 		23D75E3C1AC1654B0068C808 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 23D75E1A1AC1654B0068C808 /* Bus Panda */;
@@ -452,6 +676,14 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
+		23420A981C92A34E009F40F9 /* Interface.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				23420A991C92A34E009F40F9 /* Base */,
+			);
+			name = Interface.storyboard;
+			sourceTree = "<group>";
+		};
 		23D75E2E1AC1654B0068C808 /* Main.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -471,6 +703,82 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		23420AB81C92A34F009F40F9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				GCC_NO_COMMON_BLOCKS = YES;
+				INFOPLIST_FILE = "watchkit Extension/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda.watchkitapp.watchkitextension";
+				PRODUCT_NAME = "${TARGET_NAME}";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 2.1;
+			};
+			name = Debug;
+		};
+		23420AB91C92A34F009F40F9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_NO_COMMON_BLOCKS = YES;
+				INFOPLIST_FILE = "watchkit Extension/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda.watchkitapp.watchkitextension";
+				PRODUCT_NAME = "${TARGET_NAME}";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 2.1;
+			};
+			name = Release;
+		};
+		23420ABC1C92A34F009F40F9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				IBSC_MODULE = watchkit_Extension;
+				INFOPLIST_FILE = watchkit/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 2.1;
+			};
+			name = Debug;
+		};
+		23420ABD1C92A34F009F40F9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				IBSC_MODULE = watchkit_Extension;
+				INFOPLIST_FILE = watchkit/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 2.1;
+			};
+			name = Release;
+		};
 		23D75E421AC1654B0068C808 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -506,7 +814,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.2;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -542,7 +850,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.2;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -554,6 +862,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Bus/Bus-Panda.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
@@ -563,6 +872,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Bus/Bus Panda-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
@@ -570,6 +881,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Bus/Bus-Panda.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
@@ -579,6 +891,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Bus/Bus Panda-Bridging-Header.h";
 			};
 			name = Release;
 		};
@@ -615,6 +928,24 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		23420AB71C92A34F009F40F9 /* Build configuration list for PBXNativeTarget "watchkit Extension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				23420AB81C92A34F009F40F9 /* Debug */,
+				23420AB91C92A34F009F40F9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		23420ABB1C92A34F009F40F9 /* Build configuration list for PBXNativeTarget "watchkit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				23420ABC1C92A34F009F40F9 /* Debug */,
+				23420ABD1C92A34F009F40F9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		23D75E161AC1654B0068C808 /* Build configuration list for PBXProject "Bus Panda" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -8,11 +8,14 @@
 
 #import <UIKit/UIKit.h>
 #import <CoreData/CoreData.h>
+#import <WatchConnectivity/WatchConnectivity.h>
 
 #define ICLOUD_TOKEN_ID_DEFAULTS_KEY   @"uk.org.pond.Bus-Panda.UbiquityIdentityToken"
 #define DATA_CHANGED_NOTIFICATION_NAME @"BusPandaDataChanged"
 
-@interface AppDelegate : UIResponder <UIApplicationDelegate, UISplitViewControllerDelegate>
+@interface AppDelegate : UIResponder < UIApplicationDelegate,
+                                       UISplitViewControllerDelegate,
+                                       WCSessionDelegate >
 
 @property (           strong, nonatomic ) UIWindow                     * window;
 @property ( readonly, strong, nonatomic ) NSManagedObjectContext       * managedObjectContext;

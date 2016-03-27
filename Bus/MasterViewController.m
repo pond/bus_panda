@@ -60,56 +60,18 @@
                                                     name: DATA_CHANGED_NOTIFICATION_NAME // AppDelegate.h
                                                   object: [ [ UIApplication sharedApplication ] delegate ] ];
 
-    // If this is the first time the application has ever been run, set up a
-    // collection of predefined useful stops.
+    // Add an observer triggered whenever the Core Data list of favourite
+    // stops changes; this is used to update the Watch.
     //
+    [ [ NSNotificationCenter defaultCenter ] addObserver: self
+                                                selector: @selector( updateWatch: )
+                                                    name: NSManagedObjectContextObjectsDidChangeNotification
+                                                  object: [ [ UIApplication sharedApplication ] delegate ] ];
 
-    NSUserDefaults * defaults     = [ NSUserDefaults standardUserDefaults ];
-    BOOL             hasRunBefore = [ defaults boolForKey: @"hasRunBefore" ];
-
-    if ( hasRunBefore != YES )
-    {
-        [ defaults setBool: YES forKey: @"hasRunBefore" ];
-        [ defaults synchronize ];
-
-        // TODO: The below is used for screenshots in the simulator; for the
-        // real world, something similar to load a sensible set of first-time
-        // stops would be good. But a first-install on your *local* device
-        // does not mean you have a first-install for *any* of your devices;
-        // we have to check the ever-difficult, flaky, badly documented and
-        // hard to understand (especially in view of iOS 5/6 vs 7 vs 8 major
-        // changes) iCloud.
-        //
-        // There are a few online blogs which discuss possible approaches but
-        // until the most basic Core Data / iCloud stuff seems to actually
-        // work properly, I'm steering well clear.
-
-//        NSDictionary * cannedStops = @{
-//            @"5000": @"Courtenay Aroy",
-//            @"5516": @"Courtenay Blair",
-//            @"5514": @"Courtenay Reading",
-//            @"7418": @"Express",
-//            @"5513": @"Manners BK",
-//            @"5515": @"Manners Body",
-//            @"4113": @"Murphy Wellington Girls",
-//            @"7018": @"Riddiford At Hall",
-//            @"1200": @"Sparse",
-//            @"6000": @"Station A",
-//            @"6001": @"Station B",
-//            @"5500": @"Station C",
-//            @"7120": @"Rintoul At Stoke",
-//            @"TALA": @"Talavera - Cable Car Station"
-//        };
-//
-//        [
-//            cannedStops enumerateKeysAndObjectsUsingBlock: ^ ( NSString * stopID,
-//                                                               NSString * stopDescription,
-//                                                               BOOL     * stop )
-//            {
-//                [ self addFavourite: stopID withDescription: stopDescription ];
-//            }
-//        ];
-    }
+    // Call this now to keep the Watch as up to date as possible, just in case
+    // there's already a local or remote populated data store available.
+    //
+    [ self updateWatch: nil ];
 }
 
 - ( void ) viewDidUnload
@@ -350,14 +312,20 @@
     return _fetchedResultsController;
 }
 
+#pragma mark - NSNotificationCenter observers
+
 // Reload results (i.e. favourites) from iCloud / local storage; "notification"
 // parameter is ignored.
 //
-- ( void ) reloadFetchedResults: ( NSNotification * ) notification
+// If it is running, the WatchKit application is told about the new data too.
+//
+- ( void ) reloadFetchedResults: ( NSNotification * ) ignoredNotification
 {
+    NSError *error = nil;
+
     NSLog( @"Underlying data changed... Refreshing" );
 
-    NSError *error = nil;
+    // Deal with the local changes first
 
     if ( ! [ self.fetchedResultsController performFetch: &error ] )
     {
@@ -372,8 +340,70 @@
     [ self.tableView performSelectorOnMainThread: @selector( reloadData )
                                       withObject: nil
                                    waitUntilDone: NO ];
+
+    [ self performSelectorOnMainThread: @selector( updateWatch: )
+                            withObject: [ WCSession defaultSession ]
+                         waitUntilDone: NO ];
 }
 
+// An observer on NSManagedObjectContextObjectsDidChangeNotification which
+// re-sends all favourite stops to the Watch; "notification" parameter is
+// ignored.
+//
+- ( void ) updateWatch: ( NSNotification * ) ignoredNotification
+{
+    NSLog(@"Send all stops to watch");
+
+    if ( WCSession.isSupported )
+    {
+        NSLog(@"WCSession is supported");
+
+        WCSession * session = [ WCSession defaultSession ];
+        BOOL        proceed;
+
+        // The actiationState property for multiple Apple Watch support exists
+        // in iOS 9.3 or later only.
+        //
+        if ( [ session respondsToSelector: @selector( activationState ) ] )
+        {
+            proceed = ( session.activationState == WCSessionActivationStateActivated ) ? YES : NO;
+        }
+        else
+        {
+            proceed = YES;
+        }
+
+        NSLog(@"Proceed: %u", proceed);
+
+        if ( proceed )
+        {
+            NSError        * error;
+            NSMutableArray * allStops = [ [ NSMutableArray alloc ] init ];
+            NSDictionary   * dictionary;
+
+            for ( NSManagedObject * object in self.fetchedResultsController.fetchedObjects )
+            {
+                [
+                    allStops addObject:
+                    @{
+                        @"stopID":          [ object valueForKey: @"stopID"          ],
+                        @"stopDescription": [ object valueForKey: @"stopDescription" ]
+                    }
+                ];
+            }
+
+            dictionary = @{ @"allStops": allStops };
+            NSLog(@"Dictionary: %@",dictionary);
+
+            [ session updateApplicationContext: dictionary error: &error ];
+
+            if ( error != nil )
+            {
+                NSLog( @"Error updating watch: %p", error.localizedDescription );
+            }
+        }
+    }
+}
 
 #pragma mark - Table updates from the controller
 
@@ -452,6 +482,7 @@
 - ( void ) controllerDidChangeContent: ( NSFetchedResultsController * ) controller
 {
     [ self.tableView endUpdates ];
+    [ self updateWatch: nil ];
 }
 
 // TODO possibly:

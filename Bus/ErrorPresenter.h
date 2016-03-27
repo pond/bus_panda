@@ -6,13 +6,15 @@
 //  Copyright © 2016 Andrew Hodgkinson. All rights reserved.
 //
 
-#import <UIKit/UIKit.h>
+#import "Bus_Panda-Swift.h"
 
-@interface ErrorPresenter : NSObject
-
-+ ( void ) showModalAlertFor: ( UIViewController * ) controller
-                   withError: ( NSError          * ) error
-                       title: ( NSString         * ) title
-                  andHandler: ( void ( ^ ) ( UIAlertAction * action ) ) handler;
-
-@end
+//#import <UIKit/UIKit.h>
+//
+//@interface ErrorPresenter : NSObject
+//
+//+ ( void ) showModalAlertFor: ( UIViewController * ) controller
+//                   withError: ( NSError          * ) error
+//                       title: ( NSString         * ) title
+//                  andHandler: ( void ( ^ ) ( UIAlertAction * action ) ) handler;
+//
+//@end
