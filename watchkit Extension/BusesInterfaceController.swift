@@ -73,8 +73,6 @@ class BusesInterfaceController: WKInterfaceController
                 {
                     ( busInfo: [ String: AnyObject ] ) -> Void in
 
-                    NSLog("INFO: %@", busInfo)
-
                     let sections = busInfo[ "allBuses" ] as! NSArray
                     let stops    = [] as NSMutableArray
 
@@ -94,11 +92,24 @@ class BusesInterfaceController: WKInterfaceController
                     ( error: NSError ) -> Void in
 
                     self.hideSpinner()
-                    delegate.presentError(
-                        error,
-                        handler:    { () -> Void in self.dismissController() },
-                        controller: self
-                    )
+
+                    // TODO: There appears to be a WatchOS 2.2 bug (simulator
+                    // only?) that causes a 'message timeout' error to fire for
+                    // a message even if it's been replied to and the handler
+                    // above has already run.
+                    //
+                    // Uncomment the error presenter below once fixed.
+                    //
+                    // Considering this is the main Watch<->iOS communications
+                    // API, that's a seriously clumsy bug, even for Apple.
+                    //
+                    // https://forums.developer.apple.com/thread/43380
+                    //
+//                    delegate.presentError(
+//                        error,
+//                        handler:    { () -> Void in self.dismissController() },
+//                        controller: self
+//                    )
                 }
             )
         }

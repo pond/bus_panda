@@ -10,11 +10,11 @@
             <objects>
                 <controller identifier="Buses" title="Buses" id="dtE-OF-ndN" customClass="BusesInterfaceController" customModule="watchkit_Extension">
                     <items>
-                        <imageView width="1" height="0.59999999999999998" alignment="center" contentMode="center" id="Om9-Fu-MrN"/>
+                        <imageView width="1" height="0.65000000000000002" alignment="center" contentMode="center" id="Om9-Fu-MrN"/>
                         <table alignment="left" id="9q0-u6-1jG" userLabel="Buses Table">
                             <items>
                                 <tableRow identifier="BusesRow" selectable="NO" id="X4a-u3-eYJ" customClass="BusesRowController" customModule="watchkit_Extension">
-                                    <group key="rootItem" width="1" height="0.0" alignment="left" spacing="0.0" id="OZ5-XH-BxT">
+                                    <group key="rootItem" width="1" height="0.0" alignment="left" spacing="4" id="OZ5-XH-BxT">
                                         <items>
                                             <group width="0.69999999999999996" height="42.5" alignment="left" layout="vertical" spacing="6" id="O74-mI-HUz">
                                                 <items>
@@ -63,7 +63,7 @@
                     </connections>
                 </controller>
             </objects>
-            <point key="canvasLocation" x="439" y="364"/>
+            <point key="canvasLocation" x="505" y="364"/>
         </scene>
         <!--Stops-->
         <scene sceneID="aou-V4-d1y">

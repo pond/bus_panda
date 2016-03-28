@@ -54,7 +54,7 @@ class StopsInterfaceController: WKInterfaceController
     override func table( table: WKInterfaceTable, didSelectRowAtIndex rowIndex: Int )
     {
         let controller = stopsTable.rowControllerAtIndex( rowIndex ) as? StopsRowController
-        presentControllerWithName( "Buses", context: controller?.stopInfo )
+        pushControllerWithName( "Buses", context: controller?.stopInfo )
     }
 
     // Update the WKInterfaceTable list of stops based on the given NSArray
@@ -187,6 +187,7 @@ class StopsInterfaceController: WKInterfaceController
                     " Terrace": "",
                     " Place":   "",
                     " at ":     " ",
+                    " - ":      " ",
                     " near ":   " "
                 ]
             )
