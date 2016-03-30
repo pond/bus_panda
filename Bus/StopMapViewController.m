@@ -10,14 +10,17 @@
 
 #import "AppDelegate.h"
 #import "ErrorPresenter.h"
+#import "StopInfoFetcher.h"
 #import "StopLocation.h"
 #import "DetailViewController.h"
 #import "UsefulTypes.h"
 
 @interface StopMapViewController ()
 
-@property ( strong ) NSMutableDictionary * stopsAddedToMap;
-@property ( weak   ) NSTimer             * stopLocationUpdateTimer;
+@property ( strong            ) NSMutableDictionary * stopsAddedToMap;
+@property ( weak              ) NSTimer             * stopLocationUpdateTimer;
+@property ( nonatomic, assign ) BOOL                  showNearbyStops;
+@property ( nonatomic, assign ) BOOL                  mapLocationHasBeenUpdated;
 
 - ( void ) updateMapWithOrWithoutLocation;
 - ( void ) spinnerOn;
@@ -25,7 +28,7 @@
 - ( void ) cancelStopLocationUpdate;
 - ( void ) scheduleStopLocationUpdate;
 - ( void ) getStopsForCurrentMapRange;
-- ( void ) addStopsToMapUsingData: ( NSData * ) data;
+- ( void ) addStopsToMap: ( NSArray * ) stops;
 - ( void ) addCachedStopsToMap;
 
 @end
@@ -35,9 +38,11 @@
 //
 #define STOP_LOCATION_UPDATE_TIMER_DELAY ( double ) 0.5
 
-// Radius (m) for the typical starting view of the map view.
+// Radius (m) for the typical starting view of the map view, for far out and
+// nearby views respectively.
 //
-#define DEFAULT_RADIUS_OF_VIEW 2500
+#define DEFAULT_FAR_RADIUS  2000
+#define DEFAULT_NEAR_RADIUS 350
 
 @implementation StopMapViewController
 
@@ -122,6 +127,14 @@
     UIApplication.sharedApplication.networkActivityIndicatorVisible = NO;
 }
 
+// Permanently set this instance up so that its initial map view state will
+// be for a close zoomed-in "nearby stops" view.
+//
+- ( void ) configureForNearbyStops
+{
+   self.showNearbyStops = YES;
+}
+
 // In STOP_LOCATION_UPDATE_TIMER_DELAY seconds, call method
 // -getStopsForCurrentMapRange. Cancels any prior scheduled calls first.
 //
@@ -155,128 +168,60 @@
     self.stopLocationUpdateTimer = nil;
 }
 
-// Retrieve the stops for the map centre coordinates using the only currently
-// known interface into the MetLink web site via inspection of the public site
-// JavaScript behaviour. This is just a simple GET request with a query string
-// giving the centre point latitude and longitude and the rough radius of the
-// returned results determined by observation. A top-level JSON (i.e. JSON5)
-// Array is returned with an example entry as follows:
+// Ask StopInfoFetcher to retrieve stop information for the map's current
+// centre location and visible radius based on the view's diagonal measurement.
 //
-// {
-//     "ID":   "17929",
-//     "Name": "Manners Street at Willis Street",
-//     "Lat":  "-41.2895508",
-//     "Long": "174.7749028",
-//     "Sms":  "5006"
-// }
-//
-// The public stop ID is therefore given by the "Sms" field.
+// Either add/update the map accordingly or report an error to the user.
 //
 - ( void ) getStopsForCurrentMapRange
 {
+    CLLocationCoordinate2D centerLocation = self.mapView.region.center;
+    CLLocationDistance     radius;
+
     MKMapRect  mRect     = self.mapView.visibleMapRect;
     MKMapPoint minCorner = MKMapPointMake( MKMapRectGetMinX( mRect ), MKMapRectGetMinY( mRect ) );
     MKMapPoint maxCorner = MKMapPointMake( MKMapRectGetMaxX( mRect ), MKMapRectGetMaxY( mRect ) );
 
-    CLLocationDistance     viewDiagonal   = MKMetersBetweenMapPoints( minCorner, maxCorner );
-    CLLocationCoordinate2D centerLocation = self.mapView.region.center;
-
-    NSString * centreEnumerationURI =
-    [
-        NSString stringWithFormat: @"https://www.metlink.org.nz/stop/nearbystopdata?lat=%f&lng=%f&radius=%f",
-        centerLocation.latitude,
-        centerLocation.longitude,
-        viewDiagonal / 2
-    ];
-
-    // We will make a request to fetch the JSON at 'centreEnumerationURI' from
-    // above, declaring the below block as the code to run upon completion
-    // (success or failure).
-    //
-    // After this chunk of code, at the end of this overall method, is the
-    // place where the request is actually made.
-    //
-    URLRequestCompletionHandler completionHandler = ^ ( NSData        * data,
-                                                        NSURLResponse * response,
-                                                        NSError       * error )
-    {
-        if ( error != nil || [ response isKindOfClass: [ NSHTTPURLResponse class ] ] == NO )
-        {
-            [ self spinnerOff ];
-
-            [
-                ErrorPresenter showModalAlertFor: self
-                                       withError: error
-                                           title: @"Cannot show stops"
-                                      andHandler: ^( UIAlertAction *action )
-                {
-                    [ self dismissAdditionView ];
-                }
-            ];
-        }
-        else
-        {
-            // Conceptually we should check for e.g. application/json, but all
-            // responses from MetLink at the time of writing are served up as
-            // text/html, be they a real HTML 404 response, or raw JSON. Doh.
-            //
-            // NSDictionary * headers     = [ ( NSHTTPURLResponse * ) response allHeaderFields ];
-            // NSString     * contentType = headers[ @"Content-Type" ];
-
-            [ self performSelectorOnMainThread: @selector( addStopsToMapUsingData: )
-                                    withObject: data
-                                 waitUntilDone: YES ];
-        }
-    };
-
-    NSURL        * URL     = [ NSURL URLWithString: centreEnumerationURI ];
-    NSURLSession * session = [ NSURLSession sharedSession ];
+    radius = MKMetersBetweenMapPoints( minCorner, maxCorner ) / 2;
 
     [ self spinnerOn ];
 
-    [ [ session dataTaskWithURL: URL completionHandler: completionHandler ] resume ];
+    [
+        StopInfoFetcher getStopsWithinRadius: radius
+                                  ofLocation: centerLocation
+                           completionHandler:
+
+        ^ ( NSMutableArray * allStops, NSError * error )
+        {
+            if ( error != nil )
+            {
+                [ self spinnerOff ];
+
+                [
+                    ErrorPresenter showModalAlertFor: self
+                                           withError: error
+                                               title: @"Cannot show stops"
+                                          andHandler: ^( UIAlertAction *action )
+                    {
+                        [ self dismissAdditionView ];
+                    }
+                ];
+            }
+            else
+            {
+                [ self addStopsToMap: allStops ];
+            }
+        }
+    ];
+
 }
 
-// Given a collection of stops in a JSON array encoded into the given
-// NSData object (as JSON5 - a root-level array), addding any new map
-// annotations as required or updating any which seem to be incorrect.
+// Given a collection of stops from the StopInfoFetcher class, add any new
+// related map annotations or update any which seem to be incorrect.
 //
-- ( void ) addStopsToMapUsingData: ( NSData * ) data
+- ( void ) addStopsToMap: ( NSArray * ) stops
 {
-    NSArray * stops;
-    BOOL      anyAdded = NO;
-
-    // Try to parse what *should* be a JSON5 array.
-
-    @try
-    {
-        stops = [ NSJSONSerialization JSONObjectWithData: data
-                                                 options: 0
-                                                   error: nil ];
-
-    }
-    @catch ( NSException * exception ) // Assumed JSON processing error
-    {
-        [ self spinnerOff ];
-
-        NSDictionary * details = @{
-            NSLocalizedDescriptionKey: @"Bus stops retrieved from the Internet were sent in a way that Bus Panda does not understand."
-        };
-
-        NSError * error = [ NSError errorWithDomain: @"bus_panda_stops" code: 200 userInfo: details ];
-
-        [
-            ErrorPresenter showModalAlertFor: self
-                                   withError: error
-                                       title: @"Cannot show stops"
-                                  andHandler: ^( UIAlertAction *action )
-            {
-                [ self dismissAdditionView ];
-            }
-        ];
-
-        return;
-    }
+    BOOL anyAdded = NO;
 
     // Lazy-initialise the local stop-added-to-map flag store and get hold of
     // the AppDelegate's full stop information cache.
@@ -300,24 +245,9 @@
 
     for ( NSDictionary * stop in stops )
     {
-        // First extract information from the JSON dictionary. Bail out if the
-        // public stop ID string cannot be found (under the "Sms" key (!)).
-
-        NSString * stopID = stop[ @"Sms" ];
-
-        if ( stopID == nil ) continue;
-
-        NSString * stopDescription = stop[ @"Name" ];
-
-        if ( stopDescription == nil ) stopDescription = @"";
-
-        double latitude  = [ ( NSString * ) stop[ @"Lat"  ] doubleValue ];
-        double longitude = [ ( NSString * ) stop[ @"Long" ] doubleValue ];
-
-        CLLocationCoordinate2D stopCoordinate;
-
-        stopCoordinate.latitude  = latitude;
-        stopCoordinate.longitude = longitude;
+        NSString   * stopID          = stop[ @"stopID"          ];
+        NSString   * stopDescription = stop[ @"stopDescription" ];
+        CLLocation * stopLocation    = stop[ @"stopLocation"    ];
 
         // Examine any existing annotation info for this stop ID.
 
@@ -327,15 +257,13 @@
         // sure that it hasn't either moved or changed description. If it has,
         // remove that existing annotation, delete it from the dictionary of
         // known stops and clear the local variable recording the old one.
-
+        //
         if ( existingAnnotationInfo )
         {
-            NSNumber * existingLatitude    = existingAnnotationInfo[ @"latitude"    ];
-            NSNumber * existingLongitude   = existingAnnotationInfo[ @"longitude"   ];
-            NSString * existingDescription = existingAnnotationInfo[ @"description" ];
+            CLLocation * existingLocation    = existingAnnotationInfo[ @"location"    ];
+            NSString   * existingDescription = existingAnnotationInfo[ @"description" ];
 
-            if ( [ existingLatitude  doubleValue ] != latitude  ||
-                 [ existingLongitude doubleValue ] != longitude ||
+            if ( [ existingLocation distanceFromLocation: stopLocation ] != 0 ||
                  [ stopDescription isEqualToString: existingDescription ] == NO )
             {
                 StopLocation * existingAnnotation = existingAnnotationInfo[ @"annotation" ];
@@ -359,15 +287,14 @@
             [
                 [ StopLocation alloc ] initWithStopID: stopID
                                           description: stopDescription
-                                           coordinate: stopCoordinate
+                                           coordinate: stopLocation.coordinate
             ];
 
             if ( annotation )
             {
                 NSDictionary * stopInfo =
                 @{
-                    @"latitude":    @( latitude  ),
-                    @"longitude":   @( longitude ),
+                    @"location":    stopLocation,
                     @"description": stopDescription,
                     @"annotation":  annotation
                 };
@@ -392,7 +319,7 @@
     // If no stops were ultimately added, the 'stop network activity spinner
     // when the views-were-all-added call happens' thing won't work, obviously.
     // So stop it here instead.
-
+    //
     if ( anyAdded == NO ) [ self spinnerOff ];
 }
 
@@ -471,10 +398,15 @@
         zoomLocation.longitude = 174.772871;
     }
 
+    // If configured to show nearby stops (see '-configureForNearbyStops') then the
+    // map view diagonal measurement is ignored and a fixed 250m radius is used.
+    //
+    CLLocationDistance radius = self.showNearbyStops ? DEFAULT_NEAR_RADIUS : DEFAULT_FAR_RADIUS;
+
     MKCoordinateRegion viewRegion = MKCoordinateRegionMakeWithDistance(
         zoomLocation,
-        DEFAULT_RADIUS_OF_VIEW,
-        DEFAULT_RADIUS_OF_VIEW
+        radius,
+        radius
     );
     
     [ self.mapView setRegion: [ self.mapView regionThatFits: viewRegion ] animated: YES ];
@@ -579,27 +511,23 @@ calloutAccessoryControlTapped: ( UIControl        * ) control
 // that user's location has changed; we update the view to keep the location
 // roughly central.
 //
-// This is only done once; otherwise, location updates would "argue with" any
-// manual scroll/zoom set by the user and keep resetting the map. Infruiating.
+// This is only done once, to catch any initial location updates that might
+// have happened since the map was last shown. We don't subsequently track
+// the user's movement, either here (location updates would "argue with" any
+// manual scroll/zoom set by the user and keep resetting the map; infruiating)
+// or via MKUserTrackingModeFollow, even for 'stops nearby'. We expect the map
+// to be used as a bus stop browser, not as a route tracker.
 //
 - ( void )      mapView: ( MKMapView      * ) mapView
   didUpdateUserLocation: ( MKUserLocation * ) userLocation
 {
-    static dispatch_once_t mapLocationUpdateOnceToken;
+    if ( self.mapLocationHasBeenUpdated == NO )
+    {
+        self.mapLocationHasBeenUpdated = YES;
 
-    dispatch_once(
-        &mapLocationUpdateOnceToken,
-        ^
-        {
-            MKCoordinateRegion viewRegion = MKCoordinateRegionMakeWithDistance(
-                userLocation.coordinate,
-                DEFAULT_RADIUS_OF_VIEW,
-                DEFAULT_RADIUS_OF_VIEW
-            );
-            
-            [ self.mapView setRegion: [ self.mapView regionThatFits: viewRegion ] animated: YES ];
-        }
-    );
+        [ self.mapView setCenterCoordinate: userLocation.coordinate
+                                  animated: YES ];
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

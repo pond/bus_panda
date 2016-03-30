@@ -7,8 +7,13 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "MGSwipeTableCell.h"
 
-@interface FavouritesCell : UITableViewCell
+// For MGSwipeTableCell, see:
+//
+// https://github.com/MortimerGoro/MGSwipeTableCell
+//
+@interface FavouritesCell : MGSwipeTableCell
 
 @property ( weak, nonatomic ) IBOutlet UILabel * stopID;
 @property ( weak, nonatomic ) IBOutlet UILabel * stopDescription;

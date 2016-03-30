@@ -57,6 +57,11 @@
 		23E341651CA6A11400EDB581 /* RouteColours.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E341621CA6915100EDB581 /* RouteColours.swift */; };
 		23E341661CA6A1DF00EDB581 /* BusesRowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E3415F1CA68F5F00EDB581 /* BusesRowController.swift */; };
 		23E341691CA79F1A00EDB581 /* BusInfoFetcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E341681CA79F1A00EDB581 /* BusInfoFetcher.m */; };
+		23E341751CABACB800EDB581 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 23E3416F1CABACB800EDB581 /* Info.plist */; };
+		23E341761CABACB800EDB581 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 23E341701CABACB800EDB581 /* LICENSE */; };
+		23E341771CABACB800EDB581 /* MGSwipeButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E341721CABACB800EDB581 /* MGSwipeButton.m */; };
+		23E341781CABACB800EDB581 /* MGSwipeTableCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E341741CABACB800EDB581 /* MGSwipeTableCell.m */; };
+		23E3417B1CABD2E900EDB581 /* StopInfoFetcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E3417A1CABD2E900EDB581 /* StopInfoFetcher.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -202,6 +207,14 @@
 		23E341621CA6915100EDB581 /* RouteColours.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = RouteColours.swift; path = Bus/RouteColours.swift; sourceTree = "<group>"; };
 		23E341671CA79F1A00EDB581 /* BusInfoFetcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BusInfoFetcher.h; sourceTree = "<group>"; };
 		23E341681CA79F1A00EDB581 /* BusInfoFetcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BusInfoFetcher.m; sourceTree = "<group>"; };
+		23E3416F1CABACB800EDB581 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		23E341701CABACB800EDB581 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		23E341711CABACB800EDB581 /* MGSwipeButton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGSwipeButton.h; sourceTree = "<group>"; };
+		23E341721CABACB800EDB581 /* MGSwipeButton.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MGSwipeButton.m; sourceTree = "<group>"; };
+		23E341731CABACB800EDB581 /* MGSwipeTableCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGSwipeTableCell.h; sourceTree = "<group>"; };
+		23E341741CABACB800EDB581 /* MGSwipeTableCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MGSwipeTableCell.m; sourceTree = "<group>"; };
+		23E341791CABD2E900EDB581 /* StopInfoFetcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StopInfoFetcher.h; sourceTree = "<group>"; };
+		23E3417A1CABD2E900EDB581 /* StopInfoFetcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = StopInfoFetcher.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -309,6 +322,8 @@
 				23063AF91AC7DAAC00C063DC /* ServiceDescriptionCell.m */,
 				23E341671CA79F1A00EDB581 /* BusInfoFetcher.h */,
 				23E341681CA79F1A00EDB581 /* BusInfoFetcher.m */,
+				23E341791CABD2E900EDB581 /* StopInfoFetcher.h */,
+				23E3417A1CABD2E900EDB581 /* StopInfoFetcher.m */,
 				23C937961ACDF51E00EF1441 /* TimetableWebViewController.h */,
 				23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */,
 				23E102671C1D0B7C00BEF3C6 /* AddStopAbstractViewController.h */,
@@ -336,6 +351,7 @@
 				23D75E1F1AC1654B0068C808 /* Info.plist */,
 				23D75E201AC1654B0068C808 /* main.m */,
 				23420A871C8EC7DC009F40F9 /* Bus Panda-Bridging-Header.h */,
+				23E1026A1C1D21EA00BEF3C6 /* MapKit.framework */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -362,7 +378,7 @@
 			isa = PBXGroup;
 			children = (
 				23D75E4B1AC165A70068C808 /* HTMLReader */,
-				23E1026A1C1D21EA00BEF3C6 /* MapKit.framework */,
+				23E3416E1CABACB800EDB581 /* MGSwipeTableCell */,
 			);
 			name = "Third Party";
 			sourceTree = "<group>";
@@ -420,6 +436,19 @@
 				23E341621CA6915100EDB581 /* RouteColours.swift */,
 			);
 			name = Shared;
+			sourceTree = "<group>";
+		};
+		23E3416E1CABACB800EDB581 /* MGSwipeTableCell */ = {
+			isa = PBXGroup;
+			children = (
+				23E3416F1CABACB800EDB581 /* Info.plist */,
+				23E341701CABACB800EDB581 /* LICENSE */,
+				23E341711CABACB800EDB581 /* MGSwipeButton.h */,
+				23E341721CABACB800EDB581 /* MGSwipeButton.m */,
+				23E341731CABACB800EDB581 /* MGSwipeTableCell.h */,
+				23E341741CABACB800EDB581 /* MGSwipeTableCell.m */,
+			);
+			path = MGSwipeTableCell;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -512,6 +541,7 @@
 					};
 					23420AA11C92A34E009F40F9 = {
 						CreatedOnToolsVersion = 7.2.1;
+						DevelopmentTeam = XT4V976D8Y;
 					};
 					23D75E1A1AC1654B0068C808 = {
 						CreatedOnToolsVersion = 6.2;
@@ -577,9 +607,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				23E341751CABACB800EDB581 /* Info.plist in Resources */,
 				23D75E301AC1654B0068C808 /* Main.storyboard in Resources */,
 				23D75E351AC1654B0068C808 /* LaunchScreen.xib in Resources */,
 				23D75E321AC1654B0068C808 /* Images.xcassets in Resources */,
+				23E341761CABACB800EDB581 /* LICENSE in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -627,8 +659,10 @@
 				23D75E7B1AC165A70068C808 /* HTMLParser.m in Sources */,
 				23063AFA1AC7DAAC00C063DC /* ServiceDescriptionCell.m in Sources */,
 				23E102691C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m in Sources */,
+				23E341781CABACB800EDB581 /* MGSwipeTableCell.m in Sources */,
 				23D75E761AC165A70068C808 /* HTMLElement.m in Sources */,
 				23D75E771AC165A70068C808 /* HTMLEncoding.m in Sources */,
+				23E3417B1CABD2E900EDB581 /* StopInfoFetcher.m in Sources */,
 				23E102661C1D0AA300BEF3C6 /* StopMapViewController.m in Sources */,
 				23D75E7A1AC165A70068C808 /* HTMLOrderedDictionary.m in Sources */,
 				23063B051ACBF0BC00C063DC /* FavouritesCell.m in Sources */,
@@ -636,6 +670,7 @@
 				23D75E831AC165A70068C808 /* NSString+HTMLEntities.m in Sources */,
 				23C937981ACDF51E00EF1441 /* TimetableWebViewController.m in Sources */,
 				23D75E2A1AC1654B0068C808 /* MasterViewController.m in Sources */,
+				23E341771CABACB800EDB581 /* MGSwipeButton.m in Sources */,
 				23D75E791AC165A70068C808 /* HTMLNode.m in Sources */,
 				23D75E7E1AC165A70068C808 /* HTMLSerialization.m in Sources */,
 				23D75E801AC165A70068C808 /* HTMLTextNode.m in Sources */,
@@ -706,6 +741,7 @@
 		23420AB81C92A34F009F40F9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC_NO_COMMON_BLOCKS = YES;
 				INFOPLIST_FILE = "watchkit Extension/Info.plist";
@@ -723,6 +759,7 @@
 		23420AB91C92A34F009F40F9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_NO_COMMON_BLOCKS = YES;
 				INFOPLIST_FILE = "watchkit Extension/Info.plist";
@@ -814,7 +851,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -850,7 +887,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";

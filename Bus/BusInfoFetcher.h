@@ -5,7 +5,7 @@
 //  Created by Andrew Hodgkinson on 27/03/16.
 //  Copyright © 2016 Andrew Hodgkinson. All rights reserved.
 //
-//  Fetch information about a stop arrivals/departures based on the Stop ID.
+//  Fetch information about bus arrivals/departures based on a Stop ID.
 //
 
 #import <Foundation/Foundation.h>

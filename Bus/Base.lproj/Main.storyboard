@@ -198,20 +198,20 @@
         <scene sceneID="smW-Zh-WAh">
             <objects>
                 <tableViewController title="Master" clearsSelectionOnViewWillAppear="NO" id="7bK-jq-Zjz" customClass="MasterViewController" sceneMemberID="viewController">
-                    <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="r7i-6Z-zg0">
+                    <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="28" sectionFooterHeight="28" id="r7i-6Z-zg0">
                         <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
                             <tableViewCell contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="Cell" id="F1P-FL-Je1" userLabel="Cell" customClass="FavouritesCell">
-                                <rect key="frame" x="0.0" y="86" width="600" height="44"/>
+                                <rect key="frame" x="0.0" y="92" width="600" height="44"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="F1P-FL-Je1" id="Tis-8a-wpu">
                                     <rect key="frame" x="0.0" y="0.0" width="600" height="43.5"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
                                         <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" text="9999" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="2AK-CO-ib6">
-                                            <rect key="frame" x="535" y="1" width="57" height="44"/>
+                                            <rect key="frame" x="535" y="0.0" width="57" height="43.5"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="57" id="9qd-PK-DOO"/>
                                             </constraints>
@@ -220,7 +220,7 @@
                                             <color key="highlightedColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                         </label>
                                         <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" text="Imaginary Stop" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumFontSize="10" adjustsLetterSpacingToFitWidth="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xWf-WD-qLo">
-                                            <rect key="frame" x="15" y="1" width="512" height="44"/>
+                                            <rect key="frame" x="15" y="0.0" width="512" height="43.5"/>
                                             <constraints>
                                                 <constraint firstAttribute="height" constant="44" id="bN8-Sn-VE4"/>
                                             </constraints>
@@ -234,7 +234,7 @@
                                         <constraint firstItem="2AK-CO-ib6" firstAttribute="baseline" secondItem="xWf-WD-qLo" secondAttribute="baseline" id="7Mf-yI-NoZ"/>
                                         <constraint firstItem="2AK-CO-ib6" firstAttribute="firstBaseline" secondItem="xWf-WD-qLo" secondAttribute="firstBaseline" id="Vaw-le-sRx"/>
                                         <constraint firstItem="2AK-CO-ib6" firstAttribute="leading" secondItem="xWf-WD-qLo" secondAttribute="trailing" constant="8" id="Y7r-O4-WQO"/>
-                                        <constraint firstItem="xWf-WD-qLo" firstAttribute="top" secondItem="Tis-8a-wpu" secondAttribute="topMargin" constant="-7" id="Zfz-K9-Ayw"/>
+                                        <constraint firstItem="xWf-WD-qLo" firstAttribute="top" secondItem="Tis-8a-wpu" secondAttribute="topMargin" constant="-8" id="Zfz-K9-Ayw"/>
                                         <constraint firstItem="2AK-CO-ib6" firstAttribute="trailing" secondItem="Tis-8a-wpu" secondAttribute="trailingMargin" id="kvy-9D-Iyf"/>
                                     </constraints>
                                 </tableViewCellContentView>
@@ -257,10 +257,10 @@
             </objects>
             <point key="canvasLocation" x="709" y="-747"/>
         </scene>
-        <!--Add Using Map of Stops-->
+        <!--Add Using Map-->
         <scene sceneID="7L0-Q6-rpd">
             <objects>
-                <navigationController storyboardIdentifier="StopMap" title="Add Using Map of Stops" id="4Hy-RA-rWB" sceneMemberID="viewController">
+                <navigationController storyboardIdentifier="StopMap" title="Add Using Map" id="4Hy-RA-rWB" sceneMemberID="viewController">
                     <navigationBar key="navigationBar" contentMode="scaleToFill" id="XhY-Jg-GUr">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -434,7 +434,7 @@
                             <constraint firstItem="9Ia-P1-n7f" firstAttribute="top" secondItem="5cz-BV-hM9" secondAttribute="topMargin" id="yZs-F9-6hy"/>
                         </constraints>
                     </view>
-                    <navigationItem key="navigationItem" title="Add Using Map of Stops" id="aVB-No-Jds"/>
+                    <navigationItem key="navigationItem" title="Add Using Map" id="aVB-No-Jds"/>
                     <connections>
                         <outlet property="mapView" destination="9Ia-P1-n7f" id="CA1-j6-3MC"/>
                         <segue destination="JEX-9P-axG" kind="showDetail" identifier="showDetailForAddition" id="obV-kz-y5b"/>
@@ -446,7 +446,7 @@
         </scene>
     </scenes>
     <inferredMetricsTieBreakers>
-        <segue reference="Tll-UG-LXB"/>
         <segue reference="obV-kz-y5b"/>
+        <segue reference="6S0-TO-JiA"/>
     </inferredMetricsTieBreakers>
 </document>
