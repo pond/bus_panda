@@ -22,6 +22,15 @@
 		23420AB21C92A34E009F40F9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 23420AB11C92A34E009F40F9 /* Assets.xcassets */; };
 		23420AB61C92A34E009F40F9 /* watchkit.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 23420A961C92A34E009F40F9 /* watchkit.app */; };
 		235AA1981CA2A272006143B9 /* StopsRowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 235AA1961CA2A055006143B9 /* StopsRowController.swift */; };
+		236842411CAD3B7600548923 /* StringShortener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 236842401CAD3B7600548923 /* StringShortener.swift */; };
+		236842441CAD3E1600548923 /* NearestStopBusInfoFetcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 236842431CAD3E1600548923 /* NearestStopBusInfoFetcher.m */; };
+		236FC3451CAE124E00207C15 /* INTUHeadingRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 236FC33C1CAE124E00207C15 /* INTUHeadingRequest.m */; };
+		236FC3461CAE124E00207C15 /* INTULocationManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 236FC33F1CAE124E00207C15 /* INTULocationManager.m */; };
+		236FC3471CAE124E00207C15 /* INTULocationRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 236FC3411CAE124E00207C15 /* INTULocationRequest.m */; };
+		236FC3481CAE124E00207C15 /* INTURequestIDGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = 236FC3441CAE124E00207C15 /* INTURequestIDGenerator.m */; };
+		236FC34C1CAFC98900207C15 /* EditStopDescriptionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 236FC34B1CAFC98900207C15 /* EditStopDescriptionViewController.m */; };
+		236FC34F1CAFDC4A00207C15 /* ShorteningLabel.m in Sources */ = {isa = PBXBuildFile; fileRef = 236FC34E1CAFDC4A00207C15 /* ShorteningLabel.m */; };
+		23AB59A31CB088960057688D /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 23AB59A21CB088960057688D /* Settings.bundle */; };
 		23C937981ACDF51E00EF1441 /* TimetableWebViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */; };
 		23D75E211AC1654B0068C808 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E201AC1654B0068C808 /* main.m */; };
 		23D75E241AC1654B0068C808 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E231AC1654B0068C808 /* AppDelegate.m */; };
@@ -136,6 +145,24 @@
 		23420AB11C92A34E009F40F9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		23420AB31C92A34E009F40F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		235AA1961CA2A055006143B9 /* StopsRowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StopsRowController.swift; sourceTree = "<group>"; };
+		236842401CAD3B7600548923 /* StringShortener.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StringShortener.swift; sourceTree = "<group>"; };
+		236842421CAD3E1600548923 /* NearestStopBusInfoFetcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NearestStopBusInfoFetcher.h; sourceTree = "<group>"; };
+		236842431CAD3E1600548923 /* NearestStopBusInfoFetcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NearestStopBusInfoFetcher.m; sourceTree = "<group>"; };
+		236FC33B1CAE124E00207C15 /* INTUHeadingRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = INTUHeadingRequest.h; sourceTree = "<group>"; };
+		236FC33C1CAE124E00207C15 /* INTUHeadingRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = INTUHeadingRequest.m; sourceTree = "<group>"; };
+		236FC33D1CAE124E00207C15 /* INTULocationManager+Internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "INTULocationManager+Internal.h"; sourceTree = "<group>"; };
+		236FC33E1CAE124E00207C15 /* INTULocationManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = INTULocationManager.h; sourceTree = "<group>"; };
+		236FC33F1CAE124E00207C15 /* INTULocationManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = INTULocationManager.m; sourceTree = "<group>"; };
+		236FC3401CAE124E00207C15 /* INTULocationRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = INTULocationRequest.h; sourceTree = "<group>"; };
+		236FC3411CAE124E00207C15 /* INTULocationRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = INTULocationRequest.m; sourceTree = "<group>"; };
+		236FC3421CAE124E00207C15 /* INTULocationRequestDefines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = INTULocationRequestDefines.h; sourceTree = "<group>"; };
+		236FC3431CAE124E00207C15 /* INTURequestIDGenerator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = INTURequestIDGenerator.h; sourceTree = "<group>"; };
+		236FC3441CAE124E00207C15 /* INTURequestIDGenerator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = INTURequestIDGenerator.m; sourceTree = "<group>"; };
+		236FC34A1CAFC98900207C15 /* EditStopDescriptionViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EditStopDescriptionViewController.h; sourceTree = "<group>"; };
+		236FC34B1CAFC98900207C15 /* EditStopDescriptionViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EditStopDescriptionViewController.m; sourceTree = "<group>"; };
+		236FC34D1CAFDC4A00207C15 /* ShorteningLabel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ShorteningLabel.h; sourceTree = "<group>"; };
+		236FC34E1CAFDC4A00207C15 /* ShorteningLabel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ShorteningLabel.m; sourceTree = "<group>"; };
+		23AB59A21CB088960057688D /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; name = Settings.bundle; path = ../Settings.bundle; sourceTree = "<group>"; };
 		23C937961ACDF51E00EF1441 /* TimetableWebViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TimetableWebViewController.h; sourceTree = "<group>"; };
 		23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TimetableWebViewController.m; sourceTree = "<group>"; };
 		23D75E1B1AC1654B0068C808 /* Bus Panda.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Bus Panda.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -264,6 +291,7 @@
 				23E3415F1CA68F5F00EDB581 /* BusesRowController.swift */,
 				23420AAD1C92A34E009F40F9 /* NotificationController.swift */,
 				23420AAF1C92A34E009F40F9 /* GlanceController.swift */,
+				236842401CAD3B7600548923 /* StringShortener.swift */,
 				23420AB11C92A34E009F40F9 /* Assets.xcassets */,
 				23420AB31C92A34E009F40F9 /* Info.plist */,
 				23420AA71C92A34E009F40F9 /* Supporting Files */,
@@ -278,6 +306,76 @@
 				23420AA81C92A34E009F40F9 /* PushNotificationPayload.apns */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		236FC33A1CAE124E00207C15 /* INTULocationManager */ = {
+			isa = PBXGroup;
+			children = (
+				236FC33B1CAE124E00207C15 /* INTUHeadingRequest.h */,
+				236FC33C1CAE124E00207C15 /* INTUHeadingRequest.m */,
+				236FC33D1CAE124E00207C15 /* INTULocationManager+Internal.h */,
+				236FC33E1CAE124E00207C15 /* INTULocationManager.h */,
+				236FC33F1CAE124E00207C15 /* INTULocationManager.m */,
+				236FC3401CAE124E00207C15 /* INTULocationRequest.h */,
+				236FC3411CAE124E00207C15 /* INTULocationRequest.m */,
+				236FC3421CAE124E00207C15 /* INTULocationRequestDefines.h */,
+				236FC3431CAE124E00207C15 /* INTURequestIDGenerator.h */,
+				236FC3441CAE124E00207C15 /* INTURequestIDGenerator.m */,
+			);
+			path = INTULocationManager;
+			sourceTree = "<group>";
+		};
+		23AB59A11CB087070057688D /* Resources & Models */ = {
+			isa = PBXGroup;
+			children = (
+				23D75E2E1AC1654B0068C808 /* Main.storyboard */,
+				23D75E331AC1654B0068C808 /* LaunchScreen.xib */,
+				23D75E311AC1654B0068C808 /* Images.xcassets */,
+				23AB59A21CB088960057688D /* Settings.bundle */,
+				23D75E251AC1654B0068C808 /* Bus-Panda.xcdatamodeld */,
+				23D75E841AC165E20068C808 /* Bus-Panda.entitlements */,
+			);
+			name = "Resources & Models";
+			sourceTree = "<group>";
+		};
+		23AB59A41CB08AFD0057688D /* Code */ = {
+			isa = PBXGroup;
+			children = (
+				23D75E221AC1654B0068C808 /* AppDelegate.h */,
+				23D75E231AC1654B0068C808 /* AppDelegate.m */,
+				23D75E281AC1654B0068C808 /* MasterViewController.h */,
+				23D75E291AC1654B0068C808 /* MasterViewController.m */,
+				23D75E2B1AC1654B0068C808 /* DetailViewController.h */,
+				23D75E2C1AC1654B0068C808 /* DetailViewController.m */,
+				23E1026C1C1D2A7100BEF3C6 /* UsefulTypes.h */,
+				233CD79D1C3BDB7D00E0B6D6 /* ErrorPresenter.h */,
+				23420A881C8EC7DD009F40F9 /* ErrorPresenter.swift */,
+				23063B031ACBF0BC00C063DC /* FavouritesCell.h */,
+				23063B041ACBF0BC00C063DC /* FavouritesCell.m */,
+				23063AF81AC7DAAC00C063DC /* ServiceDescriptionCell.h */,
+				23063AF91AC7DAAC00C063DC /* ServiceDescriptionCell.m */,
+				23E341671CA79F1A00EDB581 /* BusInfoFetcher.h */,
+				23E341681CA79F1A00EDB581 /* BusInfoFetcher.m */,
+				23E341791CABD2E900EDB581 /* StopInfoFetcher.h */,
+				23E3417A1CABD2E900EDB581 /* StopInfoFetcher.m */,
+				236842421CAD3E1600548923 /* NearestStopBusInfoFetcher.h */,
+				236842431CAD3E1600548923 /* NearestStopBusInfoFetcher.m */,
+				23C937961ACDF51E00EF1441 /* TimetableWebViewController.h */,
+				23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */,
+				23E102671C1D0B7C00BEF3C6 /* AddStopAbstractViewController.h */,
+				23E102681C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m */,
+				23063AF51AC7A4C800C063DC /* EnterStopIDViewController.h */,
+				23063AF61AC7A4C800C063DC /* EnterStopIDViewController.m */,
+				236FC34A1CAFC98900207C15 /* EditStopDescriptionViewController.h */,
+				236FC34B1CAFC98900207C15 /* EditStopDescriptionViewController.m */,
+				23E102641C1D0AA300BEF3C6 /* StopMapViewController.h */,
+				23E102651C1D0AA300BEF3C6 /* StopMapViewController.m */,
+				236FC34D1CAFDC4A00207C15 /* ShorteningLabel.h */,
+				236FC34E1CAFDC4A00207C15 /* ShorteningLabel.m */,
+				23E1026D1C1D3A8700BEF3C6 /* StopLocation.h */,
+				23E1026E1C1D3A8700BEF3C6 /* StopLocation.m */,
+			);
+			name = Code;
 			sourceTree = "<group>";
 		};
 		23D75E121AC1654B0068C808 = {
@@ -307,38 +405,8 @@
 		23D75E1D1AC1654B0068C808 /* Bus Panda */ = {
 			isa = PBXGroup;
 			children = (
-				23D75E221AC1654B0068C808 /* AppDelegate.h */,
-				23D75E231AC1654B0068C808 /* AppDelegate.m */,
-				23D75E281AC1654B0068C808 /* MasterViewController.h */,
-				23D75E291AC1654B0068C808 /* MasterViewController.m */,
-				23D75E2B1AC1654B0068C808 /* DetailViewController.h */,
-				23D75E2C1AC1654B0068C808 /* DetailViewController.m */,
-				23E1026C1C1D2A7100BEF3C6 /* UsefulTypes.h */,
-				233CD79D1C3BDB7D00E0B6D6 /* ErrorPresenter.h */,
-				23420A881C8EC7DD009F40F9 /* ErrorPresenter.swift */,
-				23063B031ACBF0BC00C063DC /* FavouritesCell.h */,
-				23063B041ACBF0BC00C063DC /* FavouritesCell.m */,
-				23063AF81AC7DAAC00C063DC /* ServiceDescriptionCell.h */,
-				23063AF91AC7DAAC00C063DC /* ServiceDescriptionCell.m */,
-				23E341671CA79F1A00EDB581 /* BusInfoFetcher.h */,
-				23E341681CA79F1A00EDB581 /* BusInfoFetcher.m */,
-				23E341791CABD2E900EDB581 /* StopInfoFetcher.h */,
-				23E3417A1CABD2E900EDB581 /* StopInfoFetcher.m */,
-				23C937961ACDF51E00EF1441 /* TimetableWebViewController.h */,
-				23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */,
-				23E102671C1D0B7C00BEF3C6 /* AddStopAbstractViewController.h */,
-				23E102681C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m */,
-				23063AF51AC7A4C800C063DC /* EnterStopIDViewController.h */,
-				23063AF61AC7A4C800C063DC /* EnterStopIDViewController.m */,
-				23E102641C1D0AA300BEF3C6 /* StopMapViewController.h */,
-				23E102651C1D0AA300BEF3C6 /* StopMapViewController.m */,
-				23E1026D1C1D3A8700BEF3C6 /* StopLocation.h */,
-				23E1026E1C1D3A8700BEF3C6 /* StopLocation.m */,
-				23D75E311AC1654B0068C808 /* Images.xcassets */,
-				23D75E331AC1654B0068C808 /* LaunchScreen.xib */,
-				23D75E2E1AC1654B0068C808 /* Main.storyboard */,
-				23D75E251AC1654B0068C808 /* Bus-Panda.xcdatamodeld */,
-				23D75E841AC165E20068C808 /* Bus-Panda.entitlements */,
+				23AB59A41CB08AFD0057688D /* Code */,
+				23AB59A11CB087070057688D /* Resources & Models */,
 				23D75E1E1AC1654B0068C808 /* Supporting Files */,
 			);
 			name = "Bus Panda";
@@ -379,6 +447,7 @@
 			children = (
 				23D75E4B1AC165A70068C808 /* HTMLReader */,
 				23E3416E1CABACB800EDB581 /* MGSwipeTableCell */,
+				236FC33A1CAE124E00207C15 /* INTULocationManager */,
 			);
 			name = "Third Party";
 			sourceTree = "<group>";
@@ -547,6 +616,9 @@
 						CreatedOnToolsVersion = 6.2;
 						DevelopmentTeam = XT4V976D8Y;
 						SystemCapabilities = {
+							com.apple.BackgroundModes = {
+								enabled = 1;
+							};
 							com.apple.GameCenter = {
 								enabled = 0;
 							};
@@ -611,6 +683,7 @@
 				23D75E301AC1654B0068C808 /* Main.storyboard in Resources */,
 				23D75E351AC1654B0068C808 /* LaunchScreen.xib in Resources */,
 				23D75E321AC1654B0068C808 /* Images.xcassets in Resources */,
+				23AB59A31CB088960057688D /* Settings.bundle in Resources */,
 				23E341761CABACB800EDB581 /* LICENSE in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -637,6 +710,7 @@
 				23420AAA1C92A34E009F40F9 /* StopsInterfaceController.swift in Sources */,
 				23E341641CA6A10600EDB581 /* BusesInterfaceController.swift in Sources */,
 				23420AB01C92A34E009F40F9 /* GlanceController.swift in Sources */,
+				236842411CAD3B7600548923 /* StringShortener.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -645,7 +719,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				23D75E781AC165A70068C808 /* HTMLEntities.m in Sources */,
+				236842441CAD3E1600548923 /* NearestStopBusInfoFetcher.m in Sources */,
 				23D75E7C1AC165A70068C808 /* HTMLPreprocessedInputStream.m in Sources */,
+				236FC34C1CAFC98900207C15 /* EditStopDescriptionViewController.m in Sources */,
 				23E341691CA79F1A00EDB581 /* BusInfoFetcher.m in Sources */,
 				23D75E811AC165A70068C808 /* HTMLTokenizer.m in Sources */,
 				23063AF71AC7A4C800C063DC /* EnterStopIDViewController.m in Sources */,
@@ -658,14 +734,18 @@
 				23D75E751AC165A70068C808 /* HTMLDocumentType.m in Sources */,
 				23D75E7B1AC165A70068C808 /* HTMLParser.m in Sources */,
 				23063AFA1AC7DAAC00C063DC /* ServiceDescriptionCell.m in Sources */,
+				236FC34F1CAFDC4A00207C15 /* ShorteningLabel.m in Sources */,
 				23E102691C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m in Sources */,
+				236FC3481CAE124E00207C15 /* INTURequestIDGenerator.m in Sources */,
 				23E341781CABACB800EDB581 /* MGSwipeTableCell.m in Sources */,
 				23D75E761AC165A70068C808 /* HTMLElement.m in Sources */,
 				23D75E771AC165A70068C808 /* HTMLEncoding.m in Sources */,
 				23E3417B1CABD2E900EDB581 /* StopInfoFetcher.m in Sources */,
 				23E102661C1D0AA300BEF3C6 /* StopMapViewController.m in Sources */,
+				236FC3451CAE124E00207C15 /* INTUHeadingRequest.m in Sources */,
 				23D75E7A1AC165A70068C808 /* HTMLOrderedDictionary.m in Sources */,
 				23063B051ACBF0BC00C063DC /* FavouritesCell.m in Sources */,
+				236FC3461CAE124E00207C15 /* INTULocationManager.m in Sources */,
 				23E1026F1C1D3A8700BEF3C6 /* StopLocation.m in Sources */,
 				23D75E831AC165A70068C808 /* NSString+HTMLEntities.m in Sources */,
 				23C937981ACDF51E00EF1441 /* TimetableWebViewController.m in Sources */,
@@ -674,6 +754,7 @@
 				23D75E791AC165A70068C808 /* HTMLNode.m in Sources */,
 				23D75E7E1AC165A70068C808 /* HTMLSerialization.m in Sources */,
 				23D75E801AC165A70068C808 /* HTMLTextNode.m in Sources */,
+				236FC3471CAE124E00207C15 /* INTULocationRequest.m in Sources */,
 				23D75E271AC1654B0068C808 /* Bus-Panda.xcdatamodeld in Sources */,
 				23D75E241AC1654B0068C808 /* AppDelegate.m in Sources */,
 				23E341631CA6915100EDB581 /* RouteColours.swift in Sources */,
@@ -752,7 +833,7 @@
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 2.1;
+				WATCHOS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Debug;
 		};
@@ -769,7 +850,7 @@
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 2.1;
+				WATCHOS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Release;
 		};
@@ -851,7 +932,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.2;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -887,7 +968,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.2;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -904,7 +985,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				INFOPLIST_FILE = Bus/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.2;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -923,7 +1004,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				INFOPLIST_FILE = Bus/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.2;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda";
 				PRODUCT_NAME = "$(TARGET_NAME)";

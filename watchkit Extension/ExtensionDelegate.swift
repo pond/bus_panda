@@ -17,35 +17,33 @@ class ExtensionDelegate: NSObject, WKExtensionDelegate, WCSessionDelegate
     // MARK: - WCSession support.
     // ========================================================================
 
-    func applicationDidFinishLaunching()
+    override init()
     {
+        super.init()
+
         if WCSession.isSupported()
         {
             let session = WCSession.defaultSession()
 
             session.delegate = self
             session.activateSession()
+        }
+    }
 
-            updateAllStopsFrom( session.receivedApplicationContext )
+    func applicationDidFinishLaunching()
+    {
+        if WCSession.isSupported()
+        {
+            updateAllStopsFrom( WCSession.defaultSession().receivedApplicationContext )
         }
     }
 
     func applicationDidBecomeActive()
     {
-        // Restart any tasks that were paused (or not yet started) while the 
-        // application was inactive. If the application was previously in the
-        // background, optionally refresh the user interface.
     }
 
     func applicationWillResignActive()
     {
-        // Sent when the application is about to move from active to inactive 
-        // state. This can occur for certain types of temporary interruptions
-        // (such as an incoming phone call or SMS message) or when the user
-        // quits the application and it begins the transition to the background
-        // state.
-        //
-        // Use this method to pause ongoing tasks, disable timers, etc.
     }
 
     func presentError(
@@ -215,6 +213,17 @@ class ExtensionDelegate: NSObject, WKExtensionDelegate, WCSessionDelegate
     // MARK: - WCSessionDelegate and related code
     // ========================================================================
 
+    func session( session: WCSession,
+                  activationDidCompleteWithState activationState: WCSessionActivationState,
+                  error: NSError? )
+    {
+    }
+
+    func session( session: WCSession, didReceiveApplicationContext applicationContext: [ String : AnyObject ] )
+    {
+        updateAllStopsFrom( applicationContext )
+    }
+
     func updateAllStopsFrom( dictionary: [ String : AnyObject ] )
     {
         let stops = dictionary[ "allStops" ] as? NSArray
@@ -222,14 +231,12 @@ class ExtensionDelegate: NSObject, WKExtensionDelegate, WCSessionDelegate
         dispatch_async( dispatch_get_main_queue() )
         {
             let stopsInterfaceController = WKExtension.sharedExtension().rootInterfaceController
-                as! StopsInterfaceController
+                as? StopsInterfaceController
 
-            stopsInterfaceController.updateStops( stops )
+            if ( stopsInterfaceController != nil )
+            {
+                stopsInterfaceController!.updateStops( stops )
+            }
         }
-    }
-
-    func session( session: WCSession, didReceiveApplicationContext applicationContext: [ String : AnyObject ] )
-    {
-        updateAllStopsFrom( applicationContext )
     }
 }

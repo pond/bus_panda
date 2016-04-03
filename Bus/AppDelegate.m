@@ -12,6 +12,7 @@
 #import "DetailViewController.h"
 #import "MasterViewController.h"
 #import "BusInfoFetcher.h"
+#import "NearestStopBusInfoFetcher.h"
 
 @interface AppDelegate ()
 
@@ -31,13 +32,17 @@
 - ( BOOL )          application: ( UIApplication * ) application
   didFinishLaunchingWithOptions: ( NSDictionary  * ) launchOptions
 {
+    NSUserDefaults * defaults = [ NSUserDefaults standardUserDefaults ];
+
     // Boilerplate master/detail view setup
 
     UISplitViewController  * splitViewController  = ( UISplitViewController * ) self.window.rootViewController;
     UINavigationController * navigationController = splitViewController.viewControllers.lastObject;
 
     navigationController.topViewController.navigationItem.leftBarButtonItem = splitViewController.displayModeButtonItem;
-    splitViewController.delegate = self;
+
+    splitViewController.delegate             = self;
+    splitViewController.preferredDisplayMode = UISplitViewControllerDisplayModeAllVisible;
 
     UINavigationController * masterNavigationController = splitViewController.viewControllers.firstObject;
     MasterViewController   * masterViewController       = ( MasterViewController * ) masterNavigationController.topViewController;
@@ -59,11 +64,29 @@
 
     [ self clearCachedStops ];
 
+    // On a clean install, some iOS versions may not read the Settings bundle
+    // into the NSUserDefaults unless the user has by happenstance manually
+    // launched the system Settings application first. Work around this in a
+    // clumsy way which involves basically duplicating the defaults in the
+    // settings bundle. There are some complex attempts to work around this on
+    // e.g. StackOverflow but they all have issues with e.g. localized strings,
+    // changes of iOS version, BOOL vs NSString values and so-on.
+    //
+    id shouldNotBeNil = [ defaults objectForKey: @"shorten_names_preference" ];
+
+    if ( shouldNotBeNil == nil )
+    {
+        [ defaults setBool: YES forKey: @"shorten_names_preference" ];
+
+        // ...and in future, add any more settings here too.
+
+        [ defaults synchronize ];
+    }
+
     // If this is the first time the application has ever been run, set up a
     // collection of predefined useful stops.
     //
-    NSUserDefaults * defaults     = [ NSUserDefaults standardUserDefaults ];
-    BOOL             hasRunBefore = [ defaults boolForKey: @"hasRunBefore" ];
+    BOOL hasRunBefore = [ defaults boolForKey: @"hasRunBefore" ];
 
     if ( hasRunBefore != YES )
     {
@@ -108,7 +131,7 @@
         //            }
         //        ];
     }
-    
+
     // Wake up the WatchKit extension and this applicaftion via WCSession.
     //
     if ( [ WCSession isSupported ] )
@@ -248,7 +271,7 @@
 {
     if ( session.paired && session.watchAppInstalled )
     {
-        UISplitViewController  * splitViewController  = ( UISplitViewController * ) self.window.rootViewController;
+        UISplitViewController  * splitViewController        = ( UISplitViewController * ) self.window.rootViewController;
         UINavigationController * masterNavigationController = splitViewController.viewControllers.firstObject;
         MasterViewController   * masterViewController       = ( MasterViewController * ) masterNavigationController.topViewController;
 
@@ -279,6 +302,18 @@
                     replyHandler( @{ @"allBuses": allBuses } );
                 }
             ];
+        }
+    }
+    else if ( [ action isEqualToString: @"getNearest" ] == YES )
+    {
+        @try
+        {
+            NearestStopBusInfoFetcher * fetcher = [ [ NearestStopBusInfoFetcher alloc ] init ];
+            [ fetcher beginWithWatchOSReplyHandler: replyHandler ];
+        }
+        @catch ( NSException * exception )
+        {
+            replyHandler( @{ @"error": @"Bus Panda was unable to read your location" } );
         }
     }
     else

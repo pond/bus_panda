@@ -10,8 +10,6 @@ import WatchKit
 import WatchConnectivity
 import Foundation
 
-let MAX_CHARACTERS_PER_LINE = 17
-
 @available( iOS 8.2, * )
 class StopsInterfaceController: WKInterfaceController
 {
@@ -19,26 +17,20 @@ class StopsInterfaceController: WKInterfaceController
     // MARK: - Lifecycle
     // ========================================================================
 
-    override func awakeWithContext( context: AnyObject? )
-    {
-        super.awakeWithContext( context )
-        
-        // TODO: Configure interface objects here.
-    }
-
     // This method is called when watch view controller is about to be
     // visible to user
     //
     override func willActivate()
     {
         super.willActivate()
-    }
 
-    // This method is called when watch view controller is no longer visible
-    //
-    override func didDeactivate()
-    {
-        super.didDeactivate()
+        if WCSession.isSupported()
+        {
+            let session  = WCSession.defaultSession()
+            let delegate = WKExtension.sharedExtension().delegate as! ExtensionDelegate
+
+            delegate.updateAllStopsFrom( session.receivedApplicationContext )
+        }
     }
 
     // ========================================================================
@@ -68,9 +60,11 @@ class StopsInterfaceController: WKInterfaceController
     //
     func updateStops( allStops: NSArray? )
     {
-        let stops = ( allStops == nil ) ? NSArray() : allStops!
+        let stringShortener = StringShortener()
+        let stops           = ( allStops == nil ) ? NSArray() : allStops!
 
         stopsTable.setNumberOfRows( stops.count, withRowType: "StopsRow" )
+        stringShortener.maxCharactersPerLine = 17
 
         for index in 0 ..< stopsTable.numberOfRows
         {
@@ -80,7 +74,7 @@ class StopsInterfaceController: WKInterfaceController
             let stopID          = dictionary[ "stopID"          ] as! String
             var stopDescription = dictionary[ "stopDescription" ] as! String
 
-            stopDescription = shortenDescription( stopDescription )
+            stopDescription = stringShortener.shortenDescription( stopDescription )
 
             let stopInfo: [ String: String ] =
             [
@@ -92,114 +86,4 @@ class StopsInterfaceController: WKInterfaceController
         }
     }
 
-    // ========================================================================
-    // MARK: - String processing
-    // ========================================================================
-
-    // Given a String, split it at spaces into an array of words. For all words
-    // more than two characters long, remove English vowels ("AEIOU"). Return
-    // the result as a String by re-joining the words with spaces.
-    //
-    func removeVowels( str: String ) -> String
-    {
-        let words                = str.componentsSeparatedByString( " " )
-        var newWords: [ String ] = []
-
-        for word in words
-        {
-            if ( word.characters.count > 2 )
-            {
-                newWords.append(
-                    String(
-                        word.characters.filter
-                        {
-                            !"aeiou".characters.contains( $0 )
-                        }
-                    )
-                )
-            }
-            else
-            {
-                newWords.append( word )
-            }
-        }
-
-        return newWords.joinWithSeparator( " " )
-    }
-
-    // Given a String ("from:"), replace words using a Dictionary ("using:")
-    // of search (keys) and replace (values) strings, using case insensitive
-    // searches. Returns a new String which is the result of the removals.
-    //
-    func replaceStrings( from: String, using: [ String: String ] ) -> String
-    {
-        var newString = from
-
-        for ( search, replace ) in using
-        {
-            newString = newString.stringByReplacingOccurrencesOfString(
-                search,
-                withString: replace,
-                options:    .CaseInsensitiveSearch,
-                range:      nil
-            )
-        }
-
-        return newString
-    }
-
-    // Given a String describing a bus stop, shorten or entirely remove various
-    // common words (e.g. "Street" to "St", or " near " removed), possibly
-    // removing vowels if need be, to if possible fit into a width defined by
-    // the MAX_CHARACTERS_PER_LINE constant (see top of file). Returns a new
-    // String containing the result.
-    //
-    func shortenDescription( description: String ) -> String
-    {
-        var newDescription = description
-
-        if ( newDescription.characters.count > MAX_CHARACTERS_PER_LINE )
-        {
-            // Common word abbreviations
-
-            newDescription = replaceStrings(
-                newDescription,
-                using: [
-                    " Street":  " St",
-                    " Road":    " Rd",
-                    " Terrace": " Tce",
-                    " Place":   " Plc",
-                    " at ":     " @ "
-                ]
-            )
-        }
-
-        if ( newDescription.characters.count > MAX_CHARACTERS_PER_LINE )
-        {
-            // If it's still too long, start again but be much more aggressive
-            // by removing, not just abbreivating, redundant words.
-
-            newDescription = replaceStrings(
-                description,
-                using: [
-                    " Street":  "",
-                    " Road":    "",
-                    " Terrace": "",
-                    " Place":   "",
-                    " at ":     " ",
-                    " - ":      " ",
-                    " near ":   " "
-                ]
-            )
-        }
-
-        if ( newDescription.characters.count > MAX_CHARACTERS_PER_LINE )
-        {
-            // Again, if still too long, remove vowels.
-
-            newDescription = removeVowels( newDescription )
-        }
-
-        return newDescription
-    }
 }

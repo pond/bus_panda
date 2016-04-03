@@ -74,17 +74,17 @@ class BusesInterfaceController: WKInterfaceController
                     ( busInfo: [ String: AnyObject ] ) -> Void in
 
                     let sections = busInfo[ "allBuses" ] as! NSArray
-                    let stops    = [] as NSMutableArray
+                    let buses    = [] as NSMutableArray
 
                     for section in sections
                     {
                         let services: NSMutableArray = section[ "services" ] as! NSMutableArray
 
-                        stops.addObjectsFromArray( services as [AnyObject] )
-                        if ( stops.count > BusesInterfaceController.maximumListEntries ) { break }
+                        buses.addObjectsFromArray( services as [AnyObject] )
+                        if ( buses.count > BusesInterfaceController.maximumListEntries ) { break }
                     }
 
-                    self.updateBuses( stops )
+                    self.updateBuses( buses )
                     self.hideSpinner()
                 },
                 errorHandler:
@@ -133,21 +133,6 @@ class BusesInterfaceController: WKInterfaceController
                 controller: self
             )
         }
-    }
-
-    // This method is called when watch view controller is about to be visible
-    // to user
-    //
-    override func willActivate()
-    {
-        super.willActivate()
-    }
-
-    // This method is called when watch view controller is no longer visible
-    //
-    override func didDeactivate()
-    {
-        super.didDeactivate()
     }
 
     // ========================================================================

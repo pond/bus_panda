@@ -356,17 +356,27 @@
         stopCoordinate.latitude  = [ stopInfo[ @"latitude"  ] doubleValue ];
         stopCoordinate.longitude = [ stopInfo[ @"longitude" ] doubleValue ];
 
-        if (
-               MKMapRectContainsPoint
-               (
-                   self.mapView.visibleMapRect,
-                   MKMapPointForCoordinate( stopCoordinate )
-               )
-           )
-        {
+        // 2016-04-03 (ADH): Although this seems a reasonable optimisation,
+        // in most cases having the full circle around the current location
+        // populated is useful and saves time if the user pans around at all
+        // away from that. It's also wasteful, given the number of times that
+        // this "add cached stops" method gets called in practice due to
+        // location-updated callbacks triggering so often, to have to keep
+        // asking over and over if the map contains a stopped cache location
+        // and only add it if so. Better to add it so "stopsAddedToMap" lets
+        // us loop early and avoid a lot of repeated calculation.
+
+//        if (
+//               MKMapRectContainsPoint
+//               (
+//                   self.mapView.visibleMapRect,
+//                   MKMapPointForCoordinate( stopCoordinate )
+//               )
+//           )
+//        {
             [ self.mapView addAnnotation: stopLocations[ stopID ][ @"annotation" ] ];
             self.stopsAddedToMap[ stopID ] = @( YES );
-        }
+//        }
     }
 }
 

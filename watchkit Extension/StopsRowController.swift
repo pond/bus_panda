@@ -9,8 +9,8 @@
 import WatchKit
 
 @available( iOS 8.2, * )
-class StopsRowController: NSObject {
-
+class StopsRowController: NSObject
+{
     @IBOutlet var idLabel:          WKInterfaceLabel!
     @IBOutlet var descriptionLabel: WKInterfaceLabel!
 

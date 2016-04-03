@@ -9,8 +9,8 @@
 import WatchKit
 
 @available( iOS 8.2, * )
-class BusesRowController: NSObject {
-
+class BusesRowController: NSObject
+{
     @IBOutlet var nameLabel:             WKInterfaceLabel!
     @IBOutlet var timeLabel:             WKInterfaceLabel!
     @IBOutlet var numberLabel:           WKInterfaceLabel!

@@ -11,8 +11,12 @@
 #import "MasterViewController.h"
 #import "DetailViewController.h"
 #import "EnterStopIDViewController.h"
+#import "EditStopDescriptionViewController.h"
 #import "StopMapViewController.h"
 #import "FavouritesCell.h"
+
+#define STOP_IS_NOT_PREFERRED_VALUE @0
+#define STOP_IS_PREFERRED_VALUE     @1
 
 @implementation MasterViewController
 
@@ -67,6 +71,14 @@
                                                 selector: @selector( updateWatch: )
                                                     name: NSManagedObjectContextObjectsDidChangeNotification
                                                   object: [ [ UIApplication sharedApplication ] delegate ] ];
+
+    // Watch for user defaults changes as we'll need to reload the table data
+    // to reflect things like a 'shorten names to fit' settings change.
+    //
+    [ [ NSNotificationCenter defaultCenter ] addObserver: self
+                                                selector: @selector( defaultsDidChange: )
+                                                    name: NSUserDefaultsDidChangeNotification
+                                                  object: nil ];
 
     // Call this now to keep the Watch as up to date as possible, just in case
     // there's already a local or remote populated data store available.
@@ -183,14 +195,66 @@
     [ self presentViewController: actions animated: YES completion: nil ];
 }
 
+- ( void ) openMoreOptionsModalFrom: ( id ) sender
+                          forObject: ( NSManagedObject * ) object
+{
+    UIAlertController * actions =
+    [
+        UIAlertController alertControllerWithTitle: nil
+                                           message: nil
+                                    preferredStyle: UIAlertControllerStyleActionSheet
+    ];
+
+    UIAlertAction * editAction =
+    [
+        UIAlertAction actionWithTitle: @"Edit Description"
+                                style: UIAlertActionStyleDefault
+                              handler: ^ ( UIAlertAction * action )
+        {
+            EditStopDescriptionViewController * editStopDescriptionController =
+            [
+                self.storyboard instantiateViewControllerWithIdentifier: @"EditStopDescription"
+            ];
+
+            editStopDescriptionController.sourceObject = object;
+
+            [ self openSpecificModal: editStopDescriptionController ];
+        }
+    ];
+
+    UIAlertAction * cancel =
+    [
+        UIAlertAction actionWithTitle: @"Cancel"
+                                style: UIAlertActionStyleCancel
+                              handler: ^ ( UIAlertAction * action )
+        {
+            [ actions dismissViewControllerAnimated: ( YES ) completion: nil ];
+        }
+    ];
+
+    [ actions addAction: editAction ];
+    [ actions addAction: cancel     ];
+
+    // On the iPhone (at the time of writing) modal action sheets implicitly
+    // always pop up over the whole screen. On an iPad, you need to tell the
+    // system where to ground the popover - in this case the "+" button that
+    // caused the action method here to be run in the first place.
+    //
+    actions.popoverPresentationController.barButtonItem = sender;
+
+    [ self presentViewController: actions animated: YES completion: nil ];
+}
+
 #pragma mark - Adding and modifying favourites
 
 - ( void ) addFavourite: ( NSString * ) stopID
         withDescription: ( NSString * ) stopDescription
 {
-    NSManagedObjectContext * context          = self.fetchedResultsController.managedObjectContext;
-    NSEntityDescription    * entity           = self.fetchedResultsController.fetchRequest.entity;
-    NSManagedObject        * newManagedObject =
+    BOOL                     oldShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
+    NSManagedObjectContext * context            = self.fetchedResultsController.managedObjectContext;
+    NSEntityDescription    * entity             = self.fetchedResultsController.fetchRequest.entity;
+    NSError                * error              = nil;
+    NSManagedObject        * newManagedObject   =
     [
         NSEntityDescription insertNewObjectForEntityForName: entity.name
                                      inManagedObjectContext: context
@@ -206,8 +270,6 @@
 
     // Save the context.
 
-    NSError * error = nil;
-
     if ( ! [ context save: &error ] )
     {
         [
@@ -217,12 +279,39 @@
                                   andHandler: ^( UIAlertAction *action ) {}
         ];
     }
+
+    // Avoid animation issues if the section headers appear or dispppear.
+    //
+    BOOL newShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
+    if ( oldShowSectionFlag != newShowSectionFlag ) [ self.tableView reloadData ];
+}
+
+- ( void ) editFavourite: ( NSManagedObject * ) object
+      settingDescription: ( NSString        * ) stopDescription;
+{
+    NSError                * error   = nil;
+    NSManagedObjectContext * context = [ self.fetchedResultsController managedObjectContext ];
+
+    [ object setValue: stopDescription forKey: @"stopDescription" ];
+
+    // Save the context.
+
+    if ( ! [ context save: &error ] )
+    {
+        [
+            ErrorPresenter showModalAlertFor: self
+                                   withError: error
+                                       title: NSLocalizedString( @"Could not update item", "Error message shown when changing a favourite stop's description fails" )
+                                  andHandler: ^( UIAlertAction *action ) {}
+        ];
+    }
 }
 
 - ( void ) setPreferredFlagOf: ( NSManagedObject * ) object to: ( NSNumber * ) newFlagValue
 {
-    NSManagedObjectContext * context = [ self.fetchedResultsController managedObjectContext ];
-    NSError                * error   = nil;
+    BOOL                     oldShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
+    NSManagedObjectContext * context            = [ self.fetchedResultsController managedObjectContext ];
+    NSError                * error              = nil;
 
     [ object setValue: newFlagValue forKey: @"preferred" ];
 
@@ -236,14 +325,62 @@
         ];
     }
 
-    // Things go wrong if the number of table sections drops to 1 and
-    // we try to hide the section title; but otherwise, don't reload
-    // everything; allow iOS to animate the changes.
+    // Avoid animation issues if the section headers appear or dispppear.
+    //
+    BOOL newShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
+    if ( oldShowSectionFlag != newShowSectionFlag ) [ self.tableView reloadData ];
 
-    if ( [ self numberOfSectionsInTableView: self.tableView ] == 1 )
+    // If there's no section header than (A) is there only one favourite
+    // stop, (B) is that stop now preferred and (C) have we detected this
+    // condition before? If not, tell the user what's going on.
+    //
+    NSUserDefaults * defaults = [ NSUserDefaults standardUserDefaults ];
+
+    if (
+           newShowSectionFlag == NO &&
+           self.fetchedResultsController.fetchedObjects.count == 1 &&
+           [ [ self.fetchedResultsController.fetchedObjects[ 0 ] valueForKey: @"preferred" ] isEqual: STOP_IS_PREFERRED_VALUE ] &&
+           [ defaults boolForKey: @"haveShownSingleSectionWarning" ] != YES
+       )
     {
-        [ self.tableView reloadData ];
+        [ defaults setBool: YES forKey: @"haveShownSingleSectionWarning" ];
+        [ defaults synchronize ];
+
+        UIAlertController * warning = [ UIAlertController alertControllerWithTitle: @"You have only one preferred and favourite stop"
+                                                                           message: @"When you have a mixture of preferred and normal stops, they show up in different sections.\n\nOtherwise, you only see one list."
+                                                                    preferredStyle: UIAlertControllerStyleAlert ];
+
+        UIAlertAction * action = [ UIAlertAction actionWithTitle: @"Got it!"
+                                                           style: UIAlertActionStyleDefault
+                                                         handler: nil ];
+
+        [ warning addAction: action ];
+        [ self presentViewController: warning animated: YES completion: nil ];
     }
+}
+
+- ( void ) deleteObject: ( NSManagedObject * ) object
+{
+    BOOL                     oldShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
+    NSManagedObjectContext * context            = [ self.fetchedResultsController managedObjectContext ];
+    NSError                * error              = nil;
+
+    [ context deleteObject: object ];
+
+    if ( ! [ context save: &error ] )
+    {
+        [
+            ErrorPresenter showModalAlertFor: self
+                                   withError: error
+                                       title: NSLocalizedString( @"Could not delete favourite", "Error message shown when favourite stop deletion fails" )
+                                  andHandler: ^( UIAlertAction *action ) {}
+        ];
+    }
+
+    // Avoid animation issues if the section headers appear or dispppear.
+    //
+    BOOL newShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
+    if ( oldShowSectionFlag != newShowSectionFlag ) [ self.tableView reloadData ];
 }
 
 #pragma mark - Segues
@@ -265,6 +402,23 @@
 
 #pragma mark - Table View
 
+// Support method - returns YES if the section header should be shown for the
+// table, else NO. The idea is to hide the section header when only one section
+// is present, because all bus stops are either normal or preferred. Things go
+// wrong in that case because we don't easily know e.g. the section title and
+// it looks odd to just have a one-section table anyway.
+//
+// In the case where the user has just one new favourite stop and toggles it to
+// a preferred state, it is a bit strange that no apparent change happens to
+// the UI. To avoid that confusion, this specific special case is trapped with
+// a one-time-only alert to let the user know what's happening.
+//
+- ( BOOL ) shouldShowSectionHeaderFor: ( UITableView * ) tableView
+{
+    NSInteger sectionCount = [ self numberOfSectionsInTableView: tableView ];
+    return ( sectionCount < 2 ) ? NO : YES;
+}
+
 - ( NSInteger ) numberOfSectionsInTableView: ( UITableView * ) tableView
 {
     return [ [ self.fetchedResultsController sections ] count ];
@@ -282,7 +436,7 @@
 {
     // Show no section title unless there are at least two sections.
 
-    if ( [ self numberOfSectionsInTableView: tableView ] == 1 ) return @"";
+    if ( [ self shouldShowSectionHeaderFor: tableView ] == NO ) return @"";
 
     switch( section )
     {
@@ -299,8 +453,18 @@
 {
     // Show no section title unless there are at least two sections.
 
-    if ( [ self numberOfSectionsInTableView: tableView ] == 1 ) return 0;
+    if ( [ self shouldShowSectionHeaderFor: tableView ] == NO ) return 0;
     else                                                        return 32;
+}
+
+- ( void )    tableView: ( UITableView * ) tableView
+  willDisplayHeaderView: ( UIView      * ) view
+             forSection: ( NSInteger     ) section
+{
+    // Slightly darken the near-invisible section header background colour.
+
+    UITableViewHeaderFooterView * hfView = ( UITableViewHeaderFooterView * ) view;
+    hfView.backgroundView.backgroundColor = [ UIColor colorWithRed: 0.9 green: 0.9 blue: 0.9 alpha: 1 ];
 }
 
 - ( UITableViewCell * ) tableView: ( UITableView * ) tableView
@@ -326,66 +490,81 @@
 {
     if ( editingStyle == UITableViewCellEditingStyleDelete )
     {
-        NSManagedObjectContext * context = [ self.fetchedResultsController managedObjectContext ];
-        [ context deleteObject: [ self.fetchedResultsController objectAtIndexPath: indexPath ] ];
+        NSManagedObject * object = [ self.fetchedResultsController objectAtIndexPath: indexPath ];
 
-        NSError * error = nil;
-
-        if ( ! [ context save: &error ] )
+        if ( object != nil )
         {
-            [
-                ErrorPresenter showModalAlertFor: self
-                                       withError: error
-                                           title: NSLocalizedString( @"Could not delete favourite", "Error message shown when favourite stop deletion fails" )
-                                      andHandler: ^( UIAlertAction *action ) {}
-            ];
+            [ self deleteObject: object ];
         }
     }
 }
 
 - ( void ) configureCell: ( FavouritesCell * ) cell atIndexPath: ( NSIndexPath * ) indexPath
 {
-    NSManagedObject * object  = [ self.fetchedResultsController objectAtIndexPath: indexPath ];
+    NSManagedObject * object          = [ self.fetchedResultsController objectAtIndexPath: indexPath ];
+    NSString        * stopID          = [ [ object valueForKey: @"stopID"          ] description ];
+    NSString        * stopDescription = [ [ object valueForKey: @"stopDescription" ] description ];
 
-    cell.stopID.text          = [ [ object valueForKey: @"stopID"          ] description ];
-    cell.stopDescription.text = [ [ object valueForKey: @"stopDescription" ] description ];
+    cell.stopID.text          = stopID;
+    cell.stopDescription.text = stopDescription;
 
     // MGSwipeTableCell extensions - see:
     //
     // https://github.com/MortimerGoro/MGSwipeTableCell
 
-    MGSwipeButton * delete = [ MGSwipeButton buttonWithTitle: NSLocalizedString( @"Delete", "Title of button in a table row for a bus stop, which deletes that stop" )
-                                             backgroundColor: [ UIColor redColor ] ];
+    MGSwipeButton * delete =
+    [
+        MGSwipeButton buttonWithTitle: NSLocalizedString( @"Delete", "Title of button in a table row for a bus stop, which deletes that stop" )
+                      backgroundColor: [ UIColor redColor ]
+                             callback:  ^ BOOL ( MGSwipeTableCell * sender )
+        {
+            [ self deleteObject: object ];
+            return YES; // Yes => do slide the table row back to normal position
+        }
+    ];
+
+    MGSwipeButton * more =
+    [
+        MGSwipeButton buttonWithTitle: NSLocalizedString( @"More...", "Title of button in a table row for a bus stop, which shows extra options" )
+                      backgroundColor: [ UIColor grayColor ]
+                             callback: ^ BOOL ( MGSwipeTableCell * sender )
+        {
+            [ self openMoreOptionsModalFrom: self.navigationItem.rightBarButtonItem
+                                  forObject: object ];
+
+            return YES; // Yes => do slide the table row back to normal position
+        }
+    ];
 
     MGSwipeButton * prefer =
     [
         MGSwipeButton buttonWithTitle: NSLocalizedString( @"Prefer", "Title of button in a table row for a bus stop, which flags that stop as 'preferred'" )
-                      backgroundColor: [ UIColor greenColor ]
+                      backgroundColor: [ UIColor colorWithRed: 0 green: 0.8 blue: 0 alpha: 1 ]
                              callback: ^ BOOL ( MGSwipeTableCell * sender )
         {
-            [ self setPreferredFlagOf: object to: @1 ];
+            [ self setPreferredFlagOf: object to: STOP_IS_PREFERRED_VALUE ];
             return YES; // Yes => do slide the table row back to normal position
         }
     ];
 
     MGSwipeButton * unprefer =
     [
-        MGSwipeButton buttonWithTitle: NSLocalizedString( @"Normal", "Title of button in a table row for a bus stop, which flags that stop as normal / not 'preferred'" )
+        MGSwipeButton buttonWithTitle: NSLocalizedString( @"Demote", "Title of button in a table row for a bus stop, which flags that stop as normal / not 'preferred'" )
                       backgroundColor: [ UIColor blueColor ]
                              callback: ^ BOOL ( MGSwipeTableCell * sender )
         {
-            [ self setPreferredFlagOf: object to: @0 ];
+            [ self setPreferredFlagOf: object to: STOP_IS_NOT_PREFERRED_VALUE ];
             return YES; // Yes => do slide the table row back to normal position
         }
     ];
 
-    if ( [ [ object valueForKey: @"preferred" ] boolValue ] == NO )
+    if ( [ [ object valueForKey: @"preferred" ] isEqual: STOP_IS_NOT_PREFERRED_VALUE ] )
     {
-        cell.rightButtons = @[ delete, prefer ];
+        cell.rightButtons = @[ delete, prefer, more ];
     }
     else
     {
-        cell.rightButtons = @[ delete, unprefer ];
+        cell.rightButtons = @[ delete, unprefer, more ];
     }
 }
 
@@ -492,7 +671,7 @@
             proceed = YES;
         }
 
-        if ( proceed )
+        if ( session.reachable && proceed )
         {
             NSError        * error;
             NSMutableArray * allStops = [ [ NSMutableArray alloc ] init ];
@@ -528,6 +707,21 @@
             }
         }
     }
+}
+
+// Called via NSNotificationCenter when the user defaults change;
+// "notification" parameter is ignored.
+//
+- ( void ) defaultsDidChange: ( NSNotification * ) ignoredNotification
+{
+    dispatch_async
+    (
+        dispatch_get_main_queue(),
+        ^ ( void )
+        {
+            [ self.tableView reloadData ];
+        }
+    );
 }
 
 #pragma mark - Table updates from the controller
