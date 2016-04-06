@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="10171" systemVersion="15E65" minimumToolsVersion="Automatic">
     <entity name="BusStop">
+        <attribute name="preferred" attributeType="Integer 32" defaultValueString="0" syncable="YES"/>
         <attribute name="stopDescription" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="stopID" optional="YES" attributeType="String">
             <userInfo/>
@@ -8,6 +9,6 @@
         <userInfo/>
     </entity>
     <elements>
-        <element name="BusStop" positionX="261" positionY="189" width="128" height="75"/>
+        <element name="BusStop" positionX="261" positionY="189" width="128" height="90"/>
     </elements>
 </model>

@@ -163,6 +163,7 @@
 		236FC34D1CAFDC4A00207C15 /* ShorteningLabel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ShorteningLabel.h; sourceTree = "<group>"; };
 		236FC34E1CAFDC4A00207C15 /* ShorteningLabel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ShorteningLabel.m; sourceTree = "<group>"; };
 		23AB59A21CB088960057688D /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; name = Settings.bundle; path = ../Settings.bundle; sourceTree = "<group>"; };
+		23AB59A51CB271C90057688D /* Bus-Panda 2.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Bus-Panda 2.xcdatamodel"; sourceTree = "<group>"; };
 		23C937961ACDF51E00EF1441 /* TimetableWebViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TimetableWebViewController.h; sourceTree = "<group>"; };
 		23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TimetableWebViewController.m; sourceTree = "<group>"; };
 		23D75E1B1AC1654B0068C808 /* Bus Panda.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Bus Panda.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1097,9 +1098,10 @@
 		23D75E251AC1654B0068C808 /* Bus-Panda.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
+				23AB59A51CB271C90057688D /* Bus-Panda 2.xcdatamodel */,
 				23D75E261AC1654B0068C808 /* Bus-Panda.xcdatamodel */,
 			);
-			currentVersion = 23D75E261AC1654B0068C808 /* Bus-Panda.xcdatamodel */;
+			currentVersion = 23AB59A51CB271C90057688D /* Bus-Panda 2.xcdatamodel */;
 			path = "Bus-Panda.xcdatamodeld";
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

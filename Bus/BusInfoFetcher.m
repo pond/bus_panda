@@ -209,6 +209,15 @@
             NSString    * timetablePath = [ infoElt.attributes valueForKey: @"href" ]; // Relative path, not absolute URL
             NSString    * name          = [ infoElt.textContent stringByTrimmingCharactersInSet: whitespace ];
 
+            // 2016-04-04 (ADH): A recent MetLink fault on their end was to
+            // omit names. This looks really odd. So if there's no name, just
+            // set the name to the route number. It looks less strange!
+            //
+            if ( name.length == 0 )
+            {
+                name = [ NSString stringWithFormat: @"Route %@", number ];
+            }
+
             // if ( notes )
             // {
             //     name = [ NSString stringWithFormat: @"%@ (%@)", name, notes ];

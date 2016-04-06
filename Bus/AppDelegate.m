@@ -60,8 +60,8 @@
 
     masterViewController.managedObjectContext = self.managedObjectContext;
 
-    // Initialse the cached bus stop location data
-
+    // Initialse the cached bus stop location data.
+    //
     [ self clearCachedStops ];
 
     // On a clean install, some iOS versions may not read the Settings bundle
@@ -146,6 +146,11 @@
         //
         [ self sessionWatchStateDidChange: session ];
     }
+
+    // Call this now to keep the Watch as up to date as possible, just in case
+    // there's already a local or remote populated data store available.
+    //
+    [ masterViewController updateWatch: nil ];
 
     return YES;
 }
@@ -609,6 +614,31 @@
             [ [ NSNotificationCenter defaultCenter ] postNotification: refreshNotification];
         }
     ];
+}
+
+// This is intended really just for one-shot data migrations and is not very
+// efficient as it intentionally does not provide any cache name for the
+// results, so it'll re-fetch every time.
+//
+- ( NSArray * ) getAllFavourites
+{
+    NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
+    NSEntityDescription * entity       = [ NSEntityDescription entityForName: @"BusStop"
+                                                      inManagedObjectContext: self.managedObjectContext ];
+
+    [ fetchRequest setEntity:         entity ];
+    [ fetchRequest setFetchBatchSize: 50     ];
+
+    NSSortDescriptor * sortDescriptor = [ [ NSSortDescriptor alloc] initWithKey: @"stopDescription"
+                                                                      ascending: YES ];
+
+    [ fetchRequest setSortDescriptors: @[ sortDescriptor ] ];
+
+    NSFetchedResultsController * frc = [ [ NSFetchedResultsController alloc ] initWithFetchRequest: fetchRequest
+                                                                              managedObjectContext: self.managedObjectContext
+                                                                                sectionNameKeyPath: @"preferred"
+                                                                                         cacheName: nil ];
+    return frc.fetchedObjects;
 }
 
 #pragma mark - Core Data saving support

@@ -15,9 +15,6 @@
 #import "StopMapViewController.h"
 #import "FavouritesCell.h"
 
-#define STOP_IS_NOT_PREFERRED_VALUE @0
-#define STOP_IS_PREFERRED_VALUE     @1
-
 @implementation MasterViewController
 
 #pragma mark - View lifecycle
@@ -80,10 +77,11 @@
                                                     name: NSUserDefaultsDidChangeNotification
                                                   object: nil ];
 
-    // Call this now to keep the Watch as up to date as possible, just in case
-    // there's already a local or remote populated data store available.
-    //
-    [ self updateWatch: nil ];
+    // We don't try an update the Apple Watch app here because we don't
+    // necessarily have full access to Core Data yet. Instead, let the App
+    // Delegate deal with at-wakeup updates by calling through to our
+    // "-updateWatch:" method once it's set the 'managedObjectContext'
+    // property in this instance.
 }
 
 - ( void ) viewDidUnload
@@ -558,13 +556,13 @@
         }
     ];
 
-    if ( [ [ object valueForKey: @"preferred" ] isEqual: STOP_IS_NOT_PREFERRED_VALUE ] )
+    if ( [ [ object valueForKey: @"preferred" ] isEqual: STOP_IS_PREFERRED_VALUE ] )
     {
-        cell.rightButtons = @[ delete, prefer, more ];
+        cell.rightButtons = @[ delete, unprefer, more ];
     }
     else
     {
-        cell.rightButtons = @[ delete, unprefer, more ];
+        cell.rightButtons = @[ delete, prefer, more ];
     }
 }
 
@@ -580,7 +578,7 @@
         return _fetchedResultsController;
     }
 
-    NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init];
+    NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
     NSEntityDescription * entity       = [ NSEntityDescription entityForName: @"BusStop"
                                                       inManagedObjectContext: self.managedObjectContext ];
 

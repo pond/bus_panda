@@ -11,6 +11,9 @@
 
 @class DetailViewController;
 
+#define STOP_IS_NOT_PREFERRED_VALUE @0
+#define STOP_IS_PREFERRED_VALUE     @1
+
 @interface MasterViewController : UITableViewController <NSFetchedResultsControllerDelegate>
 
 @property ( strong, nonatomic ) DetailViewController       * detailViewController;
