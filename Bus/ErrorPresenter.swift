@@ -11,28 +11,28 @@ import UIKit
 
 @objc class ErrorPresenter : NSObject {
     @objc class func showModalAlertFor(
-        controller: UIViewController,
+        _ controller: UIViewController,
         withError:  NSError,
         title:      NSString,
-        andHandler: ( result: UIAlertAction ) -> Void
+        andHandler: @escaping ( _ result: UIAlertAction ) -> Void
     )
     {
         let message = withError.localizedDescription
         let alert   = UIAlertController(
             title:          title as String,
             message:        message,
-            preferredStyle: .Alert
+            preferredStyle: .alert
         )
 
         let action  = UIAlertAction(
             title:   "OK",
-            style:   .Default,
+            style:   .default,
             handler: andHandler
         )
 
         alert.addAction( action )
 
-        controller.presentViewController(
+        controller.present(
             alert,
             animated: true,
             completion: nil

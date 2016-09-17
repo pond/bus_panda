@@ -141,16 +141,8 @@
         session.delegate = self;
         [ session activateSession ];
 
-        // Leaning on the WCSessionDelegate method to check session details and
-        // send an update is a reliable way to get the ball rolling.
-        //
-        [ self sessionWatchStateDidChange: session ];
+        [ self pushListOfStopsToWatch: session ];
     }
-
-    // Call this now to keep the Watch as up to date as possible, just in case
-    // there's already a local or remote populated data store available.
-    //
-    [ masterViewController updateWatch: nil ];
 
     return YES;
 }
@@ -231,18 +223,20 @@
     }
 }
 
-# pragma mark - WCSessionDelegate support
+# pragma mark - WCSessionDelegate and related methods
 
 // WCSessionDelegate.
 //
 // In iOS 9.3, a delegate must support this method for multiple Apple watches
 // to be used. Since the companion application is read-only, we don't need to
-// do anything here other than provide an empty implementation.
+// do anything here other than - just in case - manually call the 'watch state
+// did change' method to provoke a pushed update to the watch.
 //
 - ( void )               session: ( WCSession                * ) session
   activationDidCompleteWithState: ( WCSessionActivationState   ) activationState
                            error: ( NSError                  * ) error
 {
+    [ self pushListOfStopsToWatch: session ];
 }
 
 // WCSessionDelegate.
@@ -274,14 +268,7 @@
 //
 - ( void ) sessionWatchStateDidChange: ( WCSession * ) session
 {
-    if ( session.paired && session.watchAppInstalled )
-    {
-        UISplitViewController  * splitViewController        = ( UISplitViewController * ) self.window.rootViewController;
-        UINavigationController * masterNavigationController = splitViewController.viewControllers.firstObject;
-        MasterViewController   * masterViewController       = ( MasterViewController * ) masterNavigationController.topViewController;
-
-        [ masterViewController updateWatch: nil ];
-    }
+    [ self pushListOfStopsToWatch: session ];
 }
 
 // WCSessionDelegate.
@@ -294,7 +281,11 @@
 {
     NSString * action = message[ @"action" ];
 
-    if ( [ action isEqualToString: @"getBuses" ] == YES )
+    if ( [ action isEqualToString: @"getStops" ] == YES )
+    {
+        [ self pushListOfStopsToWatch: session ];
+    }
+    else if ( [ action isEqualToString: @"getBuses" ] == YES )
     {
         NSString * stopID = message[ @"data" ];
 
@@ -324,6 +315,27 @@
     else
     {
         replyHandler( @{} );
+    }
+}
+
+// Call the MasterViewController and tell it to update the Watch App with
+// the current list of stops.
+//
+// The optional WCSession * parameter tells the method which session to use;
+// if omitted, it uses "[ WCSession defaultSession ]".
+//
+// If WCSession is not currently suppported, reports no watch paired or
+// reports no watch app installed, nothing will happen.
+//
+- ( void ) pushListOfStopsToWatch: ( WCSession * ) session
+{
+    if ( [ WCSession isSupported ] && session.paired && session.watchAppInstalled )
+    {
+        UISplitViewController  * splitViewController        = ( UISplitViewController * ) self.window.rootViewController;
+        UINavigationController * masterNavigationController = splitViewController.viewControllers.firstObject;
+        MasterViewController   * masterViewController       = ( MasterViewController * ) masterNavigationController.topViewController;
+
+        [ masterViewController updateWatch: nil ];
     }
 }
 
