@@ -10,7 +10,7 @@ import WatchKit
 import Foundation
 import WatchConnectivity
 
-public func myNSLog(_ givenFormat: String, _ args: CVarArg..., _ function:String = #function) {
+public func myNSLog(_ givenFormat: String, _ args: CVarArg..., _func function:String = #function) {
     let format = "\(function): \(givenFormat)"
     withVaList(args) { NSLogv(format, $0) }
 }
