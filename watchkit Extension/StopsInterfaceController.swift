@@ -52,7 +52,7 @@ class StopsInterfaceController: WKInterfaceController
 
         if WCSession.isSupported()
         {
-            let session  = WCSession.default()
+            let session  = WCSession.default
             let delegate = WKExtension.shared().delegate as! ExtensionDelegate
 
             delegate.updateAllStopsFrom( session.receivedApplicationContext as [ String: AnyObject ] )
@@ -71,7 +71,7 @@ class StopsInterfaceController: WKInterfaceController
             return // Note early exit
         }
 
-        let session  = WCSession.default()
+        let session  = WCSession.default
         let delegate = WKExtension.shared().delegate as! ExtensionDelegate
 
         showSpinner()

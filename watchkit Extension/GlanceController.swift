@@ -56,8 +56,8 @@ class GlanceController: WKInterfaceController, WCSessionDelegate
     func canUseWCSession() -> Bool
     {
         return WCSession.isSupported() &&
-            WCSession.default().activationState == .activated &&
-            WCSession.default().isReachable
+            WCSession.default.activationState == .activated &&
+            WCSession.default.isReachable
     }
 
     // ========================================================================
@@ -129,8 +129,8 @@ class GlanceController: WKInterfaceController, WCSessionDelegate
         NSLog(
             "GLA Session supported %@, activated %@, reachable %@",
             WCSession.isSupported() as NSNumber,
-            ( WCSession.default().activationState == .activated ) as NSNumber,
-            WCSession.default().isReachable as NSNumber
+            ( WCSession.default.activationState == .activated ) as NSNumber,
+            WCSession.default.isReachable as NSNumber
         )
 
         // Worse yet, the glance often finds that at this moment of activation
@@ -147,7 +147,7 @@ class GlanceController: WKInterfaceController, WCSessionDelegate
 
         if WCSession.isSupported()
         {
-            let session  = WCSession.default()
+            let session  = WCSession.default
             let delegate = WKExtension.shared().delegate as! ExtensionDelegate
 
             session.delegate = delegate
@@ -166,8 +166,8 @@ class GlanceController: WKInterfaceController, WCSessionDelegate
                     NSLog(
                         "GLA via GCD Session supported %@, activated %@, reachable %@",
                         WCSession.isSupported() as NSNumber,
-                        ( WCSession.default().activationState == .activated ) as NSNumber,
-                        WCSession.default().isReachable as NSNumber
+                        ( WCSession.default.activationState == .activated ) as NSNumber,
+                        WCSession.default.isReachable as NSNumber
                     )
 
                     if self.canUseWCSession()
@@ -215,7 +215,7 @@ class GlanceController: WKInterfaceController, WCSessionDelegate
 
         NSLog("Send message");
 
-        WCSession.default().sendMessage(
+        WCSession.default.sendMessage(
             [ "action": "getNearest" ],
             replyHandler:
             {

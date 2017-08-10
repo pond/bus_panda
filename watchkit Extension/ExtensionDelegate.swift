@@ -23,7 +23,7 @@ class ExtensionDelegate: NSObject, WKExtensionDelegate, WCSessionDelegate
 
         if WCSession.isSupported()
         {
-            let session = WCSession.default()
+            let session = WCSession.default
 
             session.delegate = self
             session.activate()
@@ -34,7 +34,7 @@ class ExtensionDelegate: NSObject, WKExtensionDelegate, WCSessionDelegate
     {
         if WCSession.isSupported()
         {
-            updateAllStopsFrom( WCSession.default().receivedApplicationContext as [String : AnyObject] )
+            updateAllStopsFrom( WCSession.default.receivedApplicationContext as [String : AnyObject] )
         }
     }
 
@@ -57,7 +57,7 @@ class ExtensionDelegate: NSObject, WKExtensionDelegate, WCSessionDelegate
 
         if ( handler == nil )
         {
-            actualHandler = { _ in }
+            actualHandler = {  }
         }
         else
         {

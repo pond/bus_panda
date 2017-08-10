@@ -40,7 +40,6 @@
 		23D75E301AC1654B0068C808 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 23D75E2E1AC1654B0068C808 /* Main.storyboard */; };
 		23D75E321AC1654B0068C808 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 23D75E311AC1654B0068C808 /* Images.xcassets */; };
 		23D75E351AC1654B0068C808 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 23D75E331AC1654B0068C808 /* LaunchScreen.xib */; };
-		23D75E411AC1654B0068C808 /* BusTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E401AC1654B0068C808 /* BusTests.m */; };
 		23D75E731AC165A70068C808 /* HTMLComment.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E4D1AC165A70068C808 /* HTMLComment.m */; };
 		23D75E741AC165A70068C808 /* HTMLDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E4F1AC165A70068C808 /* HTMLDocument.m */; };
 		23D75E751AC165A70068C808 /* HTMLDocumentType.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E511AC165A70068C808 /* HTMLDocumentType.m */; };
@@ -180,8 +179,6 @@
 		23D75E311AC1654B0068C808 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		23D75E341AC1654B0068C808 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/LaunchScreen.xib; sourceTree = "<group>"; };
 		23D75E3A1AC1654B0068C808 /* BusTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BusTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		23D75E3F1AC1654B0068C808 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		23D75E401AC1654B0068C808 /* BusTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BusTests.m; sourceTree = "<group>"; };
 		23D75E4C1AC165A70068C808 /* HTMLComment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HTMLComment.h; sourceTree = "<group>"; };
 		23D75E4D1AC165A70068C808 /* HTMLComment.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = HTMLComment.m; sourceTree = "<group>"; };
 		23D75E4E1AC165A70068C808 /* HTMLDocument.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HTMLDocument.h; sourceTree = "<group>"; };
@@ -387,7 +384,6 @@
 				23D75E1D1AC1654B0068C808 /* Bus Panda */,
 				23420AA61C92A34E009F40F9 /* Bus Panda WatchKit Extension */,
 				23420A971C92A34E009F40F9 /* Bus Panda Watch App */,
-				23D75E3D1AC1654B0068C808 /* Bus Panda Tests */,
 				23D75E1C1AC1654B0068C808 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -421,24 +417,6 @@
 				23D75E201AC1654B0068C808 /* main.m */,
 				23420A871C8EC7DC009F40F9 /* Bus Panda-Bridging-Header.h */,
 				23E1026A1C1D21EA00BEF3C6 /* MapKit.framework */,
-			);
-			name = "Supporting Files";
-			sourceTree = "<group>";
-		};
-		23D75E3D1AC1654B0068C808 /* Bus Panda Tests */ = {
-			isa = PBXGroup;
-			children = (
-				23D75E401AC1654B0068C808 /* BusTests.m */,
-				23D75E3E1AC1654B0068C808 /* Supporting Files */,
-			);
-			name = "Bus Panda Tests";
-			path = BusTests;
-			sourceTree = "<group>";
-		};
-		23D75E3E1AC1654B0068C808 /* Supporting Files */ = {
-			isa = PBXGroup;
-			children = (
-				23D75E3F1AC1654B0068C808 /* Info.plist */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -613,12 +591,12 @@
 					23420AA11C92A34E009F40F9 = {
 						CreatedOnToolsVersion = 7.2.1;
 						DevelopmentTeam = XT4V976D8Y;
-						LastSwiftMigration = 0800;
+						LastSwiftMigration = 0900;
 					};
 					23D75E1A1AC1654B0068C808 = {
 						CreatedOnToolsVersion = 6.2;
 						DevelopmentTeam = XT4V976D8Y;
-						LastSwiftMigration = 0800;
+						LastSwiftMigration = 0900;
 						SystemCapabilities = {
 							com.apple.BackgroundModes = {
 								enabled = 0;
@@ -772,7 +750,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				23D75E411AC1654B0068C808 /* BusTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -838,7 +815,8 @@
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 3.0;
+				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
+				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				WATCHOS_DEPLOYMENT_TARGET = 2.2;
 			};
@@ -857,7 +835,8 @@
 				PRODUCT_NAME = "${TARGET_NAME}";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 3.0;
+				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
+				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				WATCHOS_DEPLOYMENT_TARGET = 2.2;
 			};
@@ -958,6 +937,7 @@
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				SWIFT_SWIFT3_OBJC_INFERENCE = Off;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -1003,6 +983,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_SWIFT3_OBJC_INFERENCE = Off;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};
@@ -1025,7 +1006,8 @@
 				PROVISIONING_PROFILE = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Bus/Bus Panda-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 3.0;
+				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
+				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;
 		};
@@ -1045,13 +1027,15 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Bus/Bus Panda-Bridging-Header.h";
-				SWIFT_VERSION = 3.0;
+				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
+				SWIFT_VERSION = 4.0;
 			};
 			name = Release;
 		};
 		23D75E481AC1654B0068C808 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				DEVELOPMENT_TEAM = XT4V976D8Y;
 				FRAMEWORK_SEARCH_PATHS = "";
@@ -1063,13 +1047,14 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Bus.app/Bus";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Bus Panda.app/Bus Panda";
 			};
 			name = Debug;
 		};
 		23D75E491AC1654B0068C808 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				DEVELOPMENT_TEAM = XT4V976D8Y;
 				FRAMEWORK_SEARCH_PATHS = "";
@@ -1077,7 +1062,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Bus.app/Bus";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Bus Panda.app/Bus Panda";
 			};
 			name = Release;
 		};

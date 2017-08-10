@@ -139,12 +139,12 @@
                                 style: UIAlertActionStyleDefault
                               handler: ^ ( UIAlertAction * action )
         {
-            EnterStopIDViewController * enterStopIDController =
+            UINavigationController * enterStopIDNavigationController =
             [
                 self.storyboard instantiateViewControllerWithIdentifier: @"EnterStopID"
             ];
 
-            [ self openSpecificModal: enterStopIDController ];
+            [ self openSpecificModal: enterStopIDNavigationController ];
         }
     ];
 
@@ -209,14 +209,15 @@
                                 style: UIAlertActionStyleDefault
                               handler: ^ ( UIAlertAction * action )
         {
-            EditStopDescriptionViewController * editStopDescriptionController =
+            UINavigationController * editStopDescriptionNavigationController =
             [
                 self.storyboard instantiateViewControllerWithIdentifier: @"EditStopDescription"
             ];
 
+            EditStopDescriptionViewController * editStopDescriptionController = editStopDescriptionNavigationController.childViewControllers.firstObject;
             editStopDescriptionController.sourceObject = object;
 
-            [ self openSpecificModal: editStopDescriptionController ];
+            [ self openSpecificModal: editStopDescriptionNavigationController ];
         }
     ];
 

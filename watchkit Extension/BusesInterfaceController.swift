@@ -48,7 +48,7 @@ class BusesInterfaceController: WKInterfaceController
     {
         super.awake( withContext: context )
 
-        let session  = WCSession.default()
+        let session  = WCSession.default
         let delegate = WKExtension.shared().delegate as! ExtensionDelegate
         let stopInfo = context as? [ String: String ]
 
@@ -78,7 +78,8 @@ class BusesInterfaceController: WKInterfaceController
 
                     for section in sections
                     {
-                        let services: NSMutableArray = section[ "services" ] as! NSMutableArray
+                        let immutableServices: NSArray = section[ "services" ] as! NSArray
+                        let services: NSMutableArray = immutableServices.mutableCopy() as! NSMutableArray
 
                         buses.addObjects( from: services as [AnyObject] )
                         if ( buses.count > BusesInterfaceController.maximumListEntries ) { break }

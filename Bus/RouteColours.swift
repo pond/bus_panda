@@ -24,7 +24,7 @@ import UIKit
     // Return the colour dictionary. Key is the route number / code as a
     // String. Value is a six digit hex string. See also "colourFromHexString".
     //
-    class func colours() -> NSDictionary
+    @objc class func colours() -> NSDictionary
     {
         return map
     }
@@ -35,7 +35,7 @@ import UIKit
     //
     // https://gist.github.com/yannickl/16f0ed38f0698d9a8ae7
     //
-    class func colourFromHexString( _ hexString: String ) -> UIColor
+    @objc class func colourFromHexString( _ hexString: String ) -> UIColor
     {
         var rgbValue: UInt32 = 0
         let scanner          = Scanner( string: hexString )

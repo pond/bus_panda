@@ -11,7 +11,9 @@
 
 @interface EditStopDescriptionViewController : AddStopAbstractViewController <UITextFieldDelegate>
 
-@property ( weak, nonatomic ) IBOutlet UITextField     * descriptionField;
-@property ( weak, nonatomic )          NSManagedObject * sourceObject;
+@property (   weak, nonatomic ) IBOutlet UITextField     * descriptionField;
+@property (   weak, nonatomic )          NSManagedObject * sourceObject;
+
+@property ( retain, nonatomic )          UIToolbar       * descriptionToolbar;
 
 @end
