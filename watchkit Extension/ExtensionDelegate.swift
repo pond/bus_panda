@@ -23,10 +23,10 @@ class ExtensionDelegate: NSObject, WKExtensionDelegate, WCSessionDelegate
 
         if WCSession.isSupported()
         {
-            let session = WCSession.defaultSession()
+            let session = WCSession.default
 
             session.delegate = self
-            session.activateSession()
+            session.activate()
         }
     }
 
@@ -34,7 +34,7 @@ class ExtensionDelegate: NSObject, WKExtensionDelegate, WCSessionDelegate
     {
         if WCSession.isSupported()
         {
-            updateAllStopsFrom( WCSession.defaultSession().receivedApplicationContext )
+            updateAllStopsFrom( WCSession.default.receivedApplicationContext as [String : AnyObject] )
         }
     }
 
@@ -47,7 +47,7 @@ class ExtensionDelegate: NSObject, WKExtensionDelegate, WCSessionDelegate
     }
 
     func presentError(
-        error:      NSError,
+        _ error:      NSError,
         handler:    WKAlertActionHandler?,
         controller: WKInterfaceController?
     )
@@ -57,7 +57,7 @@ class ExtensionDelegate: NSObject, WKExtensionDelegate, WCSessionDelegate
 
         if ( handler == nil )
         {
-            actualHandler = { _ in }
+            actualHandler = {  }
         }
         else
         {
@@ -66,7 +66,7 @@ class ExtensionDelegate: NSObject, WKExtensionDelegate, WCSessionDelegate
 
         if ( controller == nil )
         {
-            actualController = WKExtension.sharedExtension().rootInterfaceController!
+            actualController = WKExtension.shared().rootInterfaceController!
         }
         else
         {
@@ -75,14 +75,14 @@ class ExtensionDelegate: NSObject, WKExtensionDelegate, WCSessionDelegate
 
         let action = WKAlertAction.init(
             title:   "OK",
-            style:   .Default,
+            style:   .default,
             handler: actualHandler
         )
 
-        actualController.presentAlertControllerWithTitle(
-                            error.localizedDescription,
+        actualController.presentAlert(
+                            withTitle: error.localizedDescription,
             message:        error.localizedFailureReason,
-            preferredStyle: .Alert,
+            preferredStyle: .alert,
             actions:        [ action ]
         )
     }
@@ -213,24 +213,24 @@ class ExtensionDelegate: NSObject, WKExtensionDelegate, WCSessionDelegate
     // MARK: - WCSessionDelegate and related code
     // ========================================================================
 
-    func session( session: WCSession,
-                  activationDidCompleteWithState activationState: WCSessionActivationState,
-                  error: NSError? )
+    func session( _ session: WCSession,
+                  activationDidCompleteWith activationState: WCSessionActivationState,
+                  error: Error? )
     {
     }
 
-    func session( session: WCSession, didReceiveApplicationContext applicationContext: [ String : AnyObject ] )
+    func session( _ session: WCSession, didReceiveApplicationContext applicationContext: [ String : Any ] )
     {
-        updateAllStopsFrom( applicationContext )
+        updateAllStopsFrom( applicationContext as [String : AnyObject] )
     }
 
-    func updateAllStopsFrom( dictionary: [ String : AnyObject ] )
+    func updateAllStopsFrom( _ dictionary: [ String : AnyObject ] )
     {
         let stops = dictionary[ "allStops" ] as? NSArray
 
-        dispatch_async( dispatch_get_main_queue() )
+        DispatchQueue.main.async
         {
-            let stopsInterfaceController = WKExtension.sharedExtension().rootInterfaceController
+            let stopsInterfaceController = WKExtension.shared().rootInterfaceController
                 as? StopsInterfaceController
 
             if ( stopsInterfaceController != nil )

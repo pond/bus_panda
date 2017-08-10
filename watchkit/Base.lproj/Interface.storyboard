@@ -70,6 +70,7 @@
             <objects>
                 <controller identifier="Stops" title="Stops" id="AgC-eL-Hgc" customClass="StopsInterfaceController" customModule="watchkit_Extension">
                     <items>
+                        <imageView width="1" height="0.65000000000000002" alignment="center" contentMode="center" id="kmi-wz-kFe"/>
                         <table alignment="left" id="8Aa-kp-9Kh">
                             <items>
                                 <tableRow identifier="StopsRow" id="Jpt-qC-bnV" customClass="StopsRowController" customModule="watchkit_Extension">
@@ -95,6 +96,7 @@
                     </items>
                     <edgeInsets key="margins" left="1" right="1" top="4" bottom="0.0"/>
                     <connections>
+                        <outlet property="spinner" destination="kmi-wz-kFe" id="Uax-Ch-joC"/>
                         <outlet property="stopsTable" destination="8Aa-kp-9Kh" id="eiL-HN-UkD"/>
                     </connections>
                 </controller>

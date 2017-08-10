@@ -16,9 +16,9 @@ class StringShortener
     // more than two characters long, remove English vowels ("AEIOU"). Return
     // the result as a String by re-joining the words with spaces.
     //
-    func removeVowels( str: String ) -> String
+    func removeVowels( _ str: String ) -> String
     {
-        let words                = str.componentsSeparatedByString( " " )
+        let words                = str.components( separatedBy: " " )
         var newWords: [ String ] = []
 
         for word in words
@@ -40,23 +40,23 @@ class StringShortener
             }
         }
 
-        return newWords.joinWithSeparator( " " )
+        return newWords.joined( separator: " " )
     }
 
     // Given a String ("from:"), replace words using a Dictionary ("using:")
     // of search (keys) and replace (values) strings, using case insensitive
     // searches. Returns a new String which is the result of the removals.
     //
-    func replaceStrings( from: String, using: [ String: String ] ) -> String
+    func replaceStrings( _ from: String, using: [ String: String ] ) -> String
     {
         var newString = from
 
         for ( search, replace ) in using
         {
-            newString = newString.stringByReplacingOccurrencesOfString(
-                search,
-                withString: replace,
-                options:    .CaseInsensitiveSearch,
+            newString = newString.replacingOccurrences(
+                of: search,
+                with: replace,
+                options:    .caseInsensitive,
                 range:      nil
             )
         }
@@ -70,7 +70,7 @@ class StringShortener
     // the maxCharactersPerLine property (see top of file). Returns a new
     // String containing the result.
     //
-    func shortenDescription( description: String ) -> String
+    func shortenDescription( _ description: String ) -> String
     {
         var newDescription = description
 

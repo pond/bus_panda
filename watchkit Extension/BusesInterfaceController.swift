@@ -21,8 +21,8 @@ class BusesInterfaceController: WKInterfaceController
     func showSpinner()
     {
         spinner.setImageNamed( "Activity" )
-        spinner.startAnimatingWithImagesInRange(
-                         NSMakeRange( 0, 15 ),
+        spinner.startAnimatingWithImages(
+                         in: NSMakeRange( 0, 15 ),
                duration: 1.0,
             repeatCount: 0
         )
@@ -44,12 +44,12 @@ class BusesInterfaceController: WKInterfaceController
     // String key yielding a String with the numerical or alphabetic four
     // character stop ID.
     //
-    override func awakeWithContext( context: AnyObject? )
+    override func awake( withContext context: Any? )
     {
-        super.awakeWithContext( context )
+        super.awake( withContext: context )
 
-        let session  = WCSession.defaultSession()
-        let delegate = WKExtension.sharedExtension().delegate as! ExtensionDelegate
+        let session  = WCSession.default
+        let delegate = WKExtension.shared().delegate as! ExtensionDelegate
         let stopInfo = context as? [ String: String ]
 
         showSpinner()
@@ -59,7 +59,7 @@ class BusesInterfaceController: WKInterfaceController
         //
         updateBuses( [] )
 
-        if ( session.reachable )
+        if ( session.activationState == .activated && session.isReachable )
         {
             let message: [ String: String ] =
             [
@@ -71,16 +71,17 @@ class BusesInterfaceController: WKInterfaceController
                 message,
                 replyHandler:
                 {
-                    ( busInfo: [ String: AnyObject ] ) -> Void in
+                    ( busInfo: [ String: Any ] ) -> Void in
 
-                    let sections = busInfo[ "allBuses" ] as! NSArray
+                    let sections = busInfo[ "allBuses" ] as! [ [ String: Any ] ]
                     let buses    = [] as NSMutableArray
 
                     for section in sections
                     {
-                        let services: NSMutableArray = section[ "services" ] as! NSMutableArray
+                        let immutableServices: NSArray = section[ "services" ] as! NSArray
+                        let services: NSMutableArray = immutableServices.mutableCopy() as! NSMutableArray
 
-                        buses.addObjectsFromArray( services as [AnyObject] )
+                        buses.addObjects( from: services as [AnyObject] )
                         if ( buses.count > BusesInterfaceController.maximumListEntries ) { break }
                     }
 
@@ -89,7 +90,7 @@ class BusesInterfaceController: WKInterfaceController
                 },
                 errorHandler:
                 {
-                    ( error: NSError ) -> Void in
+                    ( error: Error ) -> Void in
 
                     self.hideSpinner()
 
@@ -129,7 +130,7 @@ class BusesInterfaceController: WKInterfaceController
 
             delegate.presentError(
                             error,
-                handler:    { () -> Void in self.dismissController() },
+                handler:    { () -> Void in self.dismiss() },
                 controller: self
             )
         }
@@ -144,7 +145,7 @@ class BusesInterfaceController: WKInterfaceController
     // and, in context, that may be excessive; see "maximumListEntries" for the
     // limit applied here.
     //
-    func updateBuses( allBuses: NSArray? )
+    func updateBuses( _ allBuses: NSArray? )
     {
         let buses    = ( allBuses == nil ) ? NSArray() : allBuses!
         let rowCount = min( BusesInterfaceController.maximumListEntries, buses.count )
@@ -153,7 +154,7 @@ class BusesInterfaceController: WKInterfaceController
 
         for index in 0 ..< rowCount
         {
-            let controller = busesTable.rowControllerAtIndex( index ) as? BusesRowController
+            let controller = busesTable.rowController( at: index ) as? BusesRowController
             let dictionary = buses[ index ] as! NSDictionary
 
             let routeName   = dictionary[ "name"   ] as! String
@@ -169,7 +170,7 @@ class BusesInterfaceController: WKInterfaceController
                 "dueTime":     dueTime
             ]
             
-            controller?.busInfo = busInfo
+            controller?.busInfo = busInfo as NSDictionary?
         }
     }
 }

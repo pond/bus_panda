@@ -13,6 +13,30 @@ import Foundation
 @available( iOS 8.2, * )
 class StopsInterfaceController: WKInterfaceController
 {
+    @IBOutlet var stopsTable: WKInterfaceTable!
+    @IBOutlet var    spinner: WKInterfaceImage!
+
+    func showSpinner()
+    {
+        spinner.setImageNamed( "Activity" )
+        spinner.startAnimatingWithImages(
+                         in: NSMakeRange( 0, 15 ),
+               duration: 1.0,
+            repeatCount: 0
+        )
+
+        stopsTable.setHidden( true )
+        spinner.setHidden( false )
+    }
+
+    func hideSpinner()
+    {
+        spinner.setHidden( true )
+        stopsTable.setHidden( false )
+
+        spinner.stopAnimating()
+    }
+
     // ========================================================================
     // MARK: - Lifecycle
     // ========================================================================
@@ -24,12 +48,84 @@ class StopsInterfaceController: WKInterfaceController
     {
         super.willActivate()
 
+        self.hideSpinner()
+
         if WCSession.isSupported()
         {
-            let session  = WCSession.defaultSession()
-            let delegate = WKExtension.sharedExtension().delegate as! ExtensionDelegate
+            let session  = WCSession.default
+            let delegate = WKExtension.shared().delegate as! ExtensionDelegate
 
-            delegate.updateAllStopsFrom( session.receivedApplicationContext )
+            delegate.updateAllStopsFrom( session.receivedApplicationContext as [ String: AnyObject ] )
+        }
+    }
+
+    // Wake up and, if we don't seem to have any stops defined locally, try
+    // contacting the iOS application to find some.
+    //
+    override func awake( withContext context: Any? )
+    {
+        super.awake( withContext: context )
+
+        if stopsTable.numberOfRows > 0
+        {
+            return // Note early exit
+        }
+
+        let session  = WCSession.default
+        let delegate = WKExtension.shared().delegate as! ExtensionDelegate
+
+        showSpinner()
+
+        if ( session.activationState == .activated && session.isReachable )
+        {
+            let message: [ String: String ] = [ "action": "getStops" ]
+
+            // This has no reply handler because we don't get a reply. Instead
+            // the iOS handling code pushes an application context update which
+            // we'll get eventually. This reduces the number of different code
+            // paths in use.
+            //
+            session.sendMessage(
+                message,
+                replyHandler: nil,
+                errorHandler:
+                {
+                    ( error: Error ) -> Void in
+
+                    self.hideSpinner()
+
+                    // TODO: As in BusesInterfaceController, we can't rely on
+                    // this because of an apparent WatchOS 2.2 bug.
+                    //
+                    // https://forums.developer.apple.com/thread/43380
+                    //
+//                    delegate.presentError(
+//                        error,
+//                        handler:    { () -> Void in self.dismissController() },
+//                        controller: self
+//                    )
+                }
+            )
+        }
+        else
+        {
+            hideSpinner()
+
+            let error = NSError(
+                domain:   "uk.org.pond.Bus-Panda-WKExtension",
+                code:     -9999,
+                userInfo:
+                [
+                    NSLocalizedDescriptionKey:        "No iPhone Found",
+                    NSLocalizedFailureReasonErrorKey: "Cannot reach your iPhone to ask Bus Panda for bus stops"
+                ]
+            )
+
+            delegate.presentError(
+                            error,
+                handler:    { () -> Void in self.dismiss() },
+                controller: self
+            )
         }
     }
 
@@ -37,16 +133,14 @@ class StopsInterfaceController: WKInterfaceController
     // MARK: - WKInterfaceTable selection and updates
     // ========================================================================
 
-    @IBOutlet var stopsTable: WKInterfaceTable!
-
     // Handle table selections. Showing the realtime information for the buses
     // at the selected stop requires the iOS application, so this must be
     // reachable.
     //
-    override func table( table: WKInterfaceTable, didSelectRowAtIndex rowIndex: Int )
+    override func table( _ table: WKInterfaceTable, didSelectRowAt rowIndex: Int )
     {
-        let controller = stopsTable.rowControllerAtIndex( rowIndex ) as? StopsRowController
-        pushControllerWithName( "Buses", context: controller?.stopInfo )
+        let controller = stopsTable.rowController( at: rowIndex ) as? StopsRowController
+        pushController( withName: "Buses", context: controller?.stopInfo )
     }
 
     // Update the WKInterfaceTable list of stops based on the given NSArray
@@ -58,7 +152,7 @@ class StopsInterfaceController: WKInterfaceController
     // Ghuznee Street" might shorten right down to "Victoria Ghuznee"). For
     // the most aggressive last attempt, vowels are removed.
     //
-    func updateStops( allStops: NSArray? )
+    func updateStops( _ allStops: NSArray? )
     {
         let stringShortener = StringShortener()
         let stops           = ( allStops == nil ) ? NSArray() : allStops!
@@ -68,7 +162,7 @@ class StopsInterfaceController: WKInterfaceController
 
         for index in 0 ..< stopsTable.numberOfRows
         {
-            let controller = stopsTable.rowControllerAtIndex( index ) as? StopsRowController
+            let controller = stopsTable.rowController( at: index ) as? StopsRowController
             let dictionary = stops[ index ] as! NSDictionary
 
             let stopID          = dictionary[ "stopID"          ] as! String
@@ -82,7 +176,7 @@ class StopsInterfaceController: WKInterfaceController
                 "stopDescription": stopDescription
             ]
 
-            controller?.stopInfo = stopInfo
+            controller?.stopInfo = stopInfo as NSDictionary?
         }
     }
 
