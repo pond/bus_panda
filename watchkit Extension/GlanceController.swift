@@ -10,6 +10,11 @@ import WatchKit
 import Foundation
 import WatchConnectivity
 
+public func myNSLog(_ givenFormat: String, _ args: CVarArg..., _func function:String = #function) {
+    let format = "\(function): \(givenFormat)"
+    withVaList(args) { NSLogv(format, $0) }
+}
+
 @available( iOS 9, * )
 class GlanceController: WKInterfaceController, WCSessionDelegate
 {
@@ -51,17 +56,17 @@ class GlanceController: WKInterfaceController, WCSessionDelegate
     func canUseWCSession() -> Bool
     {
         return WCSession.isSupported() &&
-            WCSession.defaultSession().activationState == .Activated &&
-            WCSession.defaultSession().reachable
+            WCSession.default.activationState == .activated &&
+            WCSession.default.isReachable
     }
 
     // ========================================================================
     // MARK: - Lifecycle
     // ========================================================================
 
-    override func awakeWithContext( context: AnyObject? )
+    override func awake( withContext context: Any? )
     {
-        super.awakeWithContext( context )
+        super.awake( withContext: context )
 
         // Using this array of dictionaries, we can iterate over each bus item
         // in the Glance view and either hide groups (if we don't have enough
@@ -121,10 +126,12 @@ class GlanceController: WKInterfaceController, WCSessionDelegate
 
         showSpinner()
 
-        NSLog("GLA Session supported %@, activated %@, reachable %@",
-              WCSession.isSupported(),
-              WCSession.defaultSession().activationState == .Activated,
-              WCSession.defaultSession().reachable)
+        NSLog(
+            "GLA Session supported %@, activated %@, reachable %@",
+            WCSession.isSupported() as NSNumber,
+            ( WCSession.default.activationState == .activated ) as NSNumber,
+            WCSession.default.isReachable as NSNumber
+        )
 
         // Worse yet, the glance often finds that at this moment of activation
         // the WCSession for some reason isn't ready. Race condition; sometimes
@@ -140,11 +147,11 @@ class GlanceController: WKInterfaceController, WCSessionDelegate
 
         if WCSession.isSupported()
         {
-            let session  = WCSession.defaultSession()
-            let delegate = WKExtension.sharedExtension().delegate as! ExtensionDelegate
+            let session  = WCSession.default
+            let delegate = WKExtension.shared().delegate as! ExtensionDelegate
 
             session.delegate = delegate
-            session.activateSession()
+            session.activate()
         }
 
         if canUseWCSession()
@@ -153,14 +160,15 @@ class GlanceController: WKInterfaceController, WCSessionDelegate
         }
         else
         {
-            dispatch_after(
-                dispatch_time( DISPATCH_TIME_NOW, 100000000 ), // 0.1 seconds
-                dispatch_get_main_queue(),
-                {
-                    NSLog("GLA via GCD Session supported %@, activated %@, reachable %@",
-                        WCSession.isSupported(),
-                        WCSession.defaultSession().activationState == .Activated,
-                        WCSession.defaultSession().reachable)
+            DispatchQueue.main.asyncAfter(
+                deadline: DispatchTime.now() + Double(100000000) / Double(NSEC_PER_SEC),
+                execute: {
+                    NSLog(
+                        "GLA via GCD Session supported %@, activated %@, reachable %@",
+                        WCSession.isSupported() as NSNumber,
+                        ( WCSession.default.activationState == .activated ) as NSNumber,
+                        WCSession.default.isReachable as NSNumber
+                    )
 
                     if self.canUseWCSession()
                     {
@@ -173,6 +181,17 @@ class GlanceController: WKInterfaceController, WCSessionDelegate
                 }
             );
         }
+    }
+
+    // Called when the session has completed activation. If session state is
+    // WCSessionActivationStateNotActivated there will be an error with more
+    // details.
+    //
+    @available(watchOS 2.2, *)
+    public func session(_                 session: WCSession,
+        activationDidCompleteWith activationState: WCSessionActivationState,
+                                            error: Error? )
+    {
     }
 
     override func willDisappear()
@@ -196,11 +215,11 @@ class GlanceController: WKInterfaceController, WCSessionDelegate
 
         NSLog("Send message");
 
-        WCSession.defaultSession().sendMessage(
+        WCSession.default.sendMessage(
             [ "action": "getNearest" ],
             replyHandler:
             {
-                ( busInfo: [ String: AnyObject ] ) -> Void in
+                ( busInfo: [ String: Any ] ) -> Void in
 
                 if busInfo[ "error" ] != nil
                 {
@@ -226,7 +245,7 @@ class GlanceController: WKInterfaceController, WCSessionDelegate
             },
             errorHandler:
             {
-                ( error: NSError ) -> Void in
+                ( error: Error ) -> Void in
 
                 // TODO: As in BusesInterfaceController, we can't rely on
                 // this because of an apparent WatchOS 2.2 bug.
@@ -245,7 +264,7 @@ class GlanceController: WKInterfaceController, WCSessionDelegate
     // to four entries, so sending more is wasteful. If there are fewer
     // entries, then the remaining "slots" in the UI are blanked out.
     //
-    func updateBuses( allBuses: NSArray? )
+    func updateBuses( _ allBuses: NSArray? )
     {
         let buses    = allBuses!
         let busCount = buses.count
@@ -301,8 +320,8 @@ class GlanceController: WKInterfaceController, WCSessionDelegate
     func showSpinner()
     {
         spinnerImage.setImageNamed( "Activity" )
-        spinnerImage.startAnimatingWithImagesInRange(
-            NSMakeRange( 0, 15 ),
+        spinnerImage.startAnimatingWithImages(
+            in: NSMakeRange( 0, 15 ),
             duration: 1.0,
             repeatCount: 0
         )
@@ -319,7 +338,7 @@ class GlanceController: WKInterfaceController, WCSessionDelegate
         spinnerImage.stopAnimating()
     }
 
-    func showError( message: String )
+    func showError( _ message: String )
     {
         stopNameLabel.setText( "Sorry" )
         stopNumberLabel.setText( ":-(" )
