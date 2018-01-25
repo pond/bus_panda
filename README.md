@@ -1,6 +1,6 @@
 # Bus Panda
 
-Realtime bus information for Wellington, New Zealand, available from the Apple App Store.
+Realtime bus information for Wellington, New Zealand, [available from the Apple App Store](https://itunes.apple.com/nz/app/bus-panda/id1071652095).
 
 ## XCode project
 
