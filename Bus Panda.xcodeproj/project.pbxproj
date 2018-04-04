@@ -143,6 +143,19 @@
 		23420AAF1C92A34E009F40F9 /* GlanceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlanceController.swift; sourceTree = "<group>"; };
 		23420AB11C92A34E009F40F9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		23420AB31C92A34E009F40F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		234C4B4B1F3C306900A7718C /* NSEntityDescription+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSEntityDescription+Helpers.swift"; sourceTree = "<group>"; };
+		234C4B4C1F3C306900A7718C /* CKRecordZone+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CKRecordZone+Helpers.swift"; sourceTree = "<group>"; };
+		234C4B4D1F3C306900A7718C /* NSManagedObject+CKRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSManagedObject+CKRecord.swift"; sourceTree = "<group>"; };
+		234C4B4E1F3C306A00A7718C /* CKRecord+NSManagedObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CKRecord+NSManagedObject.swift"; sourceTree = "<group>"; };
+		234C4B4F1F3C306A00A7718C /* SMServerTokenHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMServerTokenHandler.swift; sourceTree = "<group>"; };
+		234C4B501F3C306A00A7718C /* SMServerStoreSetupOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMServerStoreSetupOperation.swift; sourceTree = "<group>"; };
+		234C4B511F3C306A00A7718C /* NSManagedObjectContext+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSManagedObjectContext+Helpers.swift"; sourceTree = "<group>"; };
+		234C4B521F3C306A00A7718C /* SMStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMStore.swift; sourceTree = "<group>"; };
+		234C4B531F3C306A00A7718C /* CKRecordZoneID+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CKRecordZoneID+Helpers.swift"; sourceTree = "<group>"; };
+		234C4B541F3C306A00A7718C /* SMStoreSyncOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMStoreSyncOperation.swift; sourceTree = "<group>"; };
+		234C4B551F3C306A00A7718C /* SMStoreChangeSetHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMStoreChangeSetHandler.swift; sourceTree = "<group>"; };
+		234C4B561F3C309100A7718C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		234C4B571F3C309900A7718C /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		235AA1961CA2A055006143B9 /* StopsRowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StopsRowController.swift; sourceTree = "<group>"; };
 		236842401CAD3B7600548923 /* StringShortener.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StringShortener.swift; sourceTree = "<group>"; };
 		236842421CAD3E1600548923 /* NearestStopBusInfoFetcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NearestStopBusInfoFetcher.h; sourceTree = "<group>"; };
@@ -306,6 +319,26 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
+		234C4B4A1F3C303E00A7718C /* Seam3 */ = {
+			isa = PBXGroup;
+			children = (
+				234C4B571F3C309900A7718C /* LICENSE */,
+				234C4B561F3C309100A7718C /* README.md */,
+				234C4B4E1F3C306A00A7718C /* CKRecord+NSManagedObject.swift */,
+				234C4B4C1F3C306900A7718C /* CKRecordZone+Helpers.swift */,
+				234C4B531F3C306A00A7718C /* CKRecordZoneID+Helpers.swift */,
+				234C4B4B1F3C306900A7718C /* NSEntityDescription+Helpers.swift */,
+				234C4B4D1F3C306900A7718C /* NSManagedObject+CKRecord.swift */,
+				234C4B511F3C306A00A7718C /* NSManagedObjectContext+Helpers.swift */,
+				234C4B501F3C306A00A7718C /* SMServerStoreSetupOperation.swift */,
+				234C4B4F1F3C306A00A7718C /* SMServerTokenHandler.swift */,
+				234C4B521F3C306A00A7718C /* SMStore.swift */,
+				234C4B551F3C306A00A7718C /* SMStoreChangeSetHandler.swift */,
+				234C4B541F3C306A00A7718C /* SMStoreSyncOperation.swift */,
+			);
+			path = Seam3;
+			sourceTree = "<group>";
+		};
 		236FC33A1CAE124E00207C15 /* INTULocationManager */ = {
 			isa = PBXGroup;
 			children = (
@@ -424,6 +457,7 @@
 		23D75E4A1AC165920068C808 /* Third Party */ = {
 			isa = PBXGroup;
 			children = (
+				234C4B4A1F3C303E00A7718C /* Seam3 */,
 				23D75E4B1AC165A70068C808 /* HTMLReader */,
 				23E3416E1CABACB800EDB581 /* MGSwipeTableCell */,
 				236FC33A1CAE124E00207C15 /* INTULocationManager */,
