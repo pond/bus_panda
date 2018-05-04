@@ -84,11 +84,6 @@
     // property in this instance.
 }
 
-- ( void ) viewDidUnload
-{
-    [ [ NSNotificationCenter defaultCenter ] removeObserver: self ];
-}
-
 // http://stackoverflow.com/questions/19379510/uitableviewcell-doesnt-get-deselected-when-swiping-back-quickly
 //
 - ( void ) viewWillAppear: ( BOOL ) animated
@@ -96,6 +91,11 @@
     [ super viewWillAppear: animated ];
     [ self.tableView deselectRowAtIndexPath: [ self.tableView indexPathForSelectedRow ]
                                    animated: animated ];
+}
+
+- ( void ) dealloc
+{
+    [ [ NSNotificationCenter defaultCenter ] removeObserver: self ];
 }
 
 #pragma mark - Modal handling

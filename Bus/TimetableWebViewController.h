@@ -6,11 +6,10 @@
 //  Copyright (c) 2015 Andrew Hodgkinson. All rights reserved.
 //
 
-#import <UIKit/UIKit.h>
+#import "WebPageAbstractViewController.h"
 
-@interface TimetableWebViewController : UIViewController <UIWebViewDelegate>
+@interface TimetableWebViewController : WebPageAbstractViewController
 
-@property ( strong, nonatomic ) id                   detailItem;
-@property ( weak,   nonatomic ) IBOutlet UIWebView * webView;
+@property ( strong, nonatomic ) id detailItem;
 
 @end

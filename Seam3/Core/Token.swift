@@ -1,12 +1,8 @@
-//    CKRecordZoneID+Helpers.swift
+//    Token.swift
 //
 //    The MIT License (MIT)
 //
-//    Copyright (c) 2016 Paul Wilkinson ( https://github.com/paulw11 )
-//
-//    Based on work by Nofel Mahmood
-//
-//    Portions copyright (c) 2015 Nofel Mahmood ( https://twitter.com/NofelMahmood )
+//    Copyright (c) 2015 Nofel Mahmood ( https://twitter.com/NofelMahmood )
 //
 //    Permission is hereby granted, free of charge, to any person obtaining a copy
 //    of this software and associated documentation files (the "Software"), to deal
@@ -26,18 +22,43 @@
 //    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //    SOFTWARE.
 
+import Foundation
 import CloudKit
 
-
-extension CKRecordZoneID {
-    
-    class func smCloudStoreCustomZoneID() -> CKRecordZoneID {
-        var zoneID: CKRecordZoneID
-        if #available(iOS 10.0, macOS 10.12, tvOS 10.0, *) {
-            zoneID =  CKRecordZoneID(zoneName: SMStore.SMStoreCloudStoreCustomZoneName, ownerName: CKCurrentUserDefaultName)
-        } else {
-            zoneID = CKRecordZoneID(zoneName: SMStore.SMStoreCloudStoreCustomZoneName, ownerName: CKOwnerDefaultName)
-        }
-        return zoneID
+class Token {
+  static let Key = "com.seam.syncToken.key"
+  private var newToken: CKServerChangeToken?
+  static let sharedToken = Token()
+  
+  func rawToken() -> CKServerChangeToken? {
+    guard let rawToken = UserDefaults.standard.object(forKey: Token.Key) as? NSData else {
+      return nil
     }
+    return NSKeyedUnarchiver.unarchiveObject(with: rawToken as Data) as? CKServerChangeToken
+  }
+  
+  func save(token: CKServerChangeToken) {
+    newToken = token
+  }
+  
+  func discard() {
+    newToken = nil
+  }
+  
+  func unCommittedToken() -> CKServerChangeToken? {
+    return newToken
+  }
+  
+  func commit() {
+    guard let newToken = newToken else {
+      return
+    }
+    let archivedToken = NSKeyedArchiver.archivedData(withRootObject: newToken)
+    UserDefaults.standard.set(archivedToken, forKey: Token.Key)
+  }
+  
+  func reset() {
+    discard()
+    UserDefaults.standard.set(nil, forKey: Token.Key)
+  }
 }

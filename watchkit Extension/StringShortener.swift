@@ -23,13 +23,13 @@ class StringShortener
 
         for word in words
         {
-            if ( word.characters.count > 2 )
+            if ( word.count > 2 )
             {
                 newWords.append(
                     String(
-                        word.characters.filter
+                        word.filter
                         {
-                            !"aeiou".characters.contains( $0 )
+                            !"aeiou".contains( $0 )
                         }
                     )
                 )
@@ -74,7 +74,7 @@ class StringShortener
     {
         var newDescription = description
 
-        if ( newDescription.characters.count > maxCharactersPerLine )
+        if ( newDescription.count > maxCharactersPerLine )
         {
             // Common word abbreviations
 
@@ -90,7 +90,7 @@ class StringShortener
             )
         }
 
-        if ( newDescription.characters.count > maxCharactersPerLine )
+        if ( newDescription.count > maxCharactersPerLine )
         {
             // If it's still too long, start again but be much more aggressive
             // by removing, not just abbreivating, redundant words.
@@ -109,7 +109,7 @@ class StringShortener
             )
         }
 
-        if ( newDescription.characters.count > maxCharactersPerLine )
+        if ( newDescription.count > maxCharactersPerLine )
         {
             // Again, if still too long, remove vowels.
 

@@ -1,225 +1,204 @@
-# Seam3
+![seamlogo](https://cloud.githubusercontent.com/assets/3306263/11891970/83208bf0-a585-11e5-98b5-3ac6bff009d9.png)
 
-[![CI Status](http://img.shields.io/travis/paulw/Seam3.svg?style=flat)](https://travis-ci.org/paulw/Seam3)
-[![Version](https://img.shields.io/cocoapods/v/Seam3.svg?style=flat)](http://cocoapods.org/pods/Seam3)
-[![License](https://img.shields.io/cocoapods/l/Seam3.svg?style=flat)](http://cocoapods.org/pods/Seam3)
-[![Platform](https://img.shields.io/cocoapods/p/Seam3.svg?style=flat)](http://cocoapods.org/pods/Seam3)
-[![GitHub stars](https://img.shields.io/github/stars/paulw11/Seam3.svg)](https://github.com/paulw11/Seam3/stargazers)
 
-Seam3 is a framework built to bridge gaps between CoreData and CloudKit. It almost handles all the CloudKit hassle. 
-All you have to do is use it as a store type for your CoreData store. 
-Local caching and sync is taken care of. 
+[![Pod Version](https://img.shields.io/badge/pod-v0.6-blue.svg)](https://img.shields.io/cocoapods/v/Alamofire.svg)
+[![Carthage Compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
+[![Platform](https://img.shields.io/badge/platform-iOS%20--%20OSX-lightgrey.svg)](https://img.shields.io/badge/platform-iOS%20--%20OSX-lightgrey.svg)
+[![License](https://img.shields.io/packagist/l/doctrine/orm.svg)](https://img.shields.io/packagist/l/doctrine/orm.svg)
 
-Seam3 is based on [Seam](https://github.com/nofelmahmood/Seam) by [nofelmahmood](https://github.com/nofelmahmood)
+Seam allows you to sync your CoreData Stores with CloudKit.
 
-Changes in Seam3 include:
+## Topics
 
-* Corrects one-to-many and many-to-one relationship mapping between CoreData and CloudKit
-* Adds mapping between binary attributes in CoreData and CKAssets in CloudKit
-* Code updates for Swift 3.0 on iOS 10, Mac OS 10.11 & tvOS 10
-* Restructures code to eliminate the use of global variables
+- [Features](#features)
+- [Requirements](#requirements)
+- [Communication](#communication)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Getting Started](#getting-started)
+- [FAQ](#faq)
+- [Apps](#apps)
+- [Author](#author)
+- [License](#license)
 
-## CoreData to CloudKit
+## Features
+- Automatic mapping of CoreData Models to CloudKit Private Databases
+- Supports Assets
+- Background Sync 
+- Conflict Resolution
 
-### Attributes
+## Requirements
 
-| CoreData  | CloudKit |
+- iOS 8.0+ / Mac OS X 10.10+
+- Xcode 7.1+
+
+## Communication
+
+- If you want to contribute submit a [pull request](https://github.com/nofelmahmood/Seam/pulls).
+- If your app uses Seam I'll be glad to add it to the list. Edit the [List](APPS.md) and submit a [pull request](https://github.com/nofelmahmood/Seam/pulls).
+- If you found a bug [open an issue](https://github.com/nofelmahmood/Seam/issues).
+- If you have a feature request [open an issue](https://github.com/nofelmahmood/Seam/issues).
+- If you have a question, ask it on [Stack Overflow](http://stackoverflow.com).
+
+Please read the [Contributing Guidelines](CONTRIBUTING.md) before doing any of above.
+
+## Installation
+
+### Cocoapods
+
+[CocoaPods](http://cocoapods.org) is a dependency manager for Cocoa projects. You can install it with the following command:
+
+```bash
+$ gem install cocoapods
+```
+
+To integrate Seam into your Xcode project using CocoaPods, specify it in your `Podfile`:
+
+```ruby
+source 'https://github.com/CocoaPods/Specs.git'
+platform :ios, '8.0'
+use_frameworks!
+
+pod 'Seam', '~> 0.6'
+```
+
+Then, run the following command:
+
+```bash
+$ pod install
+```
+
+### Carthage
+
+[Carthage](https://github.com/Carthage/Carthage) is a decentralized dependency manager that builds your dependencies and provides you with binary frameworks.
+
+You can install Carthage with [Homebrew](http://brew.sh/) using the following command:
+
+```bash
+$ brew update
+$ brew install carthage
+```
+
+To integrate Seam into your Xcode project using Carthage, specify it in your `Cartfile`:
+
+```ogdl
+github "Seam/Seam" ~> 0.6
+```
+
+Run `carthage update` to build the framework and drag the built `Seam.framework` into your Xcode project.
+
+## Usage
+
+Add a Store type of ```SeamStoreType``` to a NSPersistentStoreCoordinator in your CoreData stack:
+
+``` swift
+let persistentStoreCoordinator = NSPersistentStoreCoordinator(managedObjectModel: yourModel)
+let seamStore = try persistentStoreCoordinator.addPersistentStoreWithType(SeamStoreType, 
+                                                                          configuration: nil, 
+                                                                          URL: url, options: nil) as? Store
+```
+Observe the following two Notifications to know when the Sync Operation starts and finishes:
+
+``` swift
+
+NSNotificationCenter.defaultCenter().addObserver(self, selector: "didStartSyncing:",
+                                                name: SMStoreDidStartSyncingNotification,
+                                                object: seamStore)
+
+NSNotificationCenter.defaultCenter().addObserver(self, selector: "didFinishSyncing:",
+                                                name: SMStoreDidFinishSyncingNotification,
+                                                object: seamStore)                                               
+
+func didStartSyncing(notification: NSNotification) {
+  // Prepare for new data before syncing completes
+}
+  
+func didFinishSyncing(notification: NSNotification) {
+  // Merge Changes into your context after syncing completes
+  mainContext.mergeChangesFromStoreDidFinishSyncingNotification(notification)
+}
+  
+```
+
+Finally call sync whenever and wherever you want:
+
+```swift
+seamStore.sync(nil)
+```
+
+To trigger sync whenever a change happens on the CloudKit Servers. Subscribe the store to receive Push Notifications from the CloudKit Servers.
+
+```swift
+seamStore.subscribeToPushNotifications({ successful in
+    guard successful else { return }
+    // Ensured that subscription was created successfully
+})
+
+// In your AppDelegate
+
+func application(application: UIApplication, didReceiveRemoteNotification userInfo: [NSObject : AnyObject]) {
+    seamStore.sync(nil)
+}
+```
+
+
+## Attributes
+
+All CloudKit Attributes are mapped automatically to your CoreData attributes with the exception of [CKAsset](https://developer.apple.com/library/ios/documentation/CloudKit/Reference/CKAsset_class/) and [CLLocation](https://developer.apple.com/library/ios/documentation/CoreLocation/Reference/CLLocation_Class/).
+
+CKAsset and CLLocation can be used by setting the corresponding attribute as Transformable in your CoreData Model.
+
+| CloudKit  | CoreData |
 | ------------- | ------------- |
-| NSDate    | Date/Time
-| Binary Data | Bytes or CKAsset (See below) |
-| NSString  | String   |
-| Integer16 | Int(64) |
-| Integer32 | Int(64) |
-| Integer64 | Int(64) |
-| Decimal | Double | 
-| Float | Double |
-| Boolean | Int(64) |
-| NSManagedObject | Reference |
+| NSDate    | NSDate
+| NSData | NSData
+| NSString  | NSString   |
+| NSNumber | NSNumber |
+| CKReference | NSManagedObject |
+| CKAsset | Transformable |
+| CLLocation | Transformable |
 
-**In the table above :** `Integer16`, `Integer32`, `Integer64`, `Decimal`, `Float` and `Boolean` are referring to the instance of `NSNumber` used 
-to represent them in CoreData Models. `NSManagedObject` refers to a `to-one relationship` in a CoreData Model.
+### Transformable Attributes
 
-If a `Binary Data` attribute has the *Allows External Storage* option selected, it will be stored as a `CKAsset` in Cloud Kit, otherwise it will be stored as `Bytes` in the `CKRecord` itself.
+CKAsset and CLLocation can be used in your CoreData model as Transformable attributes.
 
-### Relationships
+1. To use **CKAsset** set **Transformable** as AttributeType and **CKAssetTransformer** as value transformer name for the attribute.
+
+![](https://cloud.githubusercontent.com/assets/3306263/11773251/f342fd36-a248-11e5-8b55-519400fdb600.png)
+
+2. To use **CLLocation** set **Transformable** as AttributeType and **CLLocationTransformer** as value transformer name for the attribute.
+
+![](https://cloud.githubusercontent.com/assets/3306263/11773252/f3459564-a248-11e5-89eb-197c32ef245a.png)
+
+
+## Relationships
 
 | CoreData Relationship  | Translation on CloudKit |
 | ------------- | ------------- |
 | To - one    | To one relationships are translated as CKReferences on the CloudKit Servers.|
 | To - many    | To many relationships are not explicitly created. Seam only creates and manages to-one relationships on the CloudKit Servers. <br/> <strong>Example</strong> -> If an Employee has a to-one relationship to Department and Department has a to-many relationship to Employee than Seam will only create the former on the CloudKit Servers. It will fullfil the later by using the to-one relationship. If all employees of a department are accessed Seam will fulfil it by fetching all the employees that belong to that particular department.|
 
-<strong>Note :</strong> You must create inverse relationships in your app's CoreData Model or Seam wouldn't be able to translate CoreData Models in to CloudKit Records. Unexpected errors and corruption of data can possibly occur.
+<strong>Note :</strong> You must create inverse relationships in your app's CoreData Model or Seam wouldn't be able to translate CoreData Models in to CloudKit Records. Unexpected errors and curroption of data can possibly occur.
 
-## Sync
+## Getting Started 
 
-Seam keeps the CoreData store in sync with the CloudKit Servers. It let's you know when the sync operation starts and finishes by throwing the following two notifications.
-- SMStoreDidStartSyncOperationNotification
-- SMStoreDidFinishSyncOperationNotification
+Download the demo project. Run it and see the magic as it happens.
 
-If an error occurred during the sync operation, then the `userInfo` property of the `SMStoreDidFinishSyncOperationNotification` notification will contain an `Error` object for the key `SMStore.SMStoreErrorDomain`
+## FAQ
 
-#### Conflict Resolution Policies
-In case of any sync conflicts, Seam exposes 3 conflict resolution policies.
+### tvOS Support ?
+tvOS provides no persistent local storage. Seam uses SQLITE file to keep a local copy of your database which is not possible with tvOS.
 
-- ClientTellsWhichWins
+## Apps
 
-This policy requires you to set syncConflictResolutionBlock block of SMStore. You get both versions of the record as arguments. You do whatever changes you want on the second argument and return it.
-
-- ServerRecordWins
-
-This is the default. It considers the server record as the true record.
-
-- ClientRecordWins
-
-This considers the client record as the true record.
-
-## How to use
-
-- Declare a SMStore type property in the class where your CoreData stack resides.
-```swift
-var smStore: SMStore
-```
-- For iOS9 and earlier or macOS, add a store type of `SeamStoreType` to your app's NSPersistentStoreCoordinator and assign it to the property created in the previous step.
-```swift
-
-SMStore.registerStoreClass()
-do 
-{
-   self.smStore = try coordinator.addPersistentStoreWithType(SeamStoreType, configuration: nil, URL: url, options: nil) as? SMStore
-}
-```
-- For iOS10 using `NSPersistentContainer`:
-
-```swift
-lazy var persistentContainer: NSPersistentContainer = {
-
-        SMStore.registerStoreClass()
-
-        let container = NSPersistentContainer(name: "Seam3Demo2")
-        
-        let urls = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-        
-        if let applicationDocumentsDirectory = urls.last {
-            
-            let url = applicationDocumentsDirectory.appendingPathComponent("SingleViewCoreData.sqlite")
-            
-            let storeDescription = NSPersistentStoreDescription(url: url)
-            
-            storeDescription.type = SMStore.type
-            
-            container.persistentStoreDescriptions=[storeDescription]
-            
-            container.loadPersistentStores(completionHandler: { (storeDescription, error) in
-                if let error = error as NSError? {
-                    // Replace this implementation with code to handle the error appropriately.
-                    // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                    
-                    /*
-                     Typical reasons for an error here include:
-                     * The parent directory does not exist, cannot be created, or disallows writing.
-                     * The persistent store is not accessible, due to permissions or data protection when the device is locked.
-                     * The device is out of space.
-                     * The store could not be migrated to the current model version.
-                     Check the error message to determine what the actual problem was.
-                     */
-                    fatalError("Unresolved error \(error), \(error.userInfo)")
-                }
-            })
-            return container
-        }
-        
-        fatalError("Unable to access documents directory")
-        
-    }()
-```
-You can access the `SMStore` instance using:
-```
-self.smStore = container.persistentStoreCoordinator.persistentStores.first as? SMStore
-```
-Before triggering a sync, you should check the Cloud Kit authentication status and check for a changed Cloud Kit user:
-```
-self.smStore?.verifyCloudKitConnectionAndUser() { (status, user, error) in
-    guard status == .available, error == nil else {
-        NSLog("Unable to verify CloudKit Connection \(error)")
-        return  
-    } 
-
-    guard let currentUser = user else {
-        NSLog("No current CloudKit user")
-        return
-    }
-
-    var completeSync = false
-
-    let previousUser = UserDefaults.standard.string(forKey: "CloudKitUser")
-    if  previousUser != currentUser {
-        do {
-            print("New user")
-            try self.smStore?.resetBackingStore()
-            completeSync = true
-        } catch {
-            NSLog("Error resetting backing store - \(error.localizedDescription)")
-            return
-        }
-    }
-
-    UserDefaults.standard.set(currentUser, forKey:"CloudKitUser")
-
-    self.smStore?.triggerSync(complete: completeSync)
-}
-```
-- Enable Push Notifications for your app.
-![](http://s29.postimg.org/rb9vj0egn/Screen_Shot_2015_08_23_at_5_44_59_pm.png)
-- Implement didReceiveRemoteNotification Method in your AppDelegate and call `handlePush` on the instance of SMStore created earlier.
-```swift
- func application(application: UIApplication, didReceiveRemoteNotification userInfo: [NSObject : AnyObject]) 
- {
-    self.smStore?.handlePush(userInfo: userInfo)
- }
-```
-- Enjoy
-
-## Cross-platform considerations
-The default Cloud Kit container is named using your app or application's *bundle identifier*.  If you want to share Cloud Kit data between apps on different platforms (e.g. iOS and macOS) then you need to use a named Cloud Kit container.  You can specify a cloud kit container when you create your SMStore instance.
-
-On iOS10, specify the `SMStore.SMStoreContainerOption` using the `NSPersistentStoreDescription` object
-
-```
-let storeDescription = NSPersistentStoreDescription(url: url)
-storeDescription.type = SMStore.type
-storeDescription.setOption("iCloud.org.cocoapods.demo.Seam3-Example" as NSString, forKey: SMStore.SMStoreContainerOption)
-```
-
-On iOS9 and macOS specify an options dictionary to the persistent store coordinator
-
-```
-let options:[String:Any] = [SMStore.SMStoreContainerOption:"iCloud.org.cocoapods.demo.Seam3-Example"]
-self.smStore = try coordinator!.addPersistentStore(ofType: SMStore.type, configurationName: nil, at: url, options: options) as? SMStore
-```
-Ensure that you specify the value you specify is selected under *iCloud containers* on the *capabilities* tab for your app in Xcode.
-
-## Migrating from Seam to Seam3
-
-Migration should be quite straight-forward, as the format used to store data in CloudKit and in the local backing store haven't changed.
-Change the import statement to `import Seam3` and you should be good to go.
-
-## Example
-
-To run the example project, clone the repo, and run `pod install` from the Example directory first.  If you are running on the simulator, make sure that you log in to iCloud using the settings app in the simulator.
-
-## Installation
-
-Seam3 is available through [CocoaPods](http://cocoapods.org). To install
-it, simply add the following line to your Podfile:
-
-```ruby
-pod "Seam3"
-```
+A [list of Apps](APPS.md) which are using **Seam**.
 
 ## Author
 
-paulw, paulw@wilko.me
+Seam is owned and maintained by [Nofel Mahmood](http://twitter.com/NofelMahmood).
+
+You can follow him on [Twitter](http://twitter.com/NofelMahmood) and [Medium](http://medium.com/@nofel)
 
 ## License
 
-Seam3 is available under the MIT license. See the LICENSE file for more info.
+Seam is available under the MIT license. See the [LICENSE file](LICENSE.md) for more info.

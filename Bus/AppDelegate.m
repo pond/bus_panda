@@ -11,6 +11,7 @@
 #import "AppDelegate.h"
 #import "DetailViewController.h"
 #import "MasterViewController.h"
+#import "StopMapViewController.h"
 #import "BusInfoFetcher.h"
 #import "NearestStopBusInfoFetcher.h"
 
@@ -34,9 +35,15 @@
 {
     NSUserDefaults * defaults = [ NSUserDefaults standardUserDefaults ];
 
+    // Tab bar setups
+
+    UITabBarController * tabBarController = ( UITabBarController * ) self.window.rootViewController;
+
+    tabBarController.delegate = self;
+
     // Boilerplate master/detail view setup
 
-    UISplitViewController  * splitViewController  = ( UISplitViewController * ) self.window.rootViewController;
+    UISplitViewController  * splitViewController  = ( UISplitViewController * ) tabBarController.viewControllers.firstObject;
     UINavigationController * navigationController = splitViewController.viewControllers.lastObject;
 
     navigationController.topViewController.navigationItem.leftBarButtonItem = splitViewController.displayModeButtonItem;
@@ -221,6 +228,54 @@
     {
         return NO;
     }
+}
+
+# pragma mark - Tab controller
+
+// Here we take setup or restoration steps when the user switches between
+// tabs. The restoration identifier in the storyboard is used to determine
+// which tab has been selected when called here.
+//
+- ( BOOL ) tabBarController: ( UITabBarController * ) tabBarController
+ shouldSelectViewController: ( UIViewController   * ) viewController
+{
+    // For Favourite Stops, make sure we always pop back to the map when the
+    // tab is selected and be sure that the StopMapViewController presenting
+    // the content is configured for "nearby stops" mode.
+    //
+    if ( [ viewController.restorationIdentifier isEqualToString: @"FavouriteStops" ] )
+    {
+
+//        * Probably want to refine this so it only pops you out of the timetable
+//          view but not out of a stop list? Unsure.
+//        * Add Stop crashing out, must be getting the wrong controller when
+//          making assumptions about the view hierarchy. Make more robust, e.g.
+//          even places like here - why not just have that app init code set a
+//          bunch of properties in the app delegate for very important objects,
+//          then get rid of all the code like the stuff below which just
+//          rediscovers the same thing.
+
+
+        UISplitViewController  * splitViewController  = ( UISplitViewController * ) viewController;
+        UINavigationController * navigationController = splitViewController.viewControllers.lastObject;
+
+        [ navigationController popToRootViewControllerAnimated: YES ];
+    }
+
+    // For Nearby Stops, make sure we always pop back to the map when the
+    // tab is selected and be sure that the StopMapViewController presenting
+    // the content is configured for "nearby stops" mode.
+    //
+    else if ( [ viewController.restorationIdentifier isEqualToString: @"NearbyStops" ] )
+    {
+        UINavigationController * navigationController = ( UINavigationController * ) viewController;
+        [ navigationController popToRootViewControllerAnimated: YES ];
+
+        StopMapViewController * stopMapController = (StopMapViewController * ) navigationController.topViewController;
+        [ stopMapController configureForNearbyStops ];
+    }
+
+    return YES;
 }
 
 # pragma mark - WCSessionDelegate and related methods

@@ -1,12 +1,8 @@
-//    CKRecordZone+Helpers.swift
+//    NSPersistentStoreCoordinator.swift
 //
 //    The MIT License (MIT)
 //
-//    Copyright (c) 2016 Paul Wilkinson ( https://github.com/paulw11 )
-//
-//    Based on work by Nofel Mahmood
-//
-//    Portions copyright (c) 2015 Nofel Mahmood ( https://twitter.com/NofelMahmood )
+//    Copyright (c) 2015 Nofel Mahmood ( https://twitter.com/NofelMahmood )
 //
 //    Permission is hereby granted, free of charge, to any person obtaining a copy
 //    of this software and associated documentation files (the "Software"), to deal
@@ -26,19 +22,17 @@
 //    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //    SOFTWARE.
 
+import Foundation
+import CoreData
 
-import CloudKit
-
-extension CKRecordZone {
-    
-    class func smCloudStoreCustomZone() -> CKRecordZone {
-        
-        var zoneID: CKRecordZoneID
-        if #available(iOS 10.0, macOS 10.12, tvOS 10.0, *) {
-                zoneID =  CKRecordZoneID(zoneName: SMStore.SMStoreCloudStoreCustomZoneName, ownerName: CKCurrentUserDefaultName)
-        } else {
-            zoneID = CKRecordZoneID(zoneName: SMStore.SMStoreCloudStoreCustomZoneName, ownerName: CKOwnerDefaultName)
-        }
-        return CKRecordZone(zoneID: zoneID)
+extension NSPersistentStoreCoordinator {
+  var seamStore: Store? {
+    var seamStore: Store?
+    persistentStores.forEach {
+      if let store = $0 as? Store {
+        seamStore = store
+      }
     }
+    return seamStore
+  }
 }

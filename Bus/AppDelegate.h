@@ -15,6 +15,7 @@
 
 @interface AppDelegate : UIResponder < UIApplicationDelegate,
                                        UISplitViewControllerDelegate,
+                                       UITabBarControllerDelegate,
                                        WCSessionDelegate >
 
 @property (           strong, nonatomic ) UIWindow                     * window;
