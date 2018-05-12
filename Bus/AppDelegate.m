@@ -37,22 +37,20 @@
 
     // Tab bar setups
 
-    UITabBarController * tabBarController = ( UITabBarController * ) self.window.rootViewController;
-
-    tabBarController.delegate = self;
+    self.tabBarController = ( UITabBarController * ) self.window.rootViewController;
+    self.tabBarController.delegate = self;
 
     // Boilerplate master/detail view setup
 
-    UISplitViewController  * splitViewController  = ( UISplitViewController * ) tabBarController.viewControllers.firstObject;
-    UINavigationController * navigationController = splitViewController.viewControllers.lastObject;
+    self.splitViewController = ( UISplitViewController * ) self.tabBarController.viewControllers.firstObject;
+    self.splitViewController.delegate = self;
+    self.splitViewController.preferredDisplayMode = UISplitViewControllerDisplayModeAllVisible;
 
-    navigationController.topViewController.navigationItem.leftBarButtonItem = splitViewController.displayModeButtonItem;
+    self.detailNavigationController = self.splitViewController.viewControllers.lastObject;
+    self.detailNavigationController.topViewController.navigationItem.leftBarButtonItem = self.splitViewController.displayModeButtonItem;
 
-    splitViewController.delegate             = self;
-    splitViewController.preferredDisplayMode = UISplitViewControllerDisplayModeAllVisible;
-
-    UINavigationController * masterNavigationController = splitViewController.viewControllers.firstObject;
-    MasterViewController   * masterViewController       = ( MasterViewController * ) masterNavigationController.topViewController;
+    self.masterNavigationController = self.splitViewController.viewControllers.firstObject;
+    self.masterViewController       = ( MasterViewController * ) self.masterNavigationController.topViewController;
 
     // Set up iCloud and the associated data storage managed object context
 
@@ -65,7 +63,7 @@
                                                     object: nil
     ];
 
-    masterViewController.managedObjectContext = self.managedObjectContext;
+    self.masterViewController.managedObjectContext = self.managedObjectContext;
 
     // Initialse the cached bus stop location data.
     //
@@ -239,27 +237,44 @@
 - ( BOOL ) tabBarController: ( UITabBarController * ) tabBarController
  shouldSelectViewController: ( UIViewController   * ) viewController
 {
-    // For Favourite Stops, make sure we always pop back to the map when the
-    // tab is selected and be sure that the StopMapViewController presenting
-    // the content is configured for "nearby stops" mode.
+    // Mostly relevant to iPhone where there's no split view.
+    //
+    // For Favourite Stops, make sure we always pop back from a timetable view,
+    // if present, to just showing the current stop when the tab is chosen.
+    // This is generally the Useful Thing To Do (though not always). If the
+    // *current* tab is already the 'favourites' view then allow repeated taps
+    // on that tap to act like "back" and pop down to the root if need be.
     //
     if ( [ viewController.restorationIdentifier isEqualToString: @"FavouriteStops" ] )
     {
+        // If we've navigated beyond the master view of favourite stops...
+        //
+        if ( self.masterNavigationController.viewControllers.count == 2 )
+        {
+            UINavigationController * stopsNavigationController = self.masterNavigationController.viewControllers.lastObject;
 
-//        * Probably want to refine this so it only pops you out of the timetable
-//          view but not out of a stop list? Unsure.
-//        * Add Stop crashing out, must be getting the wrong controller when
-//          making assumptions about the view hierarchy. Make more robust, e.g.
-//          even places like here - why not just have that app init code set a
-//          bunch of properties in the app delegate for very important objects,
-//          then get rid of all the code like the stuff below which just
-//          rediscovers the same thing.
+            // ...and we're showing a particular stop, but there isn't a
+            // timetable view pushed on top of that...
+            //
+            if ( stopsNavigationController.viewControllers.count == 1 )
+            {
+                // ...and we're already on the Favourites tab, then pop down
+                // to the root view.
+                //
+                if ( tabBarController.selectedIndex == 0 )
+                {
+                    [ self.masterNavigationController popToRootViewControllerAnimated: YES ];
+                }
+            }
 
-
-        UISplitViewController  * splitViewController  = ( UISplitViewController * ) viewController;
-        UINavigationController * navigationController = splitViewController.viewControllers.lastObject;
-
-        [ navigationController popToRootViewControllerAnimated: YES ];
+            // ...and we're showing a particular stop with a timetable view
+            // pushed on top, so pop it away.
+            //
+            else
+            {
+                [ stopsNavigationController popToRootViewControllerAnimated: YES ];
+            }
+        }
     }
 
     // For Nearby Stops, make sure we always pop back to the map when the
@@ -348,6 +363,7 @@
         {
             [
                 BusInfoFetcher getAllBusesForStop: stopID
+                      usingWebScraperInsteadOfAPI: NO
                                 completionHandler: ^ ( NSMutableArray * allBuses )
                 {
                     replyHandler( @{ @"allBuses": allBuses } );
@@ -386,11 +402,7 @@
 {
     if ( [ WCSession isSupported ] && session.paired && session.watchAppInstalled )
     {
-        UISplitViewController  * splitViewController        = ( UISplitViewController * ) self.window.rootViewController;
-        UINavigationController * masterNavigationController = splitViewController.viewControllers.firstObject;
-        MasterViewController   * masterViewController       = ( MasterViewController * ) masterNavigationController.topViewController;
-
-        [ masterViewController updateWatch: nil ];
+        [ self.masterViewController updateWatch: nil ];
     }
 }
 
@@ -655,10 +667,7 @@
     // Reset the GUI but don't load any new data yet - have to wait for 'stores
     // did change' for that.
 
-    UISplitViewController  * splitViewController  = ( UISplitViewController * ) self.window.rootViewController;
-    UINavigationController * navigationController = splitViewController.viewControllers.lastObject;
-
-    [ navigationController popToRootViewControllerAnimated: YES ];
+    [ self.detailNavigationController popToRootViewControllerAnimated: YES ];
 }
 
 - ( void ) storesDidChange: ( NSNotification * ) notification

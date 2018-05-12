@@ -12,6 +12,7 @@
 //  Not intended to be instantiated directly; only subclassed.
 //
 
+#import "AppDelegate.h"
 #import "AddStopAbstractViewController.h"
 
 @implementation AddStopAbstractViewController
@@ -22,24 +23,11 @@
 - ( void ) addFavourite: ( NSString * ) stopID
         withDescription: ( NSString * ) stopDescription;
 {
-    MasterViewController  * masterController;
-    UISplitViewController * underlyingPresenter = ( UISplitViewController * ) self.presentingViewController;
-    id                      splitViewFirst      = [ underlyingPresenter.viewControllers firstObject ];
+    AppDelegate          * appDelegate          = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
+    MasterViewController * masterViewController = appDelegate.masterViewController;
 
-    // Under the split view is either another navigation controller leading to
-    // the master view, or the master view directly.
-
-    if ( [ splitViewFirst isKindOfClass: [ MasterViewController class ] ] )
-    {
-        masterController = splitViewFirst;
-    }
-    else
-    {
-        masterController = [ [ splitViewFirst viewControllers ] firstObject ];
-    }
-
-    [ masterController addFavourite: stopID
-                    withDescription: stopDescription ];
+    [ masterViewController addFavourite: stopID
+                        withDescription: stopDescription ];
 }
 
 // Subclasses should call this method when they want to be closed. It ensures

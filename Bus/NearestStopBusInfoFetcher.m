@@ -5,6 +5,10 @@
 //  Created by Andrew Hodgkinson on 1/04/16.
 //  Copyright © 2016 Andrew Hodgkinson. All rights reserved.
 //
+//  For the Watch app, find nearby bus stops and service information.
+//  Tries to use stops marked as "preferred" in favour of other stops,
+//  even if they're a bit further away.
+//
 
 #import "NearestStopBusInfoFetcher.h"
 
@@ -168,6 +172,7 @@
 
     [
         BusInfoFetcher getAllBusesForStop: stopID
+              usingWebScraperInsteadOfAPI: NO
                         completionHandler:
 
         ^ ( NSMutableArray * allBuses )

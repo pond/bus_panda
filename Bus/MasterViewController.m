@@ -148,25 +148,25 @@
         }
     ];
 
-    UIAlertAction * nearbyStopsAction =
-    [
-        UIAlertAction actionWithTitle: @"Nearby Stops"
-                                style: UIAlertActionStyleDefault
-                              handler: ^ ( UIAlertAction * action )
-        {
-            UINavigationController * stopMapNavigationController =
-            [
-                self.storyboard instantiateViewControllerWithIdentifier: @"StopMap"
-            ];
-
-            StopMapViewController * stopMapController = ( StopMapViewController * ) stopMapNavigationController.topViewController;
-
-            [ stopMapController configureForNearbyStops   ];
-            [ stopMapController setTitle: @"Nearby Stops" ];
-
-            [ self openSpecificModal: stopMapNavigationController ];
-        }
-    ];
+//    UIAlertAction * nearbyStopsAction =
+//    [
+//        UIAlertAction actionWithTitle: @"Nearby Stops"
+//                                style: UIAlertActionStyleDefault
+//                              handler: ^ ( UIAlertAction * action )
+//        {
+//            UINavigationController * stopMapNavigationController =
+//            [
+//                self.storyboard instantiateViewControllerWithIdentifier: @"StopMap"
+//            ];
+//
+//            StopMapViewController * stopMapController = ( StopMapViewController * ) stopMapNavigationController.topViewController;
+//
+//            [ stopMapController configureForNearbyStops   ];
+//            [ stopMapController setTitle: @"Nearby Stops" ];
+//
+//            [ self openSpecificModal: stopMapNavigationController ];
+//        }
+//    ];
 
     UIAlertAction * cancel =
     [
@@ -180,7 +180,7 @@
 
     [ actions addAction: stopMapAction     ];
     [ actions addAction: enterStopIDAction ];
-    [ actions addAction: nearbyStopsAction ];
+//    [ actions addAction: nearbyStopsAction ];
     [ actions addAction: cancel            ];
 
     // On the iPhone (at the time of writing) modal action sheets implicitly

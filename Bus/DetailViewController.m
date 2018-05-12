@@ -109,6 +109,7 @@
 
     [
         BusInfoFetcher getAllBusesForStop: stopID
+              usingWebScraperInsteadOfAPI: NO
                         completionHandler: ^ ( NSMutableArray * allBuses )
         {
             self.parsedSections = allBuses;

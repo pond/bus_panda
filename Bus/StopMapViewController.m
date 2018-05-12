@@ -111,6 +111,20 @@
 #pragma mark Custom behaviour
 ///////////////////////////////////////////////////////////////////////////////
 
+// Override base class - if we're in "nearby stops" mode, then this view is
+// in its own tab and we should switch back to the "favourites" tab to show
+// the user that addition happened.
+//
+- ( void ) dismissAdditionView
+{
+    [ super dismissAdditionView ];
+
+    if ( self.showNearbyStops == YES )
+    {
+        [ self.navigationController popToRootViewControllerAnimated: YES ];
+    }
+}
+
 // Turn on an activity indicator of some sort. At the time of writing this
 // comment, the network activity indicator in the status bar is used. See
 // also -spinnerOff.
@@ -132,7 +146,8 @@
 //
 - ( void ) configureForNearbyStops
 {
-   self.showNearbyStops = YES;
+    self.showNearbyStops = YES;
+    [ self updateMapWithOrWithoutLocation ];
 }
 
 // In STOP_LOCATION_UPDATE_TIMER_DELAY seconds, call method
@@ -182,7 +197,7 @@
     MKMapPoint minCorner = MKMapPointMake( MKMapRectGetMinX( mRect ), MKMapRectGetMinY( mRect ) );
     MKMapPoint maxCorner = MKMapPointMake( MKMapRectGetMaxX( mRect ), MKMapRectGetMaxY( mRect ) );
 
-    radius = MKMetersBetweenMapPoints( minCorner, maxCorner ) / 2;
+    radius = MKMetersBetweenMapPoints( minCorner, maxCorner ) / 2000;
 
     [ self spinnerOn ];
 
@@ -587,6 +602,7 @@ calloutAccessoryControlTapped: ( UIControl        * ) control
     [ self cancelStopLocationUpdate ];
 
     [ self.mapView removeAnnotations: self.mapView.annotations ];
+    self.stopsAddedToMap = nil;
 
     AppDelegate * appDelegate = ( AppDelegate * )
     [
