@@ -153,6 +153,11 @@
 //    ]";
 }
 
+- ( NSString * ) errorTitle
+{
+    return @"Weather cannot be checked";
+}
+
 #pragma mark - WKNavigationDelegate methods
 
 // This is how we could perform some of the hiding behaviour on iOS < 11.

@@ -15,6 +15,12 @@
 #define TODAY_SECTION_TITLE    @"Today"
 #define TOMORROW_SECTION_TITLE @"Tomorrow"
 
+// Placeholder definitions used for cases where information is not available.
+//
+#define PLACEHOLDER_WHEN    @"—"
+#define PLACEHOLDER_COLOUR  @"888888"
+#define PLACEHOLDER_SERVICE @"ℹ︎"
+
 @interface BusInfoFetcher : NSObject
 
 // This does what its name suggests. The given handler is always called, even
@@ -35,6 +41,8 @@
 // descriptions (service entries), each itself as a Dictionary with string
 // keys as follows:
 //
+//   "error"         - If present with any value, this is an error placeholder
+//                     item (other fields are filled in with defaults)
 //   "colour"        - Suggested 6-hex-digit RGB colour for the route
 //   "number"        - Bus number as a string, e.g. "1", "N/A"
 //   "name"          - Service name, e.g. "Island Bay", "No Network Access"

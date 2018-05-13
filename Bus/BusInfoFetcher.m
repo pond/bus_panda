@@ -257,7 +257,7 @@
 
                 NSDictionary * routeColours = [ RouteColours colours ];
                 NSString     * foundColour  = number ? [ routeColours objectForKey: number ] : nil;
-                NSString     * colour       = foundColour ? foundColour : @"888888";
+                NSString     * colour       = foundColour ? foundColour : PLACEHOLDER_COLOUR;
 
                 // Sometimes the service name is missing, which looks odd. Use
                 // the route number as the name if so.
@@ -281,7 +281,7 @@
                 {
                     if ( serviceDateTime == nil )
                     {
-                        when = @"-";
+                        when = PLACEHOLDER_WHEN;
                     }
                     else
                     {
@@ -340,10 +340,11 @@
             [
                 currentServiceList addObject:
                 @{
-                    @"colour":        @"888888",
-                    @"number":        @"ℹ︎",
+                    @"error":         @( YES ),
+                    @"colour":        PLACEHOLDER_COLOUR,
+                    @"number":        PLACEHOLDER_SERVICE,
                     @"name":          message,
-                    @"when":          @"—",
+                    @"when":          PLACEHOLDER_WHEN,
                     @"timetablePath": @""
                 }
             ];
@@ -453,8 +454,6 @@
 
             NSString * rowClass = [ service.attributes valueForKey: @"class" ];
 
-            NSLog(@"Service %@", service);
-
             if ( [ rowClass isEqualToString: @"rowDivider" ] )
             {
                 HTMLElement * cell         = [ service firstNodeMatchingSelector: @"td" ];
@@ -485,8 +484,6 @@
                     }
                 ];
             }
-
-            NSLog(@"Service expected");
 
             // From October 2015:
             //
@@ -535,12 +532,12 @@
             // }
             // else
             // {
-            //     colour = @"888888";
+            //     colour = PLACEHOLDER_COLOUR;
             // }
 
             NSDictionary * routeColours = [ RouteColours colours ];
             NSString     * foundColour  = number ? [ routeColours objectForKey: number ] : nil;
-            NSString     * colour       = foundColour ? foundColour : @"888888";
+            NSString     * colour       = foundColour ? foundColour : PLACEHOLDER_COLOUR;
 
             // From October 2015:
             //
@@ -590,8 +587,6 @@
             NSString * eta  = [  etaElt.textContent stringByTrimmingCharactersInSet: whitespace ];
             NSString * time = [ timeElt.textContent stringByTrimmingCharactersInSet: whitespace ];
 
-            NSLog(@"Number %@, name %@, time/eta %@", number, name, eta ? eta : time);
-
             if ( number && name && ( time || eta ) )
             {
                 [
@@ -616,13 +611,15 @@
             NSString * message = ( error == nil )
                                ? @"No live info available"
                                : [ error localizedDescription ];
+
             [
                 currentServiceList addObject:
                 @{
-                    @"colour":        @"888888",
-                    @"number":        @"ℹ︎",
+                    @"error":         @( YES ),
+                    @"colour":        PLACEHOLDER_COLOUR,
+                    @"number":        PLACEHOLDER_SERVICE,
                     @"name":          message,
-                    @"when":          @"—",
+                    @"when":          PLACEHOLDER_WHEN,
                     @"timetablePath": @""
                 }
             ];

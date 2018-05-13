@@ -42,6 +42,11 @@
     ]";
 }
 
+- ( NSString * ) errorTitle
+{
+    return @"Timetable cannot be fetched";
+}
+
 #pragma mark - Managing the detail item
 
 // Detail item should be a parent detail view table row item (dictionary).

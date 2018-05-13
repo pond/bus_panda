@@ -36,6 +36,13 @@ static NSString * contentBlockingRules = @"";
     return nil;
 }
 
+// Return an NSString giving the title for error popups.
+//
+- ( NSString * ) errorTitle
+{
+    return @"Information not available";
+}
+
 #pragma mark - Spinner
 
 // Turn on an activity indicator of some sort. At the time of writing this
@@ -71,7 +78,7 @@ static NSString * contentBlockingRules = @"";
         [
             ErrorPresenter showModalAlertFor: self
                                    withError: error
-                                       title: @"Weather not available"
+                                       title: [ self errorTitle ]
                                   andHandler: ^( UIAlertAction *action )
             {
                 [ self.navigationController popViewControllerAnimated: YES ];
