@@ -168,7 +168,6 @@
         [ self.refreshControl endRefreshing ];
         [ self.tableView      reloadData    ];
 
-
         // NOTE EARLY EXIT to reduce unnecessary code indentation in a
         // simple either-or method.
         //

@@ -10,6 +10,10 @@
 
 #import "INTULocationManager.h"
 
+// "MetService" or "DarkSky"
+//
+#define WEATHER_SERVICE MetService
+
 @implementation WeatherWebViewController
 
 #pragma mark - Methods that the superclass requires
@@ -18,60 +22,108 @@
 {
     [ self spinnerOn ];
 
+#if WEATHER_SERVICE == MetService
+
     // MetService
     //
-//    NSURL        * url     = [ NSURL         URLWithString: @"http://m.metservice.com/towns/wellington" ];
-//    NSURLRequest * request = [ NSURLRequest requestWithURL: url ];
-//
-//    [ self.webView loadRequest: request ];
+    NSURL        * url     = [ NSURL         URLWithString: @"http://m.metservice.com/towns/wellington" ];
+    NSURLRequest * request = [ NSURLRequest requestWithURL: url ];
 
-    // Dark Sky
-    //
-    dispatch_async
-    (
-        dispatch_get_main_queue(),
-        ^ ( void )
-        {
-            INTULocationManager *locMgr = [ INTULocationManager sharedInstance ];
+    [ self.webView loadRequest: request ];
 
-            [
-                locMgr requestLocationWithDesiredAccuracy: INTULocationAccuracyCity
-                                                  timeout: 2.5
-                                     delayUntilAuthorized: NO
-                                                    block:
+#elif WEATHER_SERVICE == DarkSky
 
-                ^ ( CLLocation           * currentLocation,
-                    INTULocationAccuracy   achievedAccuracy,
-                    INTULocationStatus     status )
-                {
-                    CLLocationCoordinate2D coordinates;
+   // Dark Sky
+   //
+   dispatch_async
+   (
+       dispatch_get_main_queue(),
+       ^ ( void )
+       {
+           INTULocationManager *locMgr = [ INTULocationManager sharedInstance ];
 
-                    if ( status == INTULocationStatusSuccess )
-                    {
-                        coordinates = currentLocation.coordinate;
-                    }
-                    else // Just give up and assume Wellington Central
-                    {
-                        coordinates.latitude  = -41.294649;
-                        coordinates.longitude = 174.772871;
-                    }
+           [
+               locMgr requestLocationWithDesiredAccuracy: INTULocationAccuracyCity
+                                                 timeout: 2.5
+                                    delayUntilAuthorized: NO
+                                                   block:
 
-                    NSString     * url_str = [ NSString   stringWithFormat: @"https://darksky.net/forecast/%f,%f/ca12/en", coordinates.latitude, coordinates.longitude ];
-                    NSURL        * url     = [ NSURL         URLWithString: url_str ];
-                    NSURLRequest * request = [ NSURLRequest requestWithURL: url ];
+               ^ ( CLLocation           * currentLocation,
+                   INTULocationAccuracy   achievedAccuracy,
+                   INTULocationStatus     status )
+               {
+                   CLLocationCoordinate2D coordinates;
 
-                    [ self.webView performSelectorOnMainThread: @selector( loadRequest: )
-                                                    withObject: request
-                                                 waitUntilDone: NO ];
-                }
-            ];
-        }
-    );
+                   if ( status == INTULocationStatusSuccess )
+                   {
+                       coordinates = currentLocation.coordinate;
+                   }
+                   else // Just give up and assume Wellington Central
+                   {
+                       coordinates.latitude  = -41.294649;
+                       coordinates.longitude = 174.772871;
+                   }
 
+                   NSString     * url_str = [ NSString   stringWithFormat: @"https://darksky.net/forecast/%f,%f/ca12/en", coordinates.latitude, coordinates.longitude ];
+                   NSURL        * url     = [ NSURL         URLWithString: url_str ];
+                   NSURLRequest * request = [ NSURLRequest requestWithURL: url ];
+
+                   [ self.webView performSelectorOnMainThread: @selector( loadRequest: )
+                                                   withObject: request
+                                                waitUntilDone: NO ];
+               }
+           ];
+       }
+   );
+
+#else
+#error Invalid 'WEATHER_SERVICE' value
+#endif
 }
 
 - ( NSString * ) contentBlockingRules
 {
+
+#if WEATHER_SERVICE == MetService
+
+    // MetService:
+    // http://m.metservice.com/towns/wellington
+    //
+    return @" \
+    [ \
+      { \
+        \"trigger\": { \
+          \"url-filter\": \".*\" \
+        }, \
+        \"action\": { \
+          \"type\": \"css-display-none\", \
+          \"selector\": \".mob-adspace, .mob-footer, .mobil-logo\" \
+        } \
+      }, \
+      { \
+        \"trigger\": { \
+          \"url-filter\": \"\\/special\\/mobile-add-service\\\\.js\", \
+          \"resource-type\": [ \"script\" ] \
+        }, \
+        \"url-filter-is-case-sensitive\": true, \
+        \"action\": { \
+          \"type\": \"block\" \
+        } \
+      }, \
+      { \
+        \"trigger\": { \
+          \"url-filter\": \".*\", \
+          \"if-domain\": [ \"doubleclick.net\", \"facebook.net\", \"googletagservices.com\", \"google-analytics.com\", \"newrelic.com\" ], \
+          \"resource-type\": [ \"script\" ] \
+        }, \
+        \"action\": { \
+          \"type\": \"block\" \
+        } \
+      } \
+    ]";
+
+#elif WEATHER_SERVICE == DarkSky
+
     // Dark Sky:
     // https://darksky.net/forecast/-41.3135,174.776/ca12/en
     //
@@ -107,50 +159,9 @@
       } \
     ]";
 
-    // MetService:
-    // http://m.metservice.com/towns/wellington
-    //
-//    return @" \
-//    [ \
-//      { \
-//        \"trigger\": { \
-//          \"url-filter\": \".*\" \
-//        }, \
-//        \"action\": { \
-//          \"type\": \"css-display-none\", \
-//          \"selector\": \".mob-adspace, .mob-footer, .mobil-logo\" \
-//        } \
-//      }, \
-//      { \
-//        \"trigger\": { \
-//          \"url-filter\": \"\\/sites\\/all\\/themes\\/mobile\\/css\\/hi-v014.*\", \
-//          \"resource-type\": [ \"style-sheet\" ] \
-//        }, \
-//        \"action\": { \
-//          \"type\": \"block\" \
-//        } \
-//      }, \
-//      { \
-//        \"trigger\": { \
-//          \"url-filter\": \"\\/special\\/mobile-add-service\\\\.js\", \
-//          \"resource-type\": [ \"script\" ] \
-//        }, \
-//        \"url-filter-is-case-sensitive\": true, \
-//        \"action\": { \
-//          \"type\": \"block\" \
-//        } \
-//      }, \
-//      { \
-//        \"trigger\": { \
-//          \"url-filter\": \".*\", \
-//          \"if-domain\": [ \"doubleclick.net\", \"facebook.net\", \"googletagservices.com\", \"google-analytics.com\", \"newrelic.com\" ], \
-//          \"resource-type\": [ \"script\" ] \
-//        }, \
-//        \"action\": { \
-//          \"type\": \"block\" \
-//        } \
-//      } \
-//    ]";
+#else
+#error Invalid 'WEATHER_SERVICE' value
+#endif
 }
 
 - ( NSString * ) errorTitle

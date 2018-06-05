@@ -256,7 +256,7 @@
                 }
 
                 NSDictionary * routeColours = [ RouteColours colours ];
-                NSString     * foundColour  = number ? [ routeColours objectForKey: number ] : nil;
+                NSString     * foundColour  = number ? [ routeColours objectForKey: [ number uppercaseString ] ] : nil;
                 NSString     * colour       = foundColour ? foundColour : PLACEHOLDER_COLOUR;
 
                 // Sometimes the service name is missing, which looks odd. Use
@@ -536,7 +536,7 @@
             // }
 
             NSDictionary * routeColours = [ RouteColours colours ];
-            NSString     * foundColour  = number ? [ routeColours objectForKey: number ] : nil;
+            NSString     * foundColour  = number ? [ routeColours objectForKey: [ number uppercaseString ] ] : nil;
             NSString     * colour       = foundColour ? foundColour : PLACEHOLDER_COLOUR;
 
             // From October 2015:
