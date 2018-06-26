@@ -54,7 +54,6 @@
 
     // Set up iCloud and the associated data storage managed object context
 
-    [ self iCloudAccountAvailabilityChanged: nil ];
 
     [
         [ NSNotificationCenter defaultCenter ] addObserver: self

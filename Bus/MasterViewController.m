@@ -15,6 +15,8 @@
 #import "StopMapViewController.h"
 #import "FavouritesCell.h"
 
+#define CLOUDKIT
+
 @implementation MasterViewController
 
 #pragma mark - View lifecycle
@@ -246,10 +248,71 @@
 
 #pragma mark - Adding and modifying favourites
 
+// Utility method - call with a pointer to an NSError instance, which may be
+// "nil", and a pointer to a title NSString shown in the error report if the
+// NSError pointer is not "nil".
+//
+// Ensures that the error dialogue is shown on the main thread, so can be
+// called from other threads safely.
+//
+- ( void ) handleError: ( NSError  * ) error
+             withTitle: ( NSString * ) title
+{
+    if ( error )
+    {
+        dispatch_async(
+            dispatch_get_main_queue(),
+            ^ {
+                [
+                    ErrorPresenter showModalAlertFor: self
+                                           withError: error
+                                               title: title
+                                          andHandler: ^( UIAlertAction *action ) {}
+                ];
+            }
+        );
+    }
+}
+
+// Utility method - save the given CloudKit record into the given CloudKit
+// database, reporting an error to the user if it fails but taking no other
+// remedial action. The third parameter is the action being taken and used
+// as part of an error title if things go wrong, as "Could not <action>".
+//
+- ( void ) saveRecord: ( CKRecord   * ) record
+           inDatabase: ( CKDatabase * ) database
+            forAction: ( NSString   * ) action
+{
+    [
+        database saveRecord: record
+          completionHandler: ^ ( CKRecord * _Nullable record, NSError * _Nullable error )
+        {
+            NSString * title = [ NSString stringWithFormat: @"Could not %@", action ];
+            [ self handleError: error withTitle: title ];
+        }
+    ];
+}
+
 - ( void ) addFavourite: ( NSString * ) stopID
         withDescription: ( NSString * ) stopDescription
 {
-    BOOL                     oldShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
+    BOOL oldShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
+
+#ifdef USE_CLOUDKIT
+
+    CKContainer * container = [ CKContainer defaultContainer ];
+    CKDatabase  * database  = [ container privateCloudDatabase ];
+    CKRecord    * record    = [ [ CKRecord alloc ] initWithRecordType: @"BusStop" ];
+
+    [ record setObject: stopID                      forKey: @"recordName"      ];
+    [ record setObject: stopID                      forKey: @"stopID"          ];
+    [ record setObject: stopDescription             forKey: @"stopDescription" ];
+    [ record setObject: STOP_IS_NOT_PREFERRED_VALUE forKey: @"preferred"       ];
+
+    [ self saveRecord: record inDatabase: database forAction: @"add favourite" ];
+
+#else // Old pre-CloudKit code
+
     NSManagedObjectContext * context            = self.fetchedResultsController.managedObjectContext;
     NSEntityDescription    * entity             = self.fetchedResultsController.fetchRequest.entity;
     NSError                * error              = nil;
@@ -271,13 +334,10 @@
 
     if ( ! [ context save: &error ] )
     {
-        [
-            ErrorPresenter showModalAlertFor: self
-                                   withError: error
-                                       title: @"Could not save favourites"
-                                  andHandler: ^( UIAlertAction *action ) {}
-        ];
+        [ self handleError: error withTitle: @"Could not add favourite" ];
     }
+
+#endif
 
     // Avoid animation issues if the section headers appear or dispppear.
     //
@@ -285,8 +345,36 @@
     if ( oldShowSectionFlag != newShowSectionFlag ) [ self.tableView reloadData ];
 }
 
+#ifdef USE_CLOUDKIT
+
+- ( void ) editFavourite: ( NSString * ) stopID
+      settingDescription: ( NSString * ) stopDescription
+{
+    CKContainer * container = [ CKContainer defaultContainer ];
+    CKDatabase  * database  = [ container privateCloudDatabase ];
+    CKRecordID  * recordID  = [ [ CKRecordID alloc ] initWithRecordName: stopID ];
+
+    [
+        database fetchRecordWithID: recordID
+                 completionHandler: ^ ( CKRecord * _Nullable record, NSError * _Nullable error )
+        {
+            if ( error != nil )
+            {
+                [ self handleError: error withTitle: @"Could not save new description" ];
+            }
+            else if ( record )
+            {
+                [ record setObject: stopDescription forKey: @"stopDescription" ];
+                [ self saveRecord: record inDatabase: database forAction: @"save new description" ];
+            }
+        }
+    ];
+}
+
+#else // Old pre-CloudKit code
+
 - ( void ) editFavourite: ( NSManagedObject * ) object
-      settingDescription: ( NSString        * ) stopDescription;
+      settingDescription: ( NSString        * ) stopDescription
 {
     NSError                * error   = nil;
     NSManagedObjectContext * context = [ self.fetchedResultsController managedObjectContext ];
@@ -297,14 +385,20 @@
 
     if ( ! [ context save: &error ] )
     {
-        [
-            ErrorPresenter showModalAlertFor: self
-                                   withError: error
-                                       title: NSLocalizedString( @"Could not update item", "Error message shown when changing a favourite stop's description fails" )
-                                  andHandler: ^( UIAlertAction *action ) {}
-        ];
+        [ self handleError: error
+                 withTitle: NSLocalizedString( @"Could not save updated description", "Error message shown when changing a favourite stop's description fails" ) ];
     }
+
+
+
+    *** in middle of this - change over to nslocalizedstring & continue to rationalise handleError API
+
+
+
+
 }
+
+#endif
 
 - ( void ) setPreferredFlagOf: ( NSManagedObject * ) object to: ( NSNumber * ) newFlagValue
 {

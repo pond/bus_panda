@@ -7,7 +7,10 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <CloudKit/CloudKit.h>
 #import <CoreData/CoreData.h>
+
+#define USE_CLOUDKIT
 
 @class DetailViewController;
 
@@ -24,8 +27,13 @@
 - ( void )  addFavourite: ( NSString        * ) stopID
          withDescription: ( NSString        * ) stopDescription;
 
+#ifdef USE_CLOUDKIT
+- ( void ) editFavourite: ( NSString        * ) stopID
+      settingDescription: ( NSString        * ) stopDescription;
+#else
 - ( void ) editFavourite: ( NSManagedObject * ) object
       settingDescription: ( NSString        * ) stopDescription;
+#endif
 
 - ( void )   updateWatch: ( NSNotification  * ) ignoredNotification;
 
