@@ -54,13 +54,14 @@
 
     // Set up iCloud and the associated data storage managed object context
 
-
     [
         [ NSNotificationCenter defaultCenter ] addObserver: self
                                                   selector: @selector( iCloudAccountAvailabilityChanged: )
                                                       name: NSUbiquityIdentityDidChangeNotification
                                                     object: nil
     ];
+
+    [ self iCloudAccountAvailabilityChanged: nil ];
 
     self.masterViewController.managedObjectContext = self.managedObjectContext;
 

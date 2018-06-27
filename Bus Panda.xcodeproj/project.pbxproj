@@ -85,7 +85,6 @@
 		23E341651CA6A11400EDB581 /* RouteColours.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E341621CA6915100EDB581 /* RouteColours.swift */; };
 		23E341661CA6A1DF00EDB581 /* BusesRowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E3415F1CA68F5F00EDB581 /* BusesRowController.swift */; };
 		23E341691CA79F1A00EDB581 /* BusInfoFetcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E341681CA79F1A00EDB581 /* BusInfoFetcher.m */; };
-		23E341751CABACB800EDB581 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 23E3416F1CABACB800EDB581 /* Info.plist */; };
 		23E341761CABACB800EDB581 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 23E341701CABACB800EDB581 /* LICENSE */; };
 		23E341771CABACB800EDB581 /* MGSwipeButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E341721CABACB800EDB581 /* MGSwipeButton.m */; };
 		23E341781CABACB800EDB581 /* MGSwipeTableCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E341741CABACB800EDB581 /* MGSwipeTableCell.m */; };
@@ -276,7 +275,6 @@
 		23E341621CA6915100EDB581 /* RouteColours.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = RouteColours.swift; path = Bus/RouteColours.swift; sourceTree = "<group>"; };
 		23E341671CA79F1A00EDB581 /* BusInfoFetcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BusInfoFetcher.h; sourceTree = "<group>"; };
 		23E341681CA79F1A00EDB581 /* BusInfoFetcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BusInfoFetcher.m; sourceTree = "<group>"; };
-		23E3416F1CABACB800EDB581 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		23E341701CABACB800EDB581 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		23E341711CABACB800EDB581 /* MGSwipeButton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGSwipeButton.h; sourceTree = "<group>"; };
 		23E341721CABACB800EDB581 /* MGSwipeButton.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MGSwipeButton.m; sourceTree = "<group>"; };
@@ -591,7 +589,6 @@
 		23E3416E1CABACB800EDB581 /* MGSwipeTableCell */ = {
 			isa = PBXGroup;
 			children = (
-				23E3416F1CABACB800EDB581 /* Info.plist */,
 				23E341701CABACB800EDB581 /* LICENSE */,
 				23E341711CABACB800EDB581 /* MGSwipeButton.h */,
 				23E341721CABACB800EDB581 /* MGSwipeButton.m */,
@@ -768,7 +765,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				23E341751CABACB800EDB581 /* Info.plist in Resources */,
 				23D75E301AC1654B0068C808 /* Main.storyboard in Resources */,
 				23D75E351AC1654B0068C808 /* LaunchScreen.xib in Resources */,
 				23D75E321AC1654B0068C808 /* Images.xcassets in Resources */,

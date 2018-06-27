@@ -145,7 +145,7 @@ import UIKit
         "MEL": "003F5F",
         "JVL": "003F5F",
         "KPL": "003F5F",
-        "WRL": "003F5F"
+        "WRL": "003F5F",
     ]
 
     static let oldMap: NSDictionary =
