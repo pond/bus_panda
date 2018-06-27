@@ -150,25 +150,25 @@
         }
     ];
 
-//    UIAlertAction * nearbyStopsAction =
-//    [
-//        UIAlertAction actionWithTitle: @"Nearby Stops"
-//                                style: UIAlertActionStyleDefault
-//                              handler: ^ ( UIAlertAction * action )
-//        {
-//            UINavigationController * stopMapNavigationController =
-//            [
-//                self.storyboard instantiateViewControllerWithIdentifier: @"StopMap"
-//            ];
+//  UIAlertAction * nearbyStopsAction =
+//  [
+//      UIAlertAction actionWithTitle: @"Nearby Stops"
+//                              style: UIAlertActionStyleDefault
+//                            handler: ^ ( UIAlertAction * action )
+//      {
+//          UINavigationController * stopMapNavigationController =
+//          [
+//              self.storyboard instantiateViewControllerWithIdentifier: @"StopMap"
+//          ];
 //
-//            StopMapViewController * stopMapController = ( StopMapViewController * ) stopMapNavigationController.topViewController;
+//          StopMapViewController * stopMapController = ( StopMapViewController * ) stopMapNavigationController.topViewController;
 //
-//            [ stopMapController configureForNearbyStops   ];
-//            [ stopMapController setTitle: @"Nearby Stops" ];
+//          [ stopMapController configureForNearbyStops   ];
+//          [ stopMapController setTitle: @"Nearby Stops" ];
 //
-//            [ self openSpecificModal: stopMapNavigationController ];
-//        }
-//    ];
+//          [ self openSpecificModal: stopMapNavigationController ];
+//      }
+//  ];
 
     UIAlertAction * cancel =
     [
@@ -182,7 +182,7 @@
 
     [ actions addAction: stopMapAction     ];
     [ actions addAction: enterStopIDAction ];
-//    [ actions addAction: nearbyStopsAction ];
+//  [ actions addAction: nearbyStopsAction ];
     [ actions addAction: cancel            ];
 
     // On the iPhone (at the time of writing) modal action sheets implicitly
@@ -276,83 +276,96 @@
 
 // Utility method - save the given CloudKit record into the given CloudKit
 // database, reporting an error to the user if it fails but taking no other
-// remedial action. The third parameter is the action being taken and used
-// as part of an error title if things go wrong, as "Could not <action>".
+// remedial action. The third parameter is the title string to use if there
+// is an error to report.
 //
 - ( void ) saveRecord: ( CKRecord   * ) record
            inDatabase: ( CKDatabase * ) database
-            forAction: ( NSString   * ) action
+         onErrorTitle: ( NSString   * ) errorTitle
 {
     [
         database saveRecord: record
           completionHandler: ^ ( CKRecord * _Nullable record, NSError * _Nullable error )
         {
-            NSString * title = [ NSString stringWithFormat: @"Could not %@", action ];
-            [ self handleError: error withTitle: title ];
+            [ self handleError: error withTitle: errorTitle ];
         }
     ];
 }
 
-- ( void ) addFavourite: ( NSString * ) stopID
-        withDescription: ( NSString * ) stopDescription
+// Create-or-update a favourite stop. Pass the stop ID. If an existing record
+// is found, it'll be updated with the given stop description and preferred
+// flag; else a new record will be created. Do not pass "nil" for any
+// parameter; if editing a favourite and a field value hasn't changed, just
+// pass in the existing value.
+//
+// Modifies the local table view first, then iCloud next, so that the UI is
+// updated quickly rather than lagging as iCloud updates happen.
+//
+- ( void ) addOrEditFavourite: ( NSString * ) stopID
+           settingDescription: ( NSString * ) stopDescription
+             andPreferredFlag: ( NSNumber * ) preferred
 {
+    // First update local records.
+
     BOOL oldShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
 
-#ifdef USE_CLOUDKIT
-
-    CKContainer * container = [ CKContainer defaultContainer ];
-    CKDatabase  * database  = [ container privateCloudDatabase ];
-    CKRecord    * record    = [ [ CKRecord alloc ] initWithRecordType: @"BusStop" ];
-
-    [ record setObject: stopID                      forKey: @"recordName"      ];
-    [ record setObject: stopID                      forKey: @"stopID"          ];
-    [ record setObject: stopDescription             forKey: @"stopDescription" ];
-    [ record setObject: STOP_IS_NOT_PREFERRED_VALUE forKey: @"preferred"       ];
-
-    [ self saveRecord: record inDatabase: database forAction: @"add favourite" ];
-
-#else // Old pre-CloudKit code
-
-    NSManagedObjectContext * context            = self.fetchedResultsController.managedObjectContext;
-    NSEntityDescription    * entity             = self.fetchedResultsController.fetchRequest.entity;
-    NSError                * error              = nil;
-    NSManagedObject        * newManagedObject   =
-    [
-        NSEntityDescription insertNewObjectForEntityForName: entity.name
-                                     inManagedObjectContext: context
-    ];
-
-    // If appropriate, configure the new managed object.
-    //
-    // Normally you should use accessor methods, but using KVC here avoids
-    // the need to add a custom class to the template.
-
-    [ newManagedObject setValue: stopID          forKey: @"stopID"          ];
-    [ newManagedObject setValue: stopDescription forKey: @"stopDescription" ];
-
-    // Save the context.
+    [ object setValue: newFlagValue forKey: @"preferred" ];
 
     if ( ! [ context save: &error ] )
     {
-        [ self handleError: error withTitle: @"Could not add favourite" ];
+        [
+            ErrorPresenter showModalAlertFor: self
+                                   withError: error
+                                       title: NSLocalizedString( @"Could not change 'preferred' stop setting", "Error message shown when changing the 'preferred' setting fails" )
+                                  andHandler: ^( UIAlertAction *action ) {}
+        ];
     }
-
-#endif
 
     // Avoid animation issues if the section headers appear or dispppear.
     //
     BOOL newShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
     if ( oldShowSectionFlag != newShowSectionFlag ) [ self.tableView reloadData ];
-}
 
-#ifdef USE_CLOUDKIT
+    // If there's no section header than (A) is there only one favourite
+    // stop, (B) is that stop now preferred and (C) have we detected this
+    // condition before? If not, tell the user what's going on.
+    //
+    NSUserDefaults * defaults = [ NSUserDefaults standardUserDefaults ];
 
-- ( void ) editFavourite: ( NSString * ) stopID
-      settingDescription: ( NSString * ) stopDescription
-{
-    CKContainer * container = [ CKContainer defaultContainer ];
-    CKDatabase  * database  = [ container privateCloudDatabase ];
-    CKRecordID  * recordID  = [ [ CKRecordID alloc ] initWithRecordName: stopID ];
+    if (
+           newShowSectionFlag == NO &&
+           self.fetchedResultsController.fetchedObjects.count == 1 &&
+           [ [ self.fetchedResultsController.fetchedObjects[ 0 ] valueForKey: @"preferred" ] isEqual: STOP_IS_PREFERRED_VALUE ] &&
+           [ defaults boolForKey: @"haveShownSingleSectionWarning" ] != YES
+       )
+    {
+        [ defaults setBool: YES forKey: @"haveShownSingleSectionWarning" ];
+        [ defaults synchronize ];
+
+        UIAlertController * warning = [ UIAlertController alertControllerWithTitle: @"You have only one preferred and favourite stop"
+                                                                           message: @"When you have a mixture of preferred and normal stops, they show up in different sections.\n\nOtherwise, you only see one list."
+                                                                    preferredStyle: UIAlertControllerStyleAlert ];
+
+        UIAlertAction * action = [ UIAlertAction actionWithTitle: @"Got it!"
+                                                           style: UIAlertActionStyleDefault
+                                                         handler: nil ];
+
+        [ warning addAction: action ];
+        [ self presentViewController: warning animated: YES completion: nil ];
+    }
+
+
+
+
+    // Now update iCloud.
+
+    CKContainer * container  = [ CKContainer defaultContainer ];
+    CKDatabase  * database   = [ container privateCloudDatabase ];
+    CKRecordID  * recordID   = [ [ CKRecordID alloc ] initWithRecordName: stopID ];
+    NSString    * errorTitle = NSLocalizedString(
+        @"Could not save changes in iCloud",
+        @"Error message shown when trying to save favourite stop changes to iCloud"
+    );
 
     [
         database fetchRecordWithID: recordID
@@ -360,45 +373,28 @@
         {
             if ( error != nil )
             {
-                [ self handleError: error withTitle: @"Could not save new description" ];
+                [ self handleError: error withTitle: errorTitle ];
             }
             else if ( record )
             {
                 [ record setObject: stopDescription forKey: @"stopDescription" ];
-                [ self saveRecord: record inDatabase: database forAction: @"save new description" ];
+                [ record setObject: preferred       forKey: @"preferred"       ];
+
+                [ self saveRecord: record inDatabase: database onErrorTitle: errorTitle ];
+            }
+            else
+            {
+                CKRecord * record = [ [ CKRecord alloc ] initWithRecordType: @"BusStop" ];
+
+                [ record setObject: stopID          forKey: @"recordName"      ];
+                [ record setObject: stopDescription forKey: @"stopDescription" ];
+                [ record setObject: preferred       forKey: @"preferred"       ];
+
+                [ self saveRecord: record inDatabase: database onErrorTitle: errorTitle ];
             }
         }
     ];
 }
-
-#else // Old pre-CloudKit code
-
-- ( void ) editFavourite: ( NSManagedObject * ) object
-      settingDescription: ( NSString        * ) stopDescription
-{
-    NSError                * error   = nil;
-    NSManagedObjectContext * context = [ self.fetchedResultsController managedObjectContext ];
-
-    [ object setValue: stopDescription forKey: @"stopDescription" ];
-
-    // Save the context.
-
-    if ( ! [ context save: &error ] )
-    {
-        [ self handleError: error
-                 withTitle: NSLocalizedString( @"Could not save updated description", "Error message shown when changing a favourite stop's description fails" ) ];
-    }
-
-
-
-    *** in middle of this - change over to nslocalizedstring & continue to rationalise handleError API
-
-
-
-
-}
-
-#endif
 
 - ( void ) setPreferredFlagOf: ( NSManagedObject * ) object to: ( NSNumber * ) newFlagValue
 {
