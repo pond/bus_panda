@@ -503,24 +503,13 @@
     );
 
     [
-        database fetchRecordWithID: recordID
-                 completionHandler: ^ ( CKRecord * _Nullable record, NSError * _Nullable error )
+        database deleteRecordWithID: recordID
+                  completionHandler: ^ ( CKRecordID * _Nullable recordID, NSError * _Nullable error )
         {
-            if ( error != nil )
-            {
-                NSLog(@"CLOUD KIT ERROR %@", error);
-                [ self handleError: error withTitle: errorTitle ];
-            }
-            else if ( record != nil )
-            {
-                NSLog(@"EXISTING RECORD delete %@", record);
-                NSLog(@"(Record name %@)", [record valueForKey: @"recordName"]);
-
-                [ self saveRecord: record inDatabase: database onErrorTitle: errorTitle ];
-            }
+            NSLog(@"DELETE RECORD - %@ / error result: %@", recordID, error);
+            [ self handleError: error withTitle: errorTitle ];
         }
     ];
-
 }
 
 #pragma mark - Segues
@@ -634,7 +623,7 @@
 
         if ( object != nil )
         {
-            [ self deleteObject: object ];
+            [ self deleteObject: [ object valueForKey: @"stopID" ] ];
         }
     }
 }
@@ -658,7 +647,7 @@
                       backgroundColor: [ UIColor redColor ]
                              callback:  ^ BOOL ( MGSwipeTableCell * sender )
         {
-            [ self deleteObject: object ];
+            [ self deleteObject: stopID ];
             return YES; // Yes => do slide the table row back to normal position
         }
     ];
