@@ -23,6 +23,7 @@
 // of the map view's controller will be able to reuse the same data.
 
 @property ( strong ) NSMutableDictionary * cachedStopLocations;
+@property ( strong ) NSOperationQueue    * startupCloudOperations;
 
 @end
 
@@ -54,16 +55,78 @@
 
     // Set up iCloud and the associated data storage managed object context
 
+//    [
+//        [ NSNotificationCenter defaultCenter ] addObserver: self
+//                                                  selector: @selector( iCloudAccountAvailabilityChanged: )
+//                                                      name: NSUbiquityIdentityDidChangeNotification
+//                                                    object: nil
+//    ];
+//
+//    [ self iCloudAccountAvailabilityChanged: nil ];
+
+    self.masterViewController.managedObjectContext = self.managedObjectContextLocal;
+
+    self.startupCloudOperations = [ [ NSOperationQueue alloc ] init ];
+
     [
-        [ NSNotificationCenter defaultCenter ] addObserver: self
-                                                  selector: @selector( iCloudAccountAvailabilityChanged: )
-                                                      name: NSUbiquityIdentityDidChangeNotification
-                                                    object: nil
+        [ CKContainer defaultContainer ] accountStatusWithCompletionHandler: ^ ( CKAccountStatus accountStatus, NSError * error )
+        {
+            if ( accountStatus == CKAccountStatusNoAccount )
+            {
+                UIAlertController * alert =
+                [
+                    UIAlertController alertControllerWithTitle: @"Sign in to iCloud"
+                                                       message: @"Sign in to your iCloud account to synchronise favourites between your devices."
+                                                preferredStyle: UIAlertControllerStyleAlert
+                ];
+
+                [ alert addAction: [ UIAlertAction actionWithTitle: @"Okay"
+                                                             style: UIAlertActionStyleCancel
+                                                           handler: nil ] ];
+
+                [ self.masterViewController presentViewController: alert
+                                                         animated: YES
+                                                       completion: nil ];
+            }
+            else
+            {
+                NSLog(@"CloudKit says 'ready'");
+
+                NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
+                NSEntityDescription * entity       = [ NSEntityDescription entityForName: @"BusStop"
+                                                                  inManagedObjectContext: self.managedObjectContextRemote ];
+
+                [ fetchRequest setEntity:         entity ];
+                [ fetchRequest setFetchBatchSize: 50     ];
+
+                NSSortDescriptor * sortDescriptor1 = [ [ NSSortDescriptor alloc] initWithKey: @"preferred"
+                                                                                   ascending: NO ];
+
+                NSSortDescriptor * sortDescriptor2 = [ [ NSSortDescriptor alloc] initWithKey: @"stopDescription"
+                                                                                   ascending: YES ];
+
+                [ fetchRequest setSortDescriptors: @[ sortDescriptor1, sortDescriptor2 ] ];
+
+                NSString * cacheName = @"BusStops";
+
+                // Problems were seen in development once the 'preferred stops' feature was
+                // introduced that were solved by deleting the existing cache data when the
+                // NSFetchedResultsController instance is first created. Just in case any
+                // users in the field might see something similar, this code is retained.
+                //
+                [ NSFetchedResultsController deleteCacheWithName: cacheName ];
+
+                NSFetchedResultsController * frc = [ [ NSFetchedResultsController alloc ] initWithFetchRequest: fetchRequest
+                                                                                          managedObjectContext: self.managedObjectContextRemote
+                                                                                            sectionNameKeyPath: @"preferred"
+                                                                                                     cacheName: cacheName ];
+
+                NSLog(@"FETCHED %@", frc.fetchedObjects);
+            }
+        }
     ];
 
-    [ self iCloudAccountAvailabilityChanged: nil ];
 
-    self.masterViewController.managedObjectContext = self.managedObjectContext;
 
     // Initialse the cached bus stop location data.
     //
@@ -408,9 +471,11 @@
 
 #pragma mark - Core Data stack
 
-@synthesize managedObjectContext       = _managedObjectContext;
-@synthesize managedObjectModel         = _managedObjectModel;
-@synthesize persistentStoreCoordinator = _persistentStoreCoordinator;
+@synthesize managedObjectModel               = _managedObjectModel;
+@synthesize managedObjectContextLocal        = _managedObjectContextLocal;
+@synthesize managedObjectContextRemote       = _managedObjectContextRemote;
+@synthesize persistentStoreCoordinatorRemote = _persistentStoreCoordinatorRemote;
+@synthesize persistentStoreCoordinatorLocal  = _persistentStoreCoordinatorLocal;
 
 // Send a notification saying that the iCloud data has changed. A listener is
 // set up in MasterViewController.m. The notification is sent via GCD on a
@@ -472,21 +537,75 @@
     return _managedObjectModel;
 }
 
-// http://timroadley.com/2012/04/03/core-data-in-icloud/
+// Local storage only for Core Data.
 //
-- ( NSPersistentStoreCoordinator * ) persistentStoreCoordinator
+- ( NSPersistentStoreCoordinator * ) persistentStoreCoordinatorLocal
 {
-    if ( _persistentStoreCoordinator != nil )
+    if ( _persistentStoreCoordinatorLocal != nil )
     {
-        return _persistentStoreCoordinator;
+        return _persistentStoreCoordinatorLocal;
     }
 
-    _persistentStoreCoordinator = [
+    _persistentStoreCoordinatorLocal = [
         [ NSPersistentStoreCoordinator alloc ]
         initWithManagedObjectModel: [ self managedObjectModel ]
     ];
 
-    NSPersistentStoreCoordinator * psc = _persistentStoreCoordinator;
+    NSPersistentStoreCoordinator * psc        = _persistentStoreCoordinatorLocal;
+    NSURL                        * localStore =
+    [
+        [ self applicationDocumentsDirectory ] URLByAppendingPathComponent: CORE_DATA_FILE_NAME
+    ];
+
+    NSLog( @"Core Data: Using a local store for %@", _persistentStoreCoordinatorLocal );
+    NSLog( @"localStore URL = %@", localStore );
+
+    NSDictionary * options =
+    @{
+        NSMigratePersistentStoresAutomaticallyOption: @YES,
+        NSInferMappingModelAutomaticallyOption:       @YES
+    };
+
+    [
+        psc performBlockAndWait: ^ ( void )
+        {
+            [ psc addPersistentStoreWithType: NSSQLiteStoreType
+                               configuration: nil
+                                         URL: localStore
+                                     options: options
+                                       error: nil ];
+        }
+    ];
+
+    [ self sendDataHasChangedNotification ];
+    return _persistentStoreCoordinatorLocal;
+}
+
+// Remote storage only for Core Data:
+//
+//   http://timroadley.com/2012/04/03/core-data-in-icloud/
+//
+// The persistent store coordinator returned on the first call will not have
+// any stores attached initially as the iCloud storage association has to be
+// done in a background thread. Once this completes, the coordinator will be
+// asked to update the Core Data records for you.
+//
+// If you call here when iCloud is *not* working, then no data source will
+// ever get added.
+//
+- ( NSPersistentStoreCoordinator * ) persistentStoreCoordinatorRemote
+{
+    if ( _persistentStoreCoordinatorRemote != nil )
+    {
+        return _persistentStoreCoordinatorRemote;
+    }
+
+    _persistentStoreCoordinatorRemote = [
+        [ NSPersistentStoreCoordinator alloc ]
+        initWithManagedObjectModel: [ self managedObjectModel ]
+    ];
+
+    NSPersistentStoreCoordinator * psc = _persistentStoreCoordinatorRemote;
 
     // Set up iCloud in another thread: "In iOS, apps that use document storage
     // must call the URLForUbiquityContainerIdentifier: method of the
@@ -497,13 +616,10 @@
     //
     // https://developer.apple.com/library/ios/documentation/General/Conceptual/iCloudDesignGuide/Chapters/iCloudFundametals.html#//apple_ref/doc/uid/TP40012094-CH6-SW1
     //
-    dispatch_async
-    (
-        dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0 ), ^
-        {
-            NSString * iCloudEnabledAppID = @"XT4V976D8Y~uk~org~pond~Bus-Panda";
-            NSString * dataFileName       = @"Bus-Panda.sqlite";
-
+//    dispatch_async
+//    (
+//        dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0 ), ^
+//        {
             // "nil" for container identifier => choose the first from the entitlements
             // file's com.apple.developer.ubiquity-container-identifiers array. That's
             // nice as it avoids duplicating info there and here.
@@ -513,18 +629,20 @@
 
             if ( iCloud )
             {
-                NSURL * iCloudDataURL = [ [ self applicationDocumentsDirectory ] URLByAppendingPathComponent: dataFileName ];
+                NSURL * iCloudDataURL =
+                [
+                    [ self applicationDocumentsDirectory ] URLByAppendingPathComponent: CORE_DATA_FILE_NAME
+                ];
 
-                NSLog( @"iCloud is working: %@",  iCloud             );
-                NSLog( @"dataFileName: %@",       dataFileName       );
-                NSLog( @"iCloudEnabledAppID: %@", iCloudEnabledAppID );
-                NSLog( @"iCloudDataURL: %@",      iCloudDataURL      );
+                NSLog( @"iCloud is working: %@",  iCloud                );
+                NSLog( @"iCloudEnabledAppID: %@", ICLOUD_ENABLED_APP_ID );
+                NSLog( @"iCloudDataURL: %@",      iCloudDataURL         );
 
                 NSDictionary *options =
                 @{
                     NSMigratePersistentStoresAutomaticallyOption: @YES,
                     NSInferMappingModelAutomaticallyOption:       @YES,
-                    NSPersistentStoreUbiquitousContentNameKey:    iCloudEnabledAppID
+                    NSPersistentStoreUbiquitousContentNameKey:    ICLOUD_ENABLED_APP_ID
                 };
 
                 [
@@ -537,51 +655,71 @@
                                                    error: nil ];
                     }
                 ];
+
+                [ self sendDataHasChangedNotification ];
             }
             else
             {
-                NSLog( @"iCloud is NOT working - using a local store" );
-
-                NSURL * localStore = [ [ self applicationDocumentsDirectory ] URLByAppendingPathComponent: dataFileName ];
-
-                NSLog( @"dataFileName = %@",   dataFileName );
-                NSLog( @"localStore URL = %@", localStore   );
-
-                NSDictionary * options =
-                @{
-                    NSMigratePersistentStoresAutomaticallyOption: @YES,
-                    NSInferMappingModelAutomaticallyOption:       @YES
-                };
-
-                [
-                    psc performBlockAndWait: ^ ( void )
-                    {
-                        [ psc addPersistentStoreWithType: NSSQLiteStoreType
-                                           configuration: nil
-                                                     URL: localStore
-                                                 options: options
-                                                   error: nil ];
-                    }
-                ];
+                NSLog( @"iCloud is NOT working - cannot use a remote PSC" );
             }
+//        }
+//    );
 
-            [ self sendDataHasChangedNotification ];
-        }
-     );
-
-    return _persistentStoreCoordinator;
+    return _persistentStoreCoordinatorRemote;
 }
 
-// http://timroadley.com/2012/04/03/core-data-in-icloud/
+// Return an NSManagedObjectContext instance for local Core Data storage.
 //
-- ( NSManagedObjectContext * ) managedObjectContext
+- ( NSManagedObjectContext * ) managedObjectContextLocal
 {
-    if ( _managedObjectContext != nil )
+    if ( _managedObjectContextLocal != nil )
     {
-        return _managedObjectContext;
+        return _managedObjectContextLocal;
     }
 
-    NSPersistentStoreCoordinator * psc = [ self persistentStoreCoordinator ];
+    NSPersistentStoreCoordinator * psc = [ self persistentStoreCoordinatorLocal ];
+
+    if ( psc != nil )
+    {
+        NSManagedObjectContext * moc = [ [ NSManagedObjectContext alloc ] initWithConcurrencyType: NSMainQueueConcurrencyType ];
+
+        [
+            moc performBlockAndWait: ^ ( void )
+            {
+                [ moc setPersistentStoreCoordinator: psc ];
+
+                [ [ NSNotificationCenter defaultCenter ] addObserver: self
+                                                            selector: @selector( storesWillChange: )
+                                                                name: NSPersistentStoreCoordinatorStoresWillChangeNotification
+                                                              object: psc ];
+
+                [ [ NSNotificationCenter defaultCenter ] addObserver: self
+                                                            selector: @selector( storesDidChange: )
+                                                                name: NSPersistentStoreCoordinatorStoresDidChangeNotification
+                                                              object: psc ];
+            }
+        ];
+
+        moc.mergePolicy = NSMergeByPropertyStoreTrumpMergePolicy;
+
+        _managedObjectContextLocal = moc;
+    }
+
+    return _managedObjectContextLocal;
+}
+
+// Return an NSManagedObjectContext instance for iCloud Core Data storage:
+//
+//   http://timroadley.com/2012/04/03/core-data-in-icloud/
+//
+- ( NSManagedObjectContext * ) managedObjectContextRemote
+{
+    if ( _managedObjectContextRemote != nil )
+    {
+        return _managedObjectContextRemote;
+    }
+
+    NSPersistentStoreCoordinator * psc = [ self persistentStoreCoordinatorRemote ];
 
     if ( psc != nil )
     {
@@ -611,10 +749,10 @@
 
         moc.mergePolicy = NSMergeByPropertyStoreTrumpMergePolicy;
 
-        _managedObjectContext = moc;
+        _managedObjectContextRemote = moc;
     }
 
-    return _managedObjectContext;
+    return _managedObjectContextRemote;
 }
 
 // http://timroadley.com/2012/04/03/core-data-in-icloud/
@@ -623,7 +761,7 @@
 {
     NSLog( @"Merging changes from iCloud..." );
 
-    NSManagedObjectContext * moc = self.managedObjectContext;
+    NSManagedObjectContext * moc = self.managedObjectContextLocal;
 
     [
         moc performBlock: ^ ( void )
@@ -646,7 +784,7 @@
     // Close to copy-and-paste on 'savContext', except for the 'reset' call
     // needed *inside* the atomicity wrapper of 'perform block and wait'.
 
-    NSManagedObjectContext * moc = self.managedObjectContext;
+    NSManagedObjectContext * moc = self.managedObjectContextLocal;
 
     [
         moc performBlockAndWait: ^
@@ -678,7 +816,7 @@
     // posts the 'changed' notification for other bits of the app, rather than
     // also trying to merge in changes.
 
-    NSManagedObjectContext * moc = self.managedObjectContext;
+    NSManagedObjectContext * moc = self.managedObjectContextLocal;
 
     [
         moc performBlock: ^ ( void )
@@ -692,36 +830,36 @@
     ];
 }
 
-// This is intended really just for one-shot data migrations and is not very
-// efficient as it intentionally does not provide any cache name for the
-// results, so it'll re-fetch every time.
+//// This is intended really just for one-shot data migrations and is not very
+//// efficient as it intentionally does not provide any cache name for the
+//// results, so it'll re-fetch every time.
+////
+//- ( NSArray * ) getAllFavourites
+//{
+//    NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
+//    NSEntityDescription * entity       = [ NSEntityDescription entityForName: @"BusStop"
+//                                                      inManagedObjectContext: self.managedObjectContext ];
 //
-- ( NSArray * ) getAllFavourites
-{
-    NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
-    NSEntityDescription * entity       = [ NSEntityDescription entityForName: @"BusStop"
-                                                      inManagedObjectContext: self.managedObjectContext ];
-
-    [ fetchRequest setEntity:         entity ];
-    [ fetchRequest setFetchBatchSize: 50     ];
-
-    NSSortDescriptor * sortDescriptor = [ [ NSSortDescriptor alloc] initWithKey: @"stopDescription"
-                                                                      ascending: YES ];
-
-    [ fetchRequest setSortDescriptors: @[ sortDescriptor ] ];
-
-    NSFetchedResultsController * frc = [ [ NSFetchedResultsController alloc ] initWithFetchRequest: fetchRequest
-                                                                              managedObjectContext: self.managedObjectContext
-                                                                                sectionNameKeyPath: @"preferred"
-                                                                                         cacheName: nil ];
-    return frc.fetchedObjects;
-}
+//    [ fetchRequest setEntity:         entity ];
+//    [ fetchRequest setFetchBatchSize: 50     ];
+//
+//    NSSortDescriptor * sortDescriptor = [ [ NSSortDescriptor alloc] initWithKey: @"stopDescription"
+//                                                                      ascending: YES ];
+//
+//    [ fetchRequest setSortDescriptors: @[ sortDescriptor ] ];
+//
+//    NSFetchedResultsController * frc = [ [ NSFetchedResultsController alloc ] initWithFetchRequest: fetchRequest
+//                                                                              managedObjectContext: self.managedObjectContext
+//                                                                                sectionNameKeyPath: @"preferred"
+//                                                                                         cacheName: nil ];
+//    return frc.fetchedObjects;
+//}
 
 #pragma mark - Core Data saving support
 
 - ( void ) saveContext
 {
-    NSManagedObjectContext * managedObjectContext = self.managedObjectContext;
+    NSManagedObjectContext * managedObjectContext = self.managedObjectContextLocal;
 
     [
         managedObjectContext performBlockAndWait: ^

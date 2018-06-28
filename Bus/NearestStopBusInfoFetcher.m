@@ -89,8 +89,8 @@
 {
     AppDelegate            * appDelegate = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
     NSError                * error       = nil;
-    NSManagedObjectContext * moc         = [ appDelegate managedObjectContext ];
-    NSManagedObjectModel   * mom         = [ appDelegate managedObjectModel   ];
+    NSManagedObjectContext * moc         = [ appDelegate managedObjectContextLocal ];
+    NSManagedObjectModel   * mom         = [ appDelegate managedObjectModel ];
     NSEntityDescription    * styleEntity = [ mom entitiesByName ][ @"BusStop" ];
     NSFetchRequest         * request     = [ [ NSFetchRequest alloc ] init ];
     NSPredicate            * predicate   =

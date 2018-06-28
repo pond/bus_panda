@@ -37,8 +37,9 @@
     AppDelegate          * appDelegate          = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
     MasterViewController * masterViewController = appDelegate.masterViewController;
 
-    [ masterViewController editFavourite: self.sourceObject
-                      settingDescription: self.descriptionField.text ];
+    [ masterViewController addOrEditFavourite: [ self.sourceObject valueForKey: @"stopID" ]
+                           settingDescription: self.descriptionField.text
+                             andPreferredFlag: nil ];
 
     [ self dismissEditorView: nil ];
 }

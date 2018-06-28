@@ -26,8 +26,9 @@
     AppDelegate          * appDelegate          = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
     MasterViewController * masterViewController = appDelegate.masterViewController;
 
-    [ masterViewController addFavourite: stopID
-                        withDescription: stopDescription ];
+    [ masterViewController addOrEditFavourite: stopID
+                           settingDescription: stopDescription
+                             andPreferredFlag: nil ];
 }
 
 // Subclasses should call this method when they want to be closed. It ensures

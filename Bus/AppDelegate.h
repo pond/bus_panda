@@ -14,7 +14,10 @@
 #import "MasterViewController.h"
 
 #define ICLOUD_TOKEN_ID_DEFAULTS_KEY   @"uk.org.pond.Bus-Panda.UbiquityIdentityToken"
+#define ICLOUD_ENABLED_APP_ID          @"XT4V976D8Y~uk~org~pond~Bus-Panda"
+#define CORE_DATA_FILE_NAME            @"Bus-Panda.sqlite"
 #define DATA_CHANGED_NOTIFICATION_NAME @"BusPandaDataChanged"
+#define CLOUDKIT_ZONE_ID               @"busPanda"
 
 @interface AppDelegate : UIResponder < UIApplicationDelegate,
                                        UISplitViewControllerDelegate,
@@ -22,9 +25,11 @@
                                        WCSessionDelegate >
 
 @property (           strong, nonatomic ) UIWindow                     * window;
-@property ( readonly, strong, nonatomic ) NSManagedObjectContext       * managedObjectContext;
 @property ( readonly, strong, nonatomic ) NSManagedObjectModel         * managedObjectModel;
-@property ( readonly, strong, nonatomic ) NSPersistentStoreCoordinator * persistentStoreCoordinator;
+@property ( readonly, strong, nonatomic ) NSManagedObjectContext       * managedObjectContextLocal;
+@property ( readonly, strong, nonatomic ) NSManagedObjectContext       * managedObjectContextRemote;
+@property ( readonly, strong, nonatomic ) NSPersistentStoreCoordinator * persistentStoreCoordinatorLocal;
+@property ( readonly, strong, nonatomic ) NSPersistentStoreCoordinator * persistentStoreCoordinatorRemote;
 
 // Shared utility methods
 
