@@ -91,7 +91,7 @@
     NSError                * error       = nil;
     NSManagedObjectContext * moc         = [ appDelegate managedObjectContextLocal ];
     NSManagedObjectModel   * mom         = [ appDelegate managedObjectModel ];
-    NSEntityDescription    * styleEntity = [ mom entitiesByName ][ @"BusStop" ];
+    NSEntityDescription    * styleEntity = [ mom entitiesByName ][ ENTITY_AND_RECORD_NAME ];
     NSFetchRequest         * request     = [ [ NSFetchRequest alloc ] init ];
     NSPredicate            * predicate   =
     [

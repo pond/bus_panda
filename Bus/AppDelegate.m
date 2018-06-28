@@ -93,7 +93,7 @@
                 NSLog(@"CloudKit says 'ready'");
 
                 NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
-                NSEntityDescription * entity       = [ NSEntityDescription entityForName: @"BusStop"
+                NSEntityDescription * entity       = [ NSEntityDescription entityForName: ENTITY_AND_RECORD_NAME
                                                                   inManagedObjectContext: self.managedObjectContextRemote ];
 
                 [ fetchRequest setEntity:         entity ];
@@ -837,7 +837,7 @@
 //- ( NSArray * ) getAllFavourites
 //{
 //    NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
-//    NSEntityDescription * entity       = [ NSEntityDescription entityForName: @"BusStop"
+//    NSEntityDescription * entity       = [ NSEntityDescription entityForName: ENTITY_AND_RECORD_NAME
 //                                                      inManagedObjectContext: self.managedObjectContext ];
 //
 //    [ fetchRequest setEntity:         entity ];

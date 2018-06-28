@@ -17,6 +17,7 @@
 #define ICLOUD_ENABLED_APP_ID          @"XT4V976D8Y~uk~org~pond~Bus-Panda"
 #define CORE_DATA_FILE_NAME            @"Bus-Panda.sqlite"
 #define DATA_CHANGED_NOTIFICATION_NAME @"BusPandaDataChanged"
+#define ENTITY_AND_RECORD_NAME         @"BusStop"
 #define CLOUDKIT_ZONE_ID               @"busPanda"
 
 @interface AppDelegate : UIResponder < UIApplicationDelegate,

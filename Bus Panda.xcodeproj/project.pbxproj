@@ -35,22 +35,6 @@
 		23AC944C209B0A6400B670FC /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23AC944B209B0A6400B670FC /* WebKit.framework */; };
 		23AC944F209B146200B670FC /* WeatherWebViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23AC944E209B146200B670FC /* WeatherWebViewController.m */; };
 		23AC9452209C625A00B670FC /* WebPageAbstractViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23AC9451209C625900B670FC /* WebPageAbstractViewController.m */; };
-		23B0F1572074D844007DE99F /* Metadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B0F14E2074D844007DE99F /* Metadata.swift */; };
-		23B0F1582074D844007DE99F /* Properties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B0F14F2074D844007DE99F /* Properties.swift */; };
-		23B0F1592074D844007DE99F /* Sync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B0F1502074D844007DE99F /* Sync.swift */; };
-		23B0F15A2074D844007DE99F /* Zone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B0F1512074D844007DE99F /* Zone.swift */; };
-		23B0F15B2074D844007DE99F /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B0F1522074D844007DE99F /* Store.swift */; };
-		23B0F15C2074D844007DE99F /* Change.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B0F1532074D844007DE99F /* Change.swift */; };
-		23B0F15D2074D844007DE99F /* Transformers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B0F1542074D844007DE99F /* Transformers.swift */; };
-		23B0F15E2074D844007DE99F /* Token.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B0F1552074D844007DE99F /* Token.swift */; };
-		23B0F15F2074D844007DE99F /* Preference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B0F1562074D844007DE99F /* Preference.swift */; };
-		23B0F1682074D853007DE99F /* NSEntityDescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B0F1612074D853007DE99F /* NSEntityDescription.swift */; };
-		23B0F1692074D853007DE99F /* NSManagedObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B0F1622074D853007DE99F /* NSManagedObject.swift */; };
-		23B0F16A2074D853007DE99F /* NSManagedObjectContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B0F1632074D853007DE99F /* NSManagedObjectContext.swift */; };
-		23B0F16B2074D853007DE99F /* NSPersistentStoreCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B0F1642074D853007DE99F /* NSPersistentStoreCoordinator.swift */; };
-		23B0F16C2074D853007DE99F /* NSPredicate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B0F1652074D853007DE99F /* NSPredicate.swift */; };
-		23B0F16D2074D853007DE99F /* CKRecordID.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B0F1662074D853007DE99F /* CKRecordID.swift */; };
-		23B0F16E2074D853007DE99F /* CKRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23B0F1672074D853007DE99F /* CKRecord.swift */; };
 		23C937981ACDF51E00EF1441 /* TimetableWebViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */; };
 		23D75E211AC1654B0068C808 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E201AC1654B0068C808 /* main.m */; };
 		23D75E241AC1654B0068C808 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E231AC1654B0068C808 /* AppDelegate.m */; };
@@ -162,8 +146,6 @@
 		23420AAF1C92A34E009F40F9 /* GlanceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlanceController.swift; sourceTree = "<group>"; };
 		23420AB11C92A34E009F40F9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		23420AB31C92A34E009F40F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		234C4B561F3C309100A7718C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		234C4B571F3C309900A7718C /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		235AA1961CA2A055006143B9 /* StopsRowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StopsRowController.swift; sourceTree = "<group>"; };
 		235FF3C220D78B8C0080FE67 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
 		236842401CAD3B7600548923 /* StringShortener.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StringShortener.swift; sourceTree = "<group>"; };
@@ -190,22 +172,6 @@
 		23AC944E209B146200B670FC /* WeatherWebViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WeatherWebViewController.m; sourceTree = "<group>"; };
 		23AC9450209C625900B670FC /* WebPageAbstractViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WebPageAbstractViewController.h; sourceTree = "<group>"; };
 		23AC9451209C625900B670FC /* WebPageAbstractViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WebPageAbstractViewController.m; sourceTree = "<group>"; };
-		23B0F14E2074D844007DE99F /* Metadata.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Metadata.swift; sourceTree = "<group>"; };
-		23B0F14F2074D844007DE99F /* Properties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Properties.swift; sourceTree = "<group>"; };
-		23B0F1502074D844007DE99F /* Sync.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Sync.swift; sourceTree = "<group>"; };
-		23B0F1512074D844007DE99F /* Zone.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Zone.swift; sourceTree = "<group>"; };
-		23B0F1522074D844007DE99F /* Store.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
-		23B0F1532074D844007DE99F /* Change.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Change.swift; sourceTree = "<group>"; };
-		23B0F1542074D844007DE99F /* Transformers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Transformers.swift; sourceTree = "<group>"; };
-		23B0F1552074D844007DE99F /* Token.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Token.swift; sourceTree = "<group>"; };
-		23B0F1562074D844007DE99F /* Preference.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Preference.swift; sourceTree = "<group>"; };
-		23B0F1612074D853007DE99F /* NSEntityDescription.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSEntityDescription.swift; sourceTree = "<group>"; };
-		23B0F1622074D853007DE99F /* NSManagedObject.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSManagedObject.swift; sourceTree = "<group>"; };
-		23B0F1632074D853007DE99F /* NSManagedObjectContext.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSManagedObjectContext.swift; sourceTree = "<group>"; };
-		23B0F1642074D853007DE99F /* NSPersistentStoreCoordinator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSPersistentStoreCoordinator.swift; sourceTree = "<group>"; };
-		23B0F1652074D853007DE99F /* NSPredicate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSPredicate.swift; sourceTree = "<group>"; };
-		23B0F1662074D853007DE99F /* CKRecordID.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CKRecordID.swift; sourceTree = "<group>"; };
-		23B0F1672074D853007DE99F /* CKRecord.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CKRecord.swift; sourceTree = "<group>"; };
 		23C937961ACDF51E00EF1441 /* TimetableWebViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TimetableWebViewController.h; sourceTree = "<group>"; };
 		23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TimetableWebViewController.m; sourceTree = "<group>"; };
 		23D75E1B1AC1654B0068C808 /* Bus Panda.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Bus Panda.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -350,17 +316,6 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
-		234C4B4A1F3C303E00A7718C /* Seam3 */ = {
-			isa = PBXGroup;
-			children = (
-				23B0F1602074D853007DE99F /* Extensions */,
-				23B0F14D2074D844007DE99F /* Core */,
-				234C4B571F3C309900A7718C /* LICENSE */,
-				234C4B561F3C309100A7718C /* README.md */,
-			);
-			path = Seam3;
-			sourceTree = "<group>";
-		};
 		236FC33A1CAE124E00207C15 /* INTULocationManager */ = {
 			isa = PBXGroup;
 			children = (
@@ -444,36 +399,6 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		23B0F14D2074D844007DE99F /* Core */ = {
-			isa = PBXGroup;
-			children = (
-				23B0F14E2074D844007DE99F /* Metadata.swift */,
-				23B0F14F2074D844007DE99F /* Properties.swift */,
-				23B0F1502074D844007DE99F /* Sync.swift */,
-				23B0F1512074D844007DE99F /* Zone.swift */,
-				23B0F1522074D844007DE99F /* Store.swift */,
-				23B0F1532074D844007DE99F /* Change.swift */,
-				23B0F1542074D844007DE99F /* Transformers.swift */,
-				23B0F1552074D844007DE99F /* Token.swift */,
-				23B0F1562074D844007DE99F /* Preference.swift */,
-			);
-			path = Core;
-			sourceTree = "<group>";
-		};
-		23B0F1602074D853007DE99F /* Extensions */ = {
-			isa = PBXGroup;
-			children = (
-				23B0F1612074D853007DE99F /* NSEntityDescription.swift */,
-				23B0F1622074D853007DE99F /* NSManagedObject.swift */,
-				23B0F1632074D853007DE99F /* NSManagedObjectContext.swift */,
-				23B0F1642074D853007DE99F /* NSPersistentStoreCoordinator.swift */,
-				23B0F1652074D853007DE99F /* NSPredicate.swift */,
-				23B0F1662074D853007DE99F /* CKRecordID.swift */,
-				23B0F1672074D853007DE99F /* CKRecord.swift */,
-			);
-			path = Extensions;
-			sourceTree = "<group>";
-		};
 		23D75E121AC1654B0068C808 = {
 			isa = PBXGroup;
 			children = (
@@ -523,7 +448,6 @@
 		23D75E4A1AC165920068C808 /* Third Party */ = {
 			isa = PBXGroup;
 			children = (
-				234C4B4A1F3C303E00A7718C /* Seam3 */,
 				23D75E4B1AC165A70068C808 /* HTMLReader */,
 				23E3416E1CABACB800EDB581 /* MGSwipeTableCell */,
 				236FC33A1CAE124E00207C15 /* INTULocationManager */,
@@ -804,8 +728,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				23D75E781AC165A70068C808 /* HTMLEntities.m in Sources */,
-				23B0F15F2074D844007DE99F /* Preference.swift in Sources */,
-				23B0F15E2074D844007DE99F /* Token.swift in Sources */,
 				236842441CAD3E1600548923 /* NearestStopBusInfoFetcher.m in Sources */,
 				23D75E7C1AC165A70068C808 /* HTMLPreprocessedInputStream.m in Sources */,
 				236FC34C1CAFC98900207C15 /* EditStopDescriptionViewController.m in Sources */,
@@ -813,51 +735,37 @@
 				23D75E811AC165A70068C808 /* HTMLTokenizer.m in Sources */,
 				23063AF71AC7A4C800C063DC /* EnterStopIDViewController.m in Sources */,
 				23D75E741AC165A70068C808 /* HTMLDocument.m in Sources */,
-				23B0F1582074D844007DE99F /* Properties.swift in Sources */,
 				23D75E7F1AC165A70068C808 /* HTMLString.m in Sources */,
 				23420A891C8EC7DD009F40F9 /* ErrorPresenter.swift in Sources */,
 				23D75E731AC165A70068C808 /* HTMLComment.m in Sources */,
-				23B0F16E2074D853007DE99F /* CKRecord.swift in Sources */,
-				23B0F1682074D853007DE99F /* NSEntityDescription.swift in Sources */,
 				23D75E821AC165A70068C808 /* HTMLTreeEnumerator.m in Sources */,
 				23D75E2D1AC1654B0068C808 /* DetailViewController.m in Sources */,
 				23D75E751AC165A70068C808 /* HTMLDocumentType.m in Sources */,
 				23D75E7B1AC165A70068C808 /* HTMLParser.m in Sources */,
-				23B0F15B2074D844007DE99F /* Store.swift in Sources */,
-				23B0F16D2074D853007DE99F /* CKRecordID.swift in Sources */,
 				23063AFA1AC7DAAC00C063DC /* ServiceDescriptionCell.m in Sources */,
 				236FC34F1CAFDC4A00207C15 /* ShorteningLabel.m in Sources */,
 				23E102691C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m in Sources */,
 				236FC3481CAE124E00207C15 /* INTURequestIDGenerator.m in Sources */,
 				23E341781CABACB800EDB581 /* MGSwipeTableCell.m in Sources */,
-				23B0F16A2074D853007DE99F /* NSManagedObjectContext.swift in Sources */,
-				23B0F1572074D844007DE99F /* Metadata.swift in Sources */,
 				23D75E761AC165A70068C808 /* HTMLElement.m in Sources */,
 				23D75E771AC165A70068C808 /* HTMLEncoding.m in Sources */,
 				23E3417B1CABD2E900EDB581 /* StopInfoFetcher.m in Sources */,
 				23E102661C1D0AA300BEF3C6 /* StopMapViewController.m in Sources */,
 				236FC3451CAE124E00207C15 /* INTUHeadingRequest.m in Sources */,
 				23D75E7A1AC165A70068C808 /* HTMLOrderedDictionary.m in Sources */,
-				23B0F15C2074D844007DE99F /* Change.swift in Sources */,
 				23063B051ACBF0BC00C063DC /* FavouritesCell.m in Sources */,
 				236FC3461CAE124E00207C15 /* INTULocationManager.m in Sources */,
 				23E1026F1C1D3A8700BEF3C6 /* StopLocation.m in Sources */,
 				23D75E831AC165A70068C808 /* NSString+HTMLEntities.m in Sources */,
 				23AC944F209B146200B670FC /* WeatherWebViewController.m in Sources */,
-				23B0F16B2074D853007DE99F /* NSPersistentStoreCoordinator.swift in Sources */,
 				23C937981ACDF51E00EF1441 /* TimetableWebViewController.m in Sources */,
-				23B0F15D2074D844007DE99F /* Transformers.swift in Sources */,
 				23D75E2A1AC1654B0068C808 /* MasterViewController.m in Sources */,
 				23E341771CABACB800EDB581 /* MGSwipeButton.m in Sources */,
 				23D75E791AC165A70068C808 /* HTMLNode.m in Sources */,
 				23D75E7E1AC165A70068C808 /* HTMLSerialization.m in Sources */,
 				23D75E801AC165A70068C808 /* HTMLTextNode.m in Sources */,
-				23B0F16C2074D853007DE99F /* NSPredicate.swift in Sources */,
-				23B0F1692074D853007DE99F /* NSManagedObject.swift in Sources */,
 				236FC3471CAE124E00207C15 /* INTULocationRequest.m in Sources */,
-				23B0F15A2074D844007DE99F /* Zone.swift in Sources */,
 				23D75E271AC1654B0068C808 /* Bus-Panda.xcdatamodeld in Sources */,
-				23B0F1592074D844007DE99F /* Sync.swift in Sources */,
 				23D75E241AC1654B0068C808 /* AppDelegate.m in Sources */,
 				23E341631CA6915100EDB581 /* RouteColours.swift in Sources */,
 				23D75E211AC1654B0068C808 /* main.m in Sources */,

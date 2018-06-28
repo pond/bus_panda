@@ -293,7 +293,7 @@
 
             CKRecordZoneID * zoneID     = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_ID ownerName: CKCurrentUserDefaultName ];
             NSPredicate *predicate = [NSPredicate predicateWithValue:YES];
-            CKQuery *query = [[CKQuery alloc] initWithRecordType:@"BusStop" predicate:predicate];
+            CKQuery *query = [[CKQuery alloc] initWithRecordType:ENTITY_AND_RECORD_NAME predicate:predicate];
 
             [database performQuery:query inZoneWithID:zoneID completionHandler:^(NSArray *results, NSError *error) {
                 for (CKRecord *record in results) {
@@ -310,7 +310,7 @@
     NSError                * error       = nil;
     NSManagedObjectContext * moc         = [ appDelegate managedObjectContextLocal ];
     NSManagedObjectModel   * mom         = [ appDelegate managedObjectModel ];
-    NSEntityDescription    * styleEntity = [ mom entitiesByName ][ @"BusStop" ];
+    NSEntityDescription    * styleEntity = [ mom entitiesByName ][ ENTITY_AND_RECORD_NAME ];
     NSFetchRequest         * request     = [ [ NSFetchRequest alloc ] init ];
     NSPredicate            * predicate   =
     [
@@ -445,15 +445,13 @@
         {
             if ( record == nil || error.code == CKErrorUnknownItem ) // (If 'error' is nil, dereference of code will be 'nil' and comparison will fail)
             {
-                CKRecord * record = [ [ CKRecord alloc ] initWithRecordType: @"BusStop"
-                                                                     zoneID: zoneID ];
+                CKRecord * record = [ [ CKRecord alloc ] initWithRecordType: ENTITY_AND_RECORD_NAME
+                                                                   recordID: recordID ];
 
-                NSLog(@"NEW RECORD create %@", stopID);
-
-                [ record setObject: stopID          forKey: @"recordName"      ];
                 [ record setObject: stopDescription forKey: @"stopDescription" ];
                 [ record setObject: preferred       forKey: @"preferred"       ];
 
+                NSLog(@"NEW RECORD create %@", record);
                 [ self saveRecord: record inDatabase: database onErrorTitle: errorTitle ];
             }
             else if ( error != nil )
@@ -463,19 +461,17 @@
             }
             else
             {
-                NSLog(@"EXISTING RECORD update %@", record);
-                NSLog(@"(Record name %@)", [record valueForKey: @"recordName"]);
-
                 if ( stopDescription != nil ) [ record setObject: stopDescription forKey: @"stopDescription" ];
                 if ( preferred       != nil ) [ record setObject: preferred       forKey: @"preferred"       ];
 
+                NSLog(@"EXISTING RECORD update %@", record);
                 [ self saveRecord: record inDatabase: database onErrorTitle: errorTitle ];
             }
         }
     ];
 }
 
-- ( void ) deleteObject: ( NSString * ) stopID
+- ( void ) deleteFavourite: ( NSString * ) stopID
 {
     NSManagedObject * object = [ self findFavouriteStopByID: stopID ];
     if ( object == nil ) return; // Implies strange bug; don't trust data; bail out
@@ -524,7 +520,7 @@
             NSLog(@"LIST AFTER DELETE");
 
             NSPredicate *predicate = [NSPredicate predicateWithValue:YES];
-            CKQuery *query = [[CKQuery alloc] initWithRecordType:@"BusStop" predicate:predicate];
+            CKQuery *query = [[CKQuery alloc] initWithRecordType:ENTITY_AND_RECORD_NAME predicate:predicate];
 
             [database performQuery:query inZoneWithID:zoneID completionHandler:^(NSArray *results, NSError *error) {
                 for (CKRecord *record in results) {
@@ -534,7 +530,6 @@
         }
     ];
 }
-
 
 
 
@@ -647,11 +642,9 @@
     if ( editingStyle == UITableViewCellEditingStyleDelete )
     {
         NSManagedObject * object = [ self.fetchedResultsController objectAtIndexPath: indexPath ];
+        NSString        * stopID = [ object valueForKey: @"stopID" ];
 
-        if ( object != nil )
-        {
-            [ self deleteObject: [ object valueForKey: @"stopID" ] ];
-        }
+        if ( stopID != nil ) [ self deleteFavourite: stopID ];
     }
 }
 
@@ -674,7 +667,7 @@
                       backgroundColor: [ UIColor redColor ]
                              callback:  ^ BOOL ( MGSwipeTableCell * sender )
         {
-            [ self deleteObject: stopID ];
+            [ self deleteFavourite: stopID ];
             return YES; // Yes => do slide the table row back to normal position
         }
     ];
@@ -743,7 +736,7 @@
     }
 
     NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
-    NSEntityDescription * entity       = [ NSEntityDescription entityForName: @"BusStop"
+    NSEntityDescription * entity       = [ NSEntityDescription entityForName: ENTITY_AND_RECORD_NAME
                                                       inManagedObjectContext: self.managedObjectContext ];
 
     [ fetchRequest setEntity:         entity ];
