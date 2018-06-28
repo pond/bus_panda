@@ -11,6 +11,7 @@
 #import <CloudKit/CloudKit.h>
 #import <WatchConnectivity/WatchConnectivity.h>
 
+#import "UsefulTypes.h"
 #import "MasterViewController.h"
 
 #define ICLOUD_TOKEN_ID_DEFAULTS_KEY   @"uk.org.pond.Bus-Panda.UbiquityIdentityToken"
@@ -34,8 +35,9 @@
 
 // Shared utility methods
 
-- ( void    ) saveContext;
-- ( NSURL * ) applicationDocumentsDirectory;
+- ( NSURL               * ) applicationDocumentsDirectory;
+- ( NSManagedObject     * ) findFavouriteStopByID: ( NSString * ) stopID;
+- ( void                  ) saveContext;
 
 - ( NSMutableDictionary * ) getCachedStopLocationDictionary;
 - ( void                  ) clearCachedStops;

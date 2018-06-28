@@ -288,48 +288,8 @@
           completionHandler: ^ ( CKRecord * _Nullable record, NSError * _Nullable error )
         {
             [ self handleError: error withTitle: errorTitle ];
-
-            NSLog(@"LIST AFTER SAVE");
-
-            CKRecordZoneID * zoneID     = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_ID ownerName: CKCurrentUserDefaultName ];
-            NSPredicate *predicate = [NSPredicate predicateWithValue:YES];
-            CKQuery *query = [[CKQuery alloc] initWithRecordType:ENTITY_AND_RECORD_NAME predicate:predicate];
-
-            [database performQuery:query inZoneWithID:zoneID completionHandler:^(NSArray *results, NSError *error) {
-                for (CKRecord *record in results) {
-                    NSLog(@"Contents: %@", record);
-                }
-            }];
         }
     ];
-}
-
-- ( NSManagedObject * ) findFavouriteStopByID: ( NSString * ) stopID
-{
-    AppDelegate            * appDelegate = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
-    NSError                * error       = nil;
-    NSManagedObjectContext * moc         = [ appDelegate managedObjectContextLocal ];
-    NSManagedObjectModel   * mom         = [ appDelegate managedObjectModel ];
-    NSEntityDescription    * styleEntity = [ mom entitiesByName ][ ENTITY_AND_RECORD_NAME ];
-    NSFetchRequest         * request     = [ [ NSFetchRequest alloc ] init ];
-    NSPredicate            * predicate   =
-    [
-        NSPredicate predicateWithFormat: @"(stopID == %@)",
-        stopID
-    ];
-
-    [ request setEntity:              styleEntity ];
-    [ request setIncludesSubentities: NO          ];
-    [ request setPredicate:           predicate   ];
-
-    NSArray * results = [ moc executeFetchRequest: request error: &error ];
-
-    if ( error != nil || [ results count ] < 1 )
-    {
-        return nil;
-    }
-
-    return results[ 0 ];
 }
 
 // Create-or-update a favourite stop. Pass the stop ID. If an existing record
@@ -355,7 +315,8 @@
 
     BOOL                     oldShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
     NSNumber               * oldPreferred       = @( ! preferred.boolValue );
-    NSManagedObject        * object             = [ self findFavouriteStopByID: stopID ];
+    AppDelegate            * appDelegate        = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
+    NSManagedObject        * object             = [ appDelegate findFavouriteStopByID: stopID ];
     NSManagedObjectContext * context            = self.fetchedResultsController.managedObjectContext;
     NSError                * error              = nil;
 
@@ -473,8 +434,12 @@
 
 - ( void ) deleteFavourite: ( NSString * ) stopID
 {
-    NSManagedObject * object = [ self findFavouriteStopByID: stopID ];
-    if ( object == nil ) return; // Implies strange bug; don't trust data; bail out
+    AppDelegate     * appDelegate = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
+    NSManagedObject * object      = [ appDelegate findFavouriteStopByID: stopID ];
+
+    // Nothing being found implies strange bugs; can't trust the data; bail out.
+    //
+    if ( object == nil ) return;
 
     // First update local records.
 
@@ -516,23 +481,38 @@
         {
             NSLog(@"DELETE RECORD - %@ / error result: %@", recordID, error);
             [ self handleError: error withTitle: errorTitle ];
-
-            NSLog(@"LIST AFTER DELETE");
-
-            NSPredicate *predicate = [NSPredicate predicateWithValue:YES];
-            CKQuery *query = [[CKQuery alloc] initWithRecordType:ENTITY_AND_RECORD_NAME predicate:predicate];
-
-            [database performQuery:query inZoneWithID:zoneID completionHandler:^(NSArray *results, NSError *error) {
-                for (CKRecord *record in results) {
-                    NSLog(@"Contents: %@", record);
-                }
-            }];
         }
     ];
 }
 
+// Asynchronous, full CloudKit fetch of all stop data. Call with a completion
+// handler that might give an error, or an NSArray of CKRecords.
+//
+// Simple example without any error handling:
+//
+//     [
+//         self fetchAllStops: ^ ( NSArray * _Nullable results, NSError * _Nullable error )
+//         {
+//             NSLog(@"%@", results);
+//         }
+//     ];
+//
+- ( void ) fetchAllStops: ( CloudKitQueryCompletionHandler ) completionHandler
+{
+    CKContainer    * container  = [ CKContainer defaultContainer ];
+    CKDatabase     * database   = [ container privateCloudDatabase ];
+    CKRecordZoneID * zoneID     = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_ID ownerName: CKCurrentUserDefaultName ];
+    NSPredicate    * predicate  = [ NSPredicate predicateWithValue: YES ];
+    CKQuery        * query      =
+    [
+        [ CKQuery alloc ] initWithRecordType: ENTITY_AND_RECORD_NAME
+                                   predicate: predicate
+    ];
 
-
+    [ database performQuery: query
+               inZoneWithID: zoneID
+          completionHandler: completionHandler ];
+}
 
 #pragma mark - Segues
 

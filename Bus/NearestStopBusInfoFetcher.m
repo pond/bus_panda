@@ -85,34 +85,6 @@
     ];
 }
 
-- ( NSManagedObject * ) findFavouriteStopByID: ( NSString * ) stopID
-{
-    AppDelegate            * appDelegate = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
-    NSError                * error       = nil;
-    NSManagedObjectContext * moc         = [ appDelegate managedObjectContextLocal ];
-    NSManagedObjectModel   * mom         = [ appDelegate managedObjectModel ];
-    NSEntityDescription    * styleEntity = [ mom entitiesByName ][ ENTITY_AND_RECORD_NAME ];
-    NSFetchRequest         * request     = [ [ NSFetchRequest alloc ] init ];
-    NSPredicate            * predicate   =
-    [
-        NSPredicate predicateWithFormat: @"(stopID == %@)",
-        stopID
-    ];
-
-    [ request setEntity:              styleEntity ];
-    [ request setIncludesSubentities: NO          ];
-    [ request setPredicate:           predicate   ];
-
-    NSArray * results = [ moc executeFetchRequest: request error: &error ];
-
-    if ( error != nil || [ results count ] < 1 )
-    {
-        return nil;
-    }
-
-    return results[ 0 ];
-}
-
 - ( void ) getBusesFromBestStopIn: ( NSMutableArray * ) allStops
                  withReplyHandler: ( nonnull void (^)( NSDictionary <NSString *, id> * _Nonnull ) ) replyHandler
 {
@@ -132,11 +104,12 @@
 
     NSDictionary * normalMatch;
     NSDictionary * preferredMatch;
+    AppDelegate  * appDelegate = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
 
     for ( NSDictionary * stop in allStops )
     {
         NSString        * stopID = stop[ @"stopID" ]; if ( stopID == nil ) continue;
-        NSManagedObject * obj    =[ self findFavouriteStopByID: stopID ];
+        NSManagedObject * obj    =[ appDelegate findFavouriteStopByID: stopID ];
 
         if ( obj != nil )
         {

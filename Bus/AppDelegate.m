@@ -830,6 +830,36 @@
     ];
 }
 
+// Look up a stop in the local Core Data records by stop ID. Returns the
+// NSManagedObject for the found record, or "nil" if not found.
+//
+- ( NSManagedObject * ) findFavouriteStopByID: ( NSString * ) stopID
+{
+    NSError                * error       = nil;
+    NSManagedObjectContext * moc         = [ self managedObjectContextLocal ];
+    NSManagedObjectModel   * mom         = [ self managedObjectModel ];
+    NSEntityDescription    * styleEntity = [ mom entitiesByName ][ ENTITY_AND_RECORD_NAME ];
+    NSFetchRequest         * request     = [ [ NSFetchRequest alloc ] init ];
+    NSPredicate            * predicate   =
+    [
+        NSPredicate predicateWithFormat: @"(stopID == %@)",
+        stopID
+    ];
+
+    [ request setEntity:              styleEntity ];
+    [ request setIncludesSubentities: NO          ];
+    [ request setPredicate:           predicate   ];
+
+    NSArray * results = [ moc executeFetchRequest: request error: &error ];
+
+    if ( error != nil || [ results count ] < 1 )
+    {
+        return nil;
+    }
+
+    return results[ 0 ];
+}
+
 //// This is intended really just for one-shot data migrations and is not very
 //// efficient as it intentionally does not provide any cache name for the
 //// results, so it'll re-fetch every time.

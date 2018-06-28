@@ -16,7 +16,7 @@ typedef void ( ^ URLRequestCompletionHandler )( NSData        * data,
                                                 NSURLResponse * response,
                                                 NSError       * error);
 
-typedef void ( ^ CloudKitQueryCompletionHanlder )( NSArray * _Nullable results,
+typedef void ( ^ CloudKitQueryCompletionHandler )( NSArray * _Nullable results,
                                                    NSError * _Nullable error );
 
 #endif /* UsefulTypes_h */
