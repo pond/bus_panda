@@ -288,6 +288,18 @@
           completionHandler: ^ ( CKRecord * _Nullable record, NSError * _Nullable error )
         {
             [ self handleError: error withTitle: errorTitle ];
+
+            NSLog(@"LIST AFTER SAVE");
+
+            CKRecordZoneID * zoneID     = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_ID ownerName: CKCurrentUserDefaultName ];
+            NSPredicate *predicate = [NSPredicate predicateWithValue:YES];
+            CKQuery *query = [[CKQuery alloc] initWithRecordType:@"BusStop" predicate:predicate];
+
+            [database performQuery:query inZoneWithID:zoneID completionHandler:^(NSArray *results, NSError *error) {
+                for (CKRecord *record in results) {
+                    NSLog(@"Contents: %@", record);
+                }
+            }];
         }
     ];
 }
@@ -508,9 +520,24 @@
         {
             NSLog(@"DELETE RECORD - %@ / error result: %@", recordID, error);
             [ self handleError: error withTitle: errorTitle ];
+
+            NSLog(@"LIST AFTER DELETE");
+
+            NSPredicate *predicate = [NSPredicate predicateWithValue:YES];
+            CKQuery *query = [[CKQuery alloc] initWithRecordType:@"BusStop" predicate:predicate];
+
+            [database performQuery:query inZoneWithID:zoneID completionHandler:^(NSArray *results, NSError *error) {
+                for (CKRecord *record in results) {
+                    NSLog(@"Contents: %@", record);
+                }
+            }];
         }
     ];
 }
+
+
+
+
 
 #pragma mark - Segues
 
