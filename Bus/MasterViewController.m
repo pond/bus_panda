@@ -488,6 +488,16 @@
 // Asynchronous, full CloudKit fetch of all stop data. Call with a completion
 // handler that might give an error, or an NSArray of CKRecords.
 //
+// Note that by "all", we mean "assumed less than 'a few hundreds'" since the
+// CloudKit documentation tells us not to use the mechanism employed herein if
+// the result set is likely to be larger than that (it'd only return the first
+// few hundred if so). It seems very unlikely that someone would have more than
+// even 50 or so favourite stops in Bus Panda.
+//
+// TODO: Maybe one day turn this into a paginated interface using a
+///      CKQueryOperation instead of using the convenience interface - just
+//       in case someone really *does* have that many favourites stored!
+//
 // Simple example without any error handling:
 //
 //     [

@@ -92,36 +92,86 @@
             {
                 NSLog(@"CloudKit says 'ready'");
 
-                NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
-                NSEntityDescription * entity       = [ NSEntityDescription entityForName: ENTITY_AND_RECORD_NAME
-                                                                  inManagedObjectContext: self.managedObjectContextRemote ];
+                CKContainer                       * container = [ CKContainer defaultContainer ];
+                CKDatabase                        * database  = [ container privateCloudDatabase ];
+                CKRecordZoneID                    * zoneID    = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_ID ownerName: CKCurrentUserDefaultName ];
+                CKFetchRecordZoneChangesOperation * operation = [ [ CKFetchRecordZoneChangesOperation alloc ] init ];
 
-                [ fetchRequest setEntity:         entity ];
-                [ fetchRequest setFetchBatchSize: 50     ];
+                operation.fetchAllChanges = YES;
+                operation.recordZoneIDs   = @[ zoneID ];
 
-                NSSortDescriptor * sortDescriptor1 = [ [ NSSortDescriptor alloc] initWithKey: @"preferred"
-                                                                                   ascending: NO ];
+                operation.fetchRecordZoneChangesCompletionBlock = ^ ( NSError * _Nullable error )
+                {
+                    // If no error & we had something from CloudKit, we're done
+                    // If no error & user defaults say "nothing from CloudKit yet"
+                    // and user defaults say "I haven't migrated from old Core Data"
+                    // then this is assumed first app run on any device post-CloudKit
+                    // for this user. Pull old core data records. DIFFICULT, can't
+                    // seem to get it to work...
 
-                NSSortDescriptor * sortDescriptor2 = [ [ NSSortDescriptor alloc] initWithKey: @"stopDescription"
-                                                                                   ascending: YES ];
+                    NSLog( @"On-startup: Fetch changes complete: %@", error );
 
-                [ fetchRequest setSortDescriptors: @[ sortDescriptor1, sortDescriptor2 ] ];
+                    BOOL hasReceivedUpdatesBefore = [ defaults boolForKey: @"cloudKitUpdatesReceived" ];
+                    BOOL haveReadLegacyCloudData  = [ defaults boolForKey: @"haveReadLegacyCloudData" ];
 
-                NSString * cacheName = @"BusStops";
+                    if ( hasReceivedUpdatesBefore != YES && haveReadLegacyCloudData != YES )
+                    {
+                        [ self managedObjectContextRemote ];
+                    }
+                };
 
-                // Problems were seen in development once the 'preferred stops' feature was
-                // introduced that were solved by deleting the existing cache data when the
-                // NSFetchedResultsController instance is first created. Just in case any
-                // users in the field might see something similar, this code is retained.
-                //
-                [ NSFetchedResultsController deleteCacheWithName: cacheName ];
+                operation.recordChangedBlock = ^ ( CKRecord * _Nonnull record )
+                {
+// TODO: Remember to reinstate this
+//                    [ defaults setBool: YES forKey: @"cloudKitUpdatesReceived" ];
+                    NSLog( @"On-startup: Would change: %@", record );
+                };
 
-                NSFetchedResultsController * frc = [ [ NSFetchedResultsController alloc ] initWithFetchRequest: fetchRequest
-                                                                                          managedObjectContext: self.managedObjectContextRemote
-                                                                                            sectionNameKeyPath: @"preferred"
-                                                                                                     cacheName: cacheName ];
+                operation.recordWithIDWasDeletedBlock = ^ ( CKRecordID * _Nonnull recordID, CKRecordType  _Nonnull recordType )
+                {
+// TODO: Remember to reinstate this
+//                    [ defaults setBool: YES forKey: @"cloudKitUpdatesReceived" ];
+                    NSLog( @"On-startup: Would delete: %@", recordID );
+                };
 
-                NSLog(@"FETCHED %@", frc.fetchedObjects);
+                [ database addOperation: operation ];
+
+//                // Ensure we have a set of notifications registered and ready to
+//                // go with the old iCloud Core Data store
+//                //
+//                [ self managedObjectContextRemote ];
+
+//
+//                NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
+//                NSEntityDescription * entity       = [ NSEntityDescription entityForName: ENTITY_AND_RECORD_NAME
+//                                                                  inManagedObjectContext: self.managedObjectContextRemote ];
+//
+//                [ fetchRequest setEntity:         entity ];
+//                [ fetchRequest setFetchBatchSize: 50     ];
+//
+//                NSSortDescriptor * sortDescriptor1 = [ [ NSSortDescriptor alloc] initWithKey: @"preferred"
+//                                                                                   ascending: NO ];
+//
+//                NSSortDescriptor * sortDescriptor2 = [ [ NSSortDescriptor alloc] initWithKey: @"stopDescription"
+//                                                                                   ascending: YES ];
+//
+//                [ fetchRequest setSortDescriptors: @[ sortDescriptor1, sortDescriptor2 ] ];
+//
+//                NSString * cacheName = @"BusStops";
+//
+//                // Problems were seen in development once the 'preferred stops' feature was
+//                // introduced that were solved by deleting the existing cache data when the
+//                // NSFetchedResultsController instance is first created. Just in case any
+//                // users in the field might see something similar, this code is retained.
+//                //
+//                [ NSFetchedResultsController deleteCacheWithName: cacheName ];
+//
+//                NSFetchedResultsController * frc = [ [ NSFetchedResultsController alloc ] initWithFetchRequest: fetchRequest
+//                                                                                          managedObjectContext: self.managedObjectContextRemote
+//                                                                                            sectionNameKeyPath: @"preferred"
+//                                                                                                     cacheName: cacheName ];
+//
+//                NSLog(@"FETCHED %@", frc.fetchedObjects);
             }
         }
     ];
@@ -554,7 +604,7 @@
     NSPersistentStoreCoordinator * psc        = _persistentStoreCoordinatorLocal;
     NSURL                        * localStore =
     [
-        [ self applicationDocumentsDirectory ] URLByAppendingPathComponent: CORE_DATA_FILE_NAME
+        [ self applicationDocumentsDirectory ] URLByAppendingPathComponent: NEW_CORE_DATA_FILE_NAME
     ];
 
     NSLog( @"Core Data: Using a local store for %@", _persistentStoreCoordinatorLocal );
@@ -631,7 +681,7 @@
             {
                 NSURL * iCloudDataURL =
                 [
-                    [ self applicationDocumentsDirectory ] URLByAppendingPathComponent: CORE_DATA_FILE_NAME
+                    [ self applicationDocumentsDirectory ] URLByAppendingPathComponent: OLD_CORE_DATA_FILE_NAME
                 ];
 
                 NSLog( @"iCloud is working: %@",  iCloud                );
@@ -642,7 +692,8 @@
                 @{
                     NSMigratePersistentStoresAutomaticallyOption: @YES,
                     NSInferMappingModelAutomaticallyOption:       @YES,
-                    NSPersistentStoreUbiquitousContentNameKey:    ICLOUD_ENABLED_APP_ID
+                    NSPersistentStoreUbiquitousContentNameKey:    ICLOUD_ENABLED_APP_ID,
+                    NSPersistentStoreRebuildFromUbiquitousContentOption: @YES
                 };
 
                 [
@@ -656,7 +707,7 @@
                     }
                 ];
 
-                [ self sendDataHasChangedNotification ];
+//                [ self sendDataHasChangedNotification ];
             }
             else
             {
@@ -688,15 +739,15 @@
             {
                 [ moc setPersistentStoreCoordinator: psc ];
 
-                [ [ NSNotificationCenter defaultCenter ] addObserver: self
-                                                            selector: @selector( storesWillChange: )
-                                                                name: NSPersistentStoreCoordinatorStoresWillChangeNotification
-                                                              object: psc ];
-
-                [ [ NSNotificationCenter defaultCenter ] addObserver: self
-                                                            selector: @selector( storesDidChange: )
-                                                                name: NSPersistentStoreCoordinatorStoresDidChangeNotification
-                                                              object: psc ];
+//                [ [ NSNotificationCenter defaultCenter ] addObserver: self
+//                                                            selector: @selector( storesWillChange: )
+//                                                                name: NSPersistentStoreCoordinatorStoresWillChangeNotification
+//                                                              object: psc ];
+//
+//                [ [ NSNotificationCenter defaultCenter ] addObserver: self
+//                                                            selector: @selector( storesDidChange: )
+//                                                                name: NSPersistentStoreCoordinatorStoresDidChangeNotification
+//                                                              object: psc ];
             }
         ];
 
@@ -759,14 +810,16 @@
 //
 - ( void ) mergeChangesFromiCloud: ( NSNotification * ) notification
 {
-    NSLog( @"Merging changes from iCloud..." );
+    NSLog( @"******** Merging changes from iCloud..." );
 
-    NSManagedObjectContext * moc = self.managedObjectContextLocal;
+    NSManagedObjectContext * moc = self.managedObjectContextRemote;
 
     [
         moc performBlock: ^ ( void )
         {
             [ moc mergeChangesFromContextDidSaveNotification: notification ];
+
+            NSLog(@"Notification is %@", notification);
 
             NSNotification * refreshNotification = [ NSNotification notificationWithName: DATA_CHANGED_NOTIFICATION_NAME
                                                                                   object: self
@@ -779,53 +832,64 @@
 
 - ( void ) storesWillChange: ( NSNotification * ) notification
 {
-    NSLog( @"Stores will change..." );
+    NSLog( @"******** Stores will change..." );
 
-    // Close to copy-and-paste on 'savContext', except for the 'reset' call
+    // Close to copy-and-paste on 'saveContext', except for the 'reset' call
     // needed *inside* the atomicity wrapper of 'perform block and wait'.
 
-    NSManagedObjectContext * moc = self.managedObjectContextLocal;
+    NSManagedObjectContext * moc = self.managedObjectContextRemote;
 
     [
-        moc performBlockAndWait: ^
+        moc performBlock: ^
         {
-            NSError * error = nil;
-
-            if ( [ moc hasChanges ] && ![ moc save: &error ] )
-            {
-                // Nothing much we can do here other than log the fault.
-                //
-                NSLog( @"Unresolved error %@, %@", error, [ error userInfo ] );
-            }
+//            NSError * error = nil;
+//
+//            if ( [ moc hasChanges ] && ![ moc save: &error ] )
+//            {
+//                // Nothing much we can do here other than log the fault.
+//                //
+//                NSLog( @"Unresolved error %@, %@", error, [ error userInfo ] );
+//            }
 
             [ moc reset ];
         }
     ];
 
-    // Reset the GUI but don't load any new data yet - have to wait for 'stores
-    // did change' for that.
-
-    [ self.detailNavigationController popToRootViewControllerAnimated: YES ];
+//    // Reset the GUI but don't load any new data yet - have to wait for 'stores
+//    // did change' for that.
+//
+//    [ self.detailNavigationController popToRootViewControllerAnimated: YES ];
 }
 
 - ( void ) storesDidChange: ( NSNotification * ) notification
 {
-    NSLog( @"Stores did change..." );
+    NSLog( @"******** Stores did change..." );
 
     // Close to copy-and-paste on 'mergeChangesFromiCloud', except it just
     // posts the 'changed' notification for other bits of the app, rather than
     // also trying to merge in changes.
 
-    NSManagedObjectContext * moc = self.managedObjectContextLocal;
+    NSManagedObjectContext * moc = self.managedObjectContextRemote;
 
     [
-        moc performBlock: ^ ( void )
+        moc performBlockAndWait: ^ ( void )
         {
-            NSNotification * refreshNotification = [ NSNotification notificationWithName: DATA_CHANGED_NOTIFICATION_NAME
-                                                                                  object: self
-                                                                                userInfo: [ notification userInfo ] ];
+//            NSNotification * refreshNotification = [ NSNotification notificationWithName: DATA_CHANGED_NOTIFICATION_NAME
+//                                                                                  object: self
+//                                                                                userInfo: [ notification userInfo ] ];
+//
+//            [ [ NSNotificationCenter defaultCenter ] postNotification: refreshNotification ];
 
-            [ [ NSNotificationCenter defaultCenter ] postNotification: refreshNotification];
+            NSArray * results = [ self getAllFavourites: moc ];
+
+            for ( NSManagedObject * object in results )
+            {
+                BOOL       preferred       = [ [ object valueForKey: @"preferred"       ] integerValue ] == 0 ? NO : YES;
+                NSString * stopID          =   [ object valueForKey: @"stopID"          ];
+                NSString * stopDescription =   [ object valueForKey: @"stopDescription" ];
+
+                NSLog(@"RESULT: %@ (%d): %@", stopID, preferred, stopDescription);
+            }
         }
     ];
 }
@@ -860,30 +924,38 @@
     return results[ 0 ];
 }
 
-//// This is intended really just for one-shot data migrations and is not very
-//// efficient as it intentionally does not provide any cache name for the
-//// results, so it'll re-fetch every time.
-////
-//- ( NSArray * ) getAllFavourites
-//{
-//    NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
-//    NSEntityDescription * entity       = [ NSEntityDescription entityForName: ENTITY_AND_RECORD_NAME
-//                                                      inManagedObjectContext: self.managedObjectContext ];
+// This is intended really just for one-shot data migrations and is not very
+// efficient as it intentionally does not provide any cache name for the
+// results, so it'll re-fetch every time.
 //
-//    [ fetchRequest setEntity:         entity ];
+- ( NSArray * ) getAllFavourites: ( NSManagedObjectContext * ) moc
+{
+    NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
+    NSEntityDescription * entity       = [ NSEntityDescription entityForName: ENTITY_AND_RECORD_NAME
+                                                      inManagedObjectContext: moc ];
+
+    [ fetchRequest setEntity:         entity ];
 //    [ fetchRequest setFetchBatchSize: 50     ];
-//
-//    NSSortDescriptor * sortDescriptor = [ [ NSSortDescriptor alloc] initWithKey: @"stopDescription"
-//                                                                      ascending: YES ];
-//
-//    [ fetchRequest setSortDescriptors: @[ sortDescriptor ] ];
-//
-//    NSFetchedResultsController * frc = [ [ NSFetchedResultsController alloc ] initWithFetchRequest: fetchRequest
-//                                                                              managedObjectContext: self.managedObjectContext
-//                                                                                sectionNameKeyPath: @"preferred"
-//                                                                                         cacheName: nil ];
-//    return frc.fetchedObjects;
-//}
+
+    NSSortDescriptor * sortDescriptor = [ [ NSSortDescriptor alloc] initWithKey: @"stopDescription"
+                                                                      ascending: YES ];
+
+    [ fetchRequest setSortDescriptors: @[ sortDescriptor ] ];
+
+    NSFetchedResultsController * frc = [ [ NSFetchedResultsController alloc ] initWithFetchRequest: fetchRequest
+                                                                              managedObjectContext: moc
+                                                                                sectionNameKeyPath: @"preferred"
+                                                                                         cacheName: nil ];
+    NSError * error   = nil;
+    BOOL      success = [ frc performFetch: &error ];
+
+    if ( success != YES && error != nil )
+    {
+        NSLog( @"getAllFavourites failed: %@", error );
+    }
+
+    return frc.fetchedObjects;
+}
 
 #pragma mark - Core Data saving support
 
