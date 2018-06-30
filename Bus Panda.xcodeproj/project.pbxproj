@@ -23,6 +23,7 @@
 		23420AB61C92A34E009F40F9 /* watchkit.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 23420A961C92A34E009F40F9 /* watchkit.app */; };
 		235AA1981CA2A272006143B9 /* StopsRowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 235AA1961CA2A055006143B9 /* StopsRowController.swift */; };
 		235FF3C320D78B8C0080FE67 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 235FF3C220D78B8C0080FE67 /* CloudKit.framework */; };
+		235FF3C620E6D8380080FE67 /* DataManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 235FF3C520E6D8380080FE67 /* DataManager.m */; };
 		236842411CAD3B7600548923 /* StringShortener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 236842401CAD3B7600548923 /* StringShortener.swift */; };
 		236842441CAD3E1600548923 /* NearestStopBusInfoFetcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 236842431CAD3E1600548923 /* NearestStopBusInfoFetcher.m */; };
 		236FC3451CAE124E00207C15 /* INTUHeadingRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 236FC33C1CAE124E00207C15 /* INTUHeadingRequest.m */; };
@@ -148,6 +149,8 @@
 		23420AB31C92A34E009F40F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		235AA1961CA2A055006143B9 /* StopsRowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StopsRowController.swift; sourceTree = "<group>"; };
 		235FF3C220D78B8C0080FE67 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
+		235FF3C420E6D8380080FE67 /* DataManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DataManager.h; sourceTree = "<group>"; };
+		235FF3C520E6D8380080FE67 /* DataManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DataManager.m; sourceTree = "<group>"; };
 		236842401CAD3B7600548923 /* StringShortener.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StringShortener.swift; sourceTree = "<group>"; };
 		236842421CAD3E1600548923 /* NearestStopBusInfoFetcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NearestStopBusInfoFetcher.h; sourceTree = "<group>"; };
 		236842431CAD3E1600548923 /* NearestStopBusInfoFetcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NearestStopBusInfoFetcher.m; sourceTree = "<group>"; };
@@ -351,6 +354,8 @@
 			children = (
 				23D75E221AC1654B0068C808 /* AppDelegate.h */,
 				23D75E231AC1654B0068C808 /* AppDelegate.m */,
+				235FF3C420E6D8380080FE67 /* DataManager.h */,
+				235FF3C520E6D8380080FE67 /* DataManager.m */,
 				23D75E281AC1654B0068C808 /* MasterViewController.h */,
 				23D75E291AC1654B0068C808 /* MasterViewController.m */,
 				23D75E2B1AC1654B0068C808 /* DetailViewController.h */,
@@ -743,6 +748,7 @@
 				23D75E751AC165A70068C808 /* HTMLDocumentType.m in Sources */,
 				23D75E7B1AC165A70068C808 /* HTMLParser.m in Sources */,
 				23063AFA1AC7DAAC00C063DC /* ServiceDescriptionCell.m in Sources */,
+				235FF3C620E6D8380080FE67 /* DataManager.m in Sources */,
 				236FC34F1CAFDC4A00207C15 /* ShorteningLabel.m in Sources */,
 				23E102691C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m in Sources */,
 				236FC3481CAE124E00207C15 /* INTURequestIDGenerator.m in Sources */,
@@ -1034,7 +1040,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = XT4V976D8Y;
 				INFOPLIST_FILE = Bus/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1058,7 +1064,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = XT4V976D8Y;
 				INFOPLIST_FILE = Bus/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda";
 				PRODUCT_NAME = "$(TARGET_NAME)";

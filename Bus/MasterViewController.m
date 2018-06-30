@@ -7,7 +7,9 @@
 //
 
 #import "AppDelegate.h"
+#import "DataManager.h"
 #import "ErrorPresenter.h"
+
 #import "MasterViewController.h"
 #import "DetailViewController.h"
 #import "EnterStopIDViewController.h"
@@ -150,26 +152,6 @@
         }
     ];
 
-//  UIAlertAction * nearbyStopsAction =
-//  [
-//      UIAlertAction actionWithTitle: @"Nearby Stops"
-//                              style: UIAlertActionStyleDefault
-//                            handler: ^ ( UIAlertAction * action )
-//      {
-//          UINavigationController * stopMapNavigationController =
-//          [
-//              self.storyboard instantiateViewControllerWithIdentifier: @"StopMap"
-//          ];
-//
-//          StopMapViewController * stopMapController = ( StopMapViewController * ) stopMapNavigationController.topViewController;
-//
-//          [ stopMapController configureForNearbyStops   ];
-//          [ stopMapController setTitle: @"Nearby Stops" ];
-//
-//          [ self openSpecificModal: stopMapNavigationController ];
-//      }
-//  ];
-
     UIAlertAction * cancel =
     [
         UIAlertAction actionWithTitle: @"Cancel"
@@ -182,7 +164,6 @@
 
     [ actions addAction: stopMapAction     ];
     [ actions addAction: enterStopIDAction ];
-//  [ actions addAction: nearbyStopsAction ];
     [ actions addAction: cancel            ];
 
     // On the iPhone (at the time of writing) modal action sheets implicitly
@@ -246,284 +227,6 @@
     [ self presentViewController: actions animated: YES completion: nil ];
 }
 
-#pragma mark - Adding and modifying favourites
-
-// Utility method - call with a pointer to an NSError instance, which may be
-// "nil", and a pointer to a title NSString shown in the error report if the
-// NSError pointer is not "nil".
-//
-// Ensures that the error dialogue is shown on the main thread, so can be
-// called from other threads safely.
-//
-- ( void ) handleError: ( NSError  * ) error
-             withTitle: ( NSString * ) title
-{
-    if ( error )
-    {
-        dispatch_async(
-            dispatch_get_main_queue(),
-            ^ {
-                [
-                    ErrorPresenter showModalAlertFor: self
-                                           withError: error
-                                               title: title
-                                          andHandler: ^( UIAlertAction *action ) {}
-                ];
-            }
-        );
-    }
-}
-
-// Utility method - save the given CloudKit record into the given CloudKit
-// database, reporting an error to the user if it fails but taking no other
-// remedial action. The third parameter is the title string to use if there
-// is an error to report.
-//
-- ( void ) saveRecord: ( CKRecord   * ) record
-           inDatabase: ( CKDatabase * ) database
-         onErrorTitle: ( NSString   * ) errorTitle
-{
-    [
-        database saveRecord: record
-          completionHandler: ^ ( CKRecord * _Nullable record, NSError * _Nullable error )
-        {
-            [ self handleError: error withTitle: errorTitle ];
-        }
-    ];
-}
-
-// Create-or-update a favourite stop. Pass the stop ID. If an existing record
-// is found, it'll be updated with the given stop description and preferred
-// flag; else a new record will be created. Pass 'nil' for stopDescription if
-// you want to preserve an existing value; default is to match stopID string
-// for new records. Similarly, pass 'nil' for preferred flag if you want to
-// preserve that; default is 'not preferred' for new records.
-//
-// Modifies the local table view first, then iCloud next, so that the UI is
-// updated quickly rather than lagging as iCloud updates happen.
-//
-- ( void ) addOrEditFavourite: ( NSString * ) stopID
-           settingDescription: ( NSString * ) stopDescription
-             andPreferredFlag: ( NSNumber * ) preferred
-{
-    // First update local records.
-
-    NSLog(@"ADD OR EDIT FAVOURITE");
-    NSLog(@"StopID %@",          stopID);
-    NSLog(@"stopDescription %@", stopDescription);
-    NSLog(@"preferred %@",       preferred);
-
-    BOOL                     oldShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
-    NSNumber               * oldPreferred       = @( ! preferred.boolValue );
-    AppDelegate            * appDelegate        = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
-    NSManagedObject        * object             = [ appDelegate findFavouriteStopByID: stopID ];
-    NSManagedObjectContext * context            = self.fetchedResultsController.managedObjectContext;
-    NSError                * error              = nil;
-
-    if ( object == nil )
-    {
-        object =
-        [
-            NSEntityDescription insertNewObjectForEntityForName: self.fetchedResultsController.fetchRequest.entity.name
-                                         inManagedObjectContext: context
-        ];
-
-        [ object setValue: stopID forKey: @"stopID" ];
-
-        if ( stopDescription == nil ) stopDescription = [ stopID copy ];
-        if ( preferred       == nil ) preferred       = STOP_IS_NOT_PREFERRED_VALUE;
-    }
-    else
-    {
-        oldPreferred = [ object valueForKey: @"preferred" ];
-    }
-
-    if ( stopDescription != nil ) [ object setValue: stopDescription forKey: @"stopDescription" ];
-    if ( preferred       != nil ) [ object setValue: preferred       forKey: @"preferred"       ];
-
-    if ( ! [ context save: &error ] )
-    {
-        [
-            ErrorPresenter showModalAlertFor: self
-                                   withError: error
-                                       title: NSLocalizedString( @"Could not change 'preferred' stop setting", "Error message shown when changing the 'preferred' setting fails" )
-                                  andHandler: ^( UIAlertAction *action ) {}
-        ];
-
-        return;
-    }
-
-    // Avoid animation issues if the section headers appear or dispppear.
-    //
-    BOOL newShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
-    if ( oldShowSectionFlag != newShowSectionFlag ) [ self.tableView reloadData ];
-
-    if ( preferred.boolValue != oldPreferred.boolValue )
-    {
-        // If there's no section header than (A) is there only one favourite
-        // stop, (B) is that stop now preferred and (C) have we detected this
-        // condition before? If not, tell the user what's going on.
-        //
-        NSUserDefaults * defaults = [ NSUserDefaults standardUserDefaults ];
-
-        if (
-               newShowSectionFlag == NO &&
-               self.fetchedResultsController.fetchedObjects.count == 1 &&
-               [ [ self.fetchedResultsController.fetchedObjects[ 0 ] valueForKey: @"preferred" ] isEqual: STOP_IS_PREFERRED_VALUE ] &&
-               [ defaults boolForKey: @"haveShownSingleSectionWarning" ] != YES
-           )
-        {
-            [ defaults setBool: YES forKey: @"haveShownSingleSectionWarning" ];
-            [ defaults synchronize ];
-
-            UIAlertController * warning = [ UIAlertController alertControllerWithTitle: @"You have only one preferred and favourite stop"
-                                                                               message: @"When you have a mixture of preferred and normal stops, they show up in different sections.\n\nOtherwise, you only see one list."
-                                                                        preferredStyle: UIAlertControllerStyleAlert ];
-
-            UIAlertAction * action = [ UIAlertAction actionWithTitle: @"Got it!"
-                                                               style: UIAlertActionStyleDefault
-                                                             handler: nil ];
-
-            [ warning addAction: action ];
-            [ self presentViewController: warning animated: YES completion: nil ];
-        }
-    }
-
-    // Now update iCloud.
-
-    CKContainer    * container  = [ CKContainer defaultContainer ];
-    CKDatabase     * database   = [ container privateCloudDatabase ];
-    CKRecordZoneID * zoneID     = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_ID ownerName: CKCurrentUserDefaultName ];
-    CKRecordID     * recordID   = [ [ CKRecordID alloc ] initWithRecordName: stopID zoneID: zoneID ];
-    NSString       * errorTitle = NSLocalizedString(
-        @"Could not save changes in iCloud",
-        @"Error message shown when trying to save favourite stop changes to iCloud"
-    );
-
-    [
-        database fetchRecordWithID: recordID
-                 completionHandler: ^ ( CKRecord * _Nullable record, NSError * _Nullable error )
-        {
-            if ( record == nil || error.code == CKErrorUnknownItem ) // (If 'error' is nil, dereference of code will be 'nil' and comparison will fail)
-            {
-                CKRecord * record = [ [ CKRecord alloc ] initWithRecordType: ENTITY_AND_RECORD_NAME
-                                                                   recordID: recordID ];
-
-                [ record setObject: stopDescription forKey: @"stopDescription" ];
-                [ record setObject: preferred       forKey: @"preferred"       ];
-
-                NSLog(@"NEW RECORD create %@", record);
-                [ self saveRecord: record inDatabase: database onErrorTitle: errorTitle ];
-            }
-            else if ( error != nil )
-            {
-                NSLog(@"CLOUD KIT ERROR %@", error);
-                [ self handleError: error withTitle: errorTitle ];
-            }
-            else
-            {
-                if ( stopDescription != nil ) [ record setObject: stopDescription forKey: @"stopDescription" ];
-                if ( preferred       != nil ) [ record setObject: preferred       forKey: @"preferred"       ];
-
-                NSLog(@"EXISTING RECORD update %@", record);
-                [ self saveRecord: record inDatabase: database onErrorTitle: errorTitle ];
-            }
-        }
-    ];
-}
-
-- ( void ) deleteFavourite: ( NSString * ) stopID
-{
-    AppDelegate     * appDelegate = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
-    NSManagedObject * object      = [ appDelegate findFavouriteStopByID: stopID ];
-
-    // Nothing being found implies strange bugs; can't trust the data; bail out.
-    //
-    if ( object == nil ) return;
-
-    // First update local records.
-
-    BOOL                     oldShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
-    NSManagedObjectContext * context            = [ self.fetchedResultsController managedObjectContext ];
-    NSError                * error              = nil;
-
-    [ context deleteObject: object ];
-
-    if ( ! [ context save: &error ] )
-    {
-        [
-            ErrorPresenter showModalAlertFor: self
-                                   withError: error
-                                       title: NSLocalizedString( @"Could not delete favourite", "Error message shown when favourite stop deletion fails" )
-                                  andHandler: ^( UIAlertAction *action ) {}
-        ];
-    }
-
-    // Avoid animation issues if the section headers appear or dispppear.
-    //
-    BOOL newShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
-    if ( oldShowSectionFlag != newShowSectionFlag ) [ self.tableView reloadData ];
-
-    // Now update iCloud.
-
-    CKContainer    * container  = [ CKContainer defaultContainer ];
-    CKDatabase     * database   = [ container privateCloudDatabase ];
-    CKRecordZoneID * zoneID     = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_ID ownerName: CKCurrentUserDefaultName ];
-    CKRecordID     * recordID   = [ [ CKRecordID alloc ] initWithRecordName: stopID zoneID: zoneID ];
-    NSString       * errorTitle = NSLocalizedString(
-        @"Could not remove favourite from in iCloud",
-        @"Error message shown when trying to remove favourite stop from iCloud"
-    );
-
-    [
-        database deleteRecordWithID: recordID
-                  completionHandler: ^ ( CKRecordID * _Nullable recordID, NSError * _Nullable error )
-        {
-            NSLog(@"DELETE RECORD - %@ / error result: %@", recordID, error);
-            [ self handleError: error withTitle: errorTitle ];
-        }
-    ];
-}
-
-// Asynchronous, full CloudKit fetch of all stop data. Call with a completion
-// handler that might give an error, or an NSArray of CKRecords.
-//
-// Note that by "all", we mean "assumed less than 'a few hundreds'" since the
-// CloudKit documentation tells us not to use the mechanism employed herein if
-// the result set is likely to be larger than that (it'd only return the first
-// few hundred if so). It seems very unlikely that someone would have more than
-// even 50 or so favourite stops in Bus Panda.
-//
-// TODO: Maybe one day turn this into a paginated interface using a
-///      CKQueryOperation instead of using the convenience interface - just
-//       in case someone really *does* have that many favourites stored!
-//
-// Simple example without any error handling:
-//
-//     [
-//         self fetchAllStops: ^ ( NSArray * _Nullable results, NSError * _Nullable error )
-//         {
-//             NSLog(@"%@", results);
-//         }
-//     ];
-//
-- ( void ) fetchAllStops: ( CloudKitQueryCompletionHandler ) completionHandler
-{
-    CKContainer    * container  = [ CKContainer defaultContainer ];
-    CKDatabase     * database   = [ container privateCloudDatabase ];
-    CKRecordZoneID * zoneID     = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_ID ownerName: CKCurrentUserDefaultName ];
-    NSPredicate    * predicate  = [ NSPredicate predicateWithValue: YES ];
-    CKQuery        * query      =
-    [
-        [ CKQuery alloc ] initWithRecordType: ENTITY_AND_RECORD_NAME
-                                   predicate: predicate
-    ];
-
-    [ database performQuery: query
-               inZoneWithID: zoneID
-          completionHandler: completionHandler ];
-}
-
 #pragma mark - Segues
 
 - ( void ) prepareForSegue: ( UIStoryboardSegue * ) segue sender: ( id ) sender
@@ -531,7 +234,7 @@
     if ( [ [ segue identifier ] isEqualToString: @"showDetail" ] )
     {
         NSIndexPath          * indexPath  = [ self.tableView indexPathForSelectedRow ];
-        NSManagedObject      * object     = [ [ self fetchedResultsController ] objectAtIndexPath: indexPath ];
+        NSManagedObject      * object     = [ DataManager.dataManager.fetchedResultsController objectAtIndexPath: indexPath ];
         DetailViewController * controller = ( DetailViewController * ) [ [ segue destinationViewController ] topViewController ];
 
         [ controller setDetailItem: object ];
@@ -543,41 +246,23 @@
 
 #pragma mark - Table View
 
-// Support method - returns YES if the section header should be shown for the
-// table, else NO. The idea is to hide the section header when only one section
-// is present, because all bus stops are either normal or preferred. Things go
-// wrong in that case because we don't easily know e.g. the section title and
-// it looks odd to just have a one-section table anyway.
-//
-// In the case where the user has just one new favourite stop and toggles it to
-// a preferred state, it is a bit strange that no apparent change happens to
-// the UI. To avoid that confusion, this specific special case is trapped with
-// a one-time-only alert to let the user know what's happening.
-//
-- ( BOOL ) shouldShowSectionHeaderFor: ( UITableView * ) tableView
-{
-    NSInteger sectionCount = [ self numberOfSectionsInTableView: tableView ];
-    return ( sectionCount < 2 ) ? NO : YES;
-}
-
 - ( NSInteger ) numberOfSectionsInTableView: ( UITableView * ) tableView
 {
-    return [ [ self.fetchedResultsController sections ] count ];
+    ( void ) tableView;
+    return DataManager.dataManager.numberOfSections;
 }
 
 - ( NSInteger ) tableView: ( UITableView * ) tableView
     numberOfRowsInSection: ( NSInteger     ) section
 {
-    id <NSFetchedResultsSectionInfo> sectionInfo = [ self.fetchedResultsController sections ][ section ];
+    id <NSFetchedResultsSectionInfo> sectionInfo = DataManager.dataManager.fetchedResultsController.sections[ section ];
     return [ sectionInfo numberOfObjects ];
 }
 
 - ( NSString * ) tableView: ( UITableView * ) tableView
    titleForHeaderInSection: ( NSInteger     ) section
 {
-    // Show no section title unless there are at least two sections.
-
-    if ( [ self shouldShowSectionHeaderFor: tableView ] == NO ) return @"";
+    if ( DataManager.dataManager.shouldShowSectionHeader == NO ) return @"";
 
     switch( section )
     {
@@ -594,8 +279,8 @@
 {
     // Show no section title unless there are at least two sections.
 
-    if ( [ self shouldShowSectionHeaderFor: tableView ] == NO ) return 0;
-    else                                                        return 32;
+    if ( DataManager.dataManager.shouldShowSectionHeader == NO ) return 0;
+    else                                                         return 32;
 }
 
 - ( void )    tableView: ( UITableView * ) tableView
@@ -629,18 +314,21 @@
   commitEditingStyle: ( UITableViewCellEditingStyle   ) editingStyle
    forRowAtIndexPath: ( NSIndexPath                 * ) indexPath
 {
+    DataManager * dataManager = DataManager.dataManager;
+
     if ( editingStyle == UITableViewCellEditingStyleDelete )
     {
-        NSManagedObject * object = [ self.fetchedResultsController objectAtIndexPath: indexPath ];
+        NSManagedObject * object = [ dataManager.fetchedResultsController objectAtIndexPath: indexPath ];
         NSString        * stopID = [ object valueForKey: @"stopID" ];
 
-        if ( stopID != nil ) [ self deleteFavourite: stopID ];
+        if ( stopID != nil ) [ dataManager deleteFavourite: stopID ];
     }
 }
 
 - ( void ) configureCell: ( FavouritesCell * ) cell atIndexPath: ( NSIndexPath * ) indexPath
 {
-    NSManagedObject * object          = [ self.fetchedResultsController objectAtIndexPath: indexPath ];
+    DataManager     * dataManager     = DataManager.dataManager;
+    NSManagedObject * object          = [ dataManager.fetchedResultsController objectAtIndexPath: indexPath ];
     NSString        * stopID          = [ object valueForKey: @"stopID"          ];
     NSString        * stopDescription = [ object valueForKey: @"stopDescription" ];
 
@@ -657,7 +345,7 @@
                       backgroundColor: [ UIColor redColor ]
                              callback:  ^ BOOL ( MGSwipeTableCell * sender )
         {
-            [ self deleteFavourite: stopID ];
+            [ dataManager deleteFavourite: stopID ];
             return YES; // Yes => do slide the table row back to normal position
         }
     ];
@@ -681,9 +369,9 @@
                       backgroundColor: [ UIColor colorWithRed: 0 green: 0.8 blue: 0 alpha: 1 ]
                              callback: ^ BOOL ( MGSwipeTableCell * sender )
         {
-            [ self addOrEditFavourite: stopID
-                   settingDescription: nil
-                     andPreferredFlag: STOP_IS_PREFERRED_VALUE ];
+            [ dataManager addOrEditFavourite: stopID
+                          settingDescription: nil
+                            andPreferredFlag: STOP_IS_PREFERRED_VALUE ];
 
             return YES; // Yes => do slide the table row back to normal position
         }
@@ -695,9 +383,9 @@
                       backgroundColor: [ UIColor blueColor ]
                              callback: ^ BOOL ( MGSwipeTableCell * sender )
         {
-            [ self addOrEditFavourite: stopID
-                   settingDescription: nil
-                     andPreferredFlag: STOP_IS_NOT_PREFERRED_VALUE ];
+            [ dataManager addOrEditFavourite: stopID
+                          settingDescription: nil
+                            andPreferredFlag: STOP_IS_NOT_PREFERRED_VALUE ];
 
             return YES; // Yes => do slide the table row back to normal position
         }
@@ -713,52 +401,6 @@
     }
 }
 
-#pragma mark - Fetched results management
-
-// Returns an existing NSFetchedResultsController instance or generates a new
-// one when called for the first time.
-//
-- ( NSFetchedResultsController * ) fetchedResultsController
-{
-    if ( _fetchedResultsController != nil )
-    {
-        return _fetchedResultsController;
-    }
-
-    NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
-    NSEntityDescription * entity       = [ NSEntityDescription entityForName: ENTITY_AND_RECORD_NAME
-                                                      inManagedObjectContext: self.managedObjectContext ];
-
-    [ fetchRequest setEntity:         entity ];
-    [ fetchRequest setFetchBatchSize: 50     ];
-
-    NSSortDescriptor * sortDescriptor1 = [ [ NSSortDescriptor alloc] initWithKey: @"preferred"
-                                                                       ascending: NO ];
-
-    NSSortDescriptor * sortDescriptor2 = [ [ NSSortDescriptor alloc] initWithKey: @"stopDescription"
-                                                                       ascending: YES ];
-
-    [ fetchRequest setSortDescriptors: @[ sortDescriptor1, sortDescriptor2 ] ];
-
-    NSString * cacheName = @"BusStops";
-
-    // Problems were seen in development once the 'preferred stops' feature was
-    // introduced that were solved by deleting the existing cache data when the
-    // NSFetchedResultsController instance is first created. Just in case any
-    // users in the field might see something similar, this code is retained.
-    //
-    [ NSFetchedResultsController deleteCacheWithName: cacheName ];
-
-    NSFetchedResultsController * frc = [ [ NSFetchedResultsController alloc ] initWithFetchRequest: fetchRequest
-                                                                              managedObjectContext: self.managedObjectContext
-                                                                                sectionNameKeyPath: @"preferred"
-                                                                                         cacheName: cacheName ];
-    frc.delegate = self;
-
-    self.fetchedResultsController = frc;
-    return _fetchedResultsController;
-}
-
 #pragma mark - NSNotificationCenter observers
 
 // Reload results (i.e. favourites) from iCloud / local storage; "notification"
@@ -768,13 +410,13 @@
 //
 - ( void ) reloadFetchedResults: ( NSNotification * ) ignoredNotification
 {
-    NSError *error = nil;
+    NSError * error = nil;
 
     NSLog( @"Underlying data changed... Refreshing" );
 
     // Deal with the local changes first
 
-    if ( ! [ self.fetchedResultsController performFetch: &error ] )
+    if ( ! [ DataManager.dataManager.fetchedResultsController performFetch: &error ] )
     {
         [
             ErrorPresenter showModalAlertFor: self
@@ -823,7 +465,7 @@
             NSDictionary   * dictionary;
             NSInteger        sections = [ self numberOfSectionsInTableView: self.tableView ];
 
-            for ( NSManagedObject * object in self.fetchedResultsController.fetchedObjects )
+            for ( NSManagedObject * object in DataManager.dataManager.fetchedResultsController.fetchedObjects )
             {
                 // If the table view thinks it only has one section, send all
                 // stops; they're either all normal, or all preferred. If there

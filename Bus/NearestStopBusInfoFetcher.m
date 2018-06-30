@@ -12,9 +12,9 @@
 
 #import "NearestStopBusInfoFetcher.h"
 
+#import "DataManager.h"
 #import "StopInfoFetcher.h"
 #import "BusInfoFetcher.h"
-#import "AppDelegate.h"
 #import "MasterViewController.h"
 
 #import "INTULocationManager.h"
@@ -104,12 +104,12 @@
 
     NSDictionary * normalMatch;
     NSDictionary * preferredMatch;
-    AppDelegate  * appDelegate = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
+    DataManager  * dataManager = DataManager.dataManager;
 
     for ( NSDictionary * stop in allStops )
     {
         NSString        * stopID = stop[ @"stopID" ]; if ( stopID == nil ) continue;
-        NSManagedObject * obj    =[ appDelegate findFavouriteStopByID: stopID ];
+        NSManagedObject * obj    = [ dataManager findFavouriteStopByID: stopID ];
 
         if ( obj != nil )
         {
