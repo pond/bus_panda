@@ -8,7 +8,7 @@
 
 #import "StopMapViewController.h"
 
-#import "AppDelegate.h"
+#import "DataManager.h"
 #import "ErrorPresenter.h"
 #import "StopInfoFetcher.h"
 #import "StopLocation.h"
@@ -246,14 +246,9 @@
         self.stopsAddedToMap = [ [ NSMutableDictionary alloc ] init ];
     }
 
-    AppDelegate * appDelegate = ( AppDelegate * )
-    [
-        [ UIApplication sharedApplication ] delegate
-    ];
-
     NSMutableDictionary * stopLocations =
     [
-        appDelegate getCachedStopLocationDictionary
+        DataManager.dataManager getCachedStopLocationDictionary
     ];
 
     // Now processes all the (possibly) new stops from the parsed JSON data.
@@ -351,14 +346,9 @@
         self.stopsAddedToMap = [ [ NSMutableDictionary alloc ] init ];
     }
 
-    AppDelegate * appDelegate = ( AppDelegate * )
-    [
-        [ UIApplication sharedApplication ] delegate
-    ];
-
     NSMutableDictionary * stopLocations =
     [
-        appDelegate getCachedStopLocationDictionary
+        DataManager.dataManager getCachedStopLocationDictionary
     ];
 
     for ( id stopID in stopLocations )
@@ -604,12 +594,7 @@ calloutAccessoryControlTapped: ( UIControl        * ) control
     [ self.mapView removeAnnotations: self.mapView.annotations ];
     self.stopsAddedToMap = nil;
 
-    AppDelegate * appDelegate = ( AppDelegate * )
-    [
-        [ UIApplication sharedApplication ] delegate
-    ];
-
-    [ appDelegate clearCachedStops ];
+    [ DataManager.dataManager clearCachedStops ];
 
     [ self getStopsForCurrentMapRange ];
 }

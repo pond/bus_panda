@@ -8,7 +8,7 @@
 
 #import "EditStopDescriptionViewController.h"
 
-#import "AppDelegate.h"
+#import "DataManager.h"
 
 @implementation EditStopDescriptionViewController
 
@@ -34,12 +34,10 @@
 {
     ( void ) sender;
 
-    AppDelegate          * appDelegate          = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
-    MasterViewController * masterViewController = appDelegate.masterViewController;
-
-    [ masterViewController addOrEditFavourite: [ self.sourceObject valueForKey: @"stopID" ]
-                           settingDescription: self.descriptionField.text
-                             andPreferredFlag: nil ];
+    [ DataManager.dataManager addOrEditFavourite: [ self.sourceObject valueForKey: @"stopID" ]
+                              settingDescription: self.descriptionField.text
+                                andPreferredFlag: nil
+                               includingCloudKit: YES ];
 
     [ self dismissEditorView: nil ];
 }

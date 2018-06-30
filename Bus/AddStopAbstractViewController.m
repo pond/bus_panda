@@ -12,8 +12,9 @@
 //  Not intended to be instantiated directly; only subclassed.
 //
 
-#import "AppDelegate.h"
 #import "AddStopAbstractViewController.h"
+
+#import "DataManager.h"
 
 @implementation AddStopAbstractViewController
 
@@ -23,12 +24,10 @@
 - ( void ) addFavourite: ( NSString * ) stopID
         withDescription: ( NSString * ) stopDescription;
 {
-    AppDelegate          * appDelegate          = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
-    MasterViewController * masterViewController = appDelegate.masterViewController;
-
-    [ masterViewController addOrEditFavourite: stopID
-                           settingDescription: stopDescription
-                             andPreferredFlag: nil ];
+    [ DataManager.dataManager addOrEditFavourite: stopID
+                              settingDescription: stopDescription
+                                andPreferredFlag: nil
+                               includingCloudKit: YES ];
 }
 
 // Subclasses should call this method when they want to be closed. It ensures
