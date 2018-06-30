@@ -70,12 +70,7 @@
 // A UIViewController is used purely for presenting error alerts, such as
 // the one-off at-startup warning that the user isn't signed into iCloud.
 //
-// The UIApplication is provided if you want to register for push notifications
-// inline. This should really only be done by the AppDelegate at launch time;
-// anyone else should pass 'nil'.
-//
 - ( void ) awakenAllStores: ( UIViewController * ) viewController
-            forApplication: ( UIApplication    * ) application
 {
     NSUserDefaults * defaults = [ NSUserDefaults standardUserDefaults ];
 
@@ -179,43 +174,36 @@
                                             ignoringPriorChangeToken: YES ];
 
                         // With that underway, we can set up our subscription to
-                        // CloudKit changes, to react at run-time - if need be.
-                        //
-                        if ( application != nil )
-                        {
-                            [ application performSelectorOnMainThread: @selector( registerForRemoteNotifications )
-                                                           withObject: nil
-                                                        waitUntilDone: YES ];
+                        // CloudKit changes, to react at run-time.
 
-    //                        CKRecordZoneSubscription * subscription = [
-    //                            [ CKRecordZoneSubscription alloc] initWithZoneID: zoneID
-    //                                                              subscriptionID: CLOUDKIT_SUBSCRIPTION_ID
-    //                        ];
-    //
-                            NSPredicate         * predicate    = [ NSPredicate predicateWithValue: YES ];
-                            CKQuerySubscription * subscription = [
-                                [ CKQuerySubscription alloc ] initWithRecordType: ENTITY_AND_RECORD_NAME
-                                                                       predicate: predicate
-                                                                  subscriptionID: CLOUDKIT_SUBSCRIPTION_ID
-                                                                         options: CKQuerySubscriptionOptionsFiresOnRecordCreation |
-                                                                                  CKQuerySubscriptionOptionsFiresOnRecordUpdate   |
-                                                                                  CKQuerySubscriptionOptionsFiresOnRecordDeletion
-                            ];
+//                        CKRecordZoneSubscription * subscription = [
+//                            [ CKRecordZoneSubscription alloc] initWithZoneID: zoneID
+//                                                              subscriptionID: CLOUDKIT_SUBSCRIPTION_ID
+//                        ];
+//
+                        NSPredicate         * predicate    = [ NSPredicate predicateWithValue: YES ];
+                        CKQuerySubscription * subscription = [
+                            [ CKQuerySubscription alloc ] initWithRecordType: ENTITY_AND_RECORD_NAME
+                                                                   predicate: predicate
+                                                              subscriptionID: CLOUDKIT_SUBSCRIPTION_ID
+                                                                     options: CKQuerySubscriptionOptionsFiresOnRecordCreation |
+                                                                              CKQuerySubscriptionOptionsFiresOnRecordUpdate   |
+                                                                              CKQuerySubscriptionOptionsFiresOnRecordDeletion
+                        ];
 
-                            CKNotificationInfo * info = [ [ CKNotificationInfo alloc ] init ];
+                        CKNotificationInfo * info = [ [ CKNotificationInfo alloc ] init ];
 
-                            info.shouldSendContentAvailable = true; // "Silent" notification
-                            subscription.notificationInfo   = info;
+                        info.shouldSendContentAvailable = true; // "Silent" notification
+                        subscription.notificationInfo   = info;
 
-                            CKModifySubscriptionsOperation * subscriptionsOperation = [
-                                [ CKModifySubscriptionsOperation alloc ] initWithSubscriptionsToSave: @[ subscription ]
-                                                                             subscriptionIDsToDelete: nil
-                            ];
+                        CKModifySubscriptionsOperation * subscriptionsOperation = [
+                            [ CKModifySubscriptionsOperation alloc ] initWithSubscriptionsToSave: @[ subscription ]
+                                                                         subscriptionIDsToDelete: nil
+                        ];
 
-                            subscriptionsOperation.qualityOfService = NSQualityOfServiceUtility;
+                        subscriptionsOperation.qualityOfService = NSQualityOfServiceUtility;
 
-                            [ database addOperation: subscriptionsOperation ];
-                        }
+                        [ database addOperation: subscriptionsOperation ];
                     }
                 };
 

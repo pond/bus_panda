@@ -18,18 +18,12 @@
 
 # pragma mark - Initialisation
 
-- ( void )         application: ( UIApplication * ) application
-  didReceiveRemoteNotification: ( NSDictionary  * ) userInfo
-        fetchCompletionHandler: ( void ( ^ ) ( UIBackgroundFetchResult ) ) completionHandler
-{
-    [ DataManager.dataManager handleNotification: userInfo
-                          fetchCompletionHandler: completionHandler ];
-}
-
 - ( BOOL )          application: ( UIApplication * ) application
   didFinishLaunchingWithOptions: ( NSDictionary  * ) launchOptions
 {
     NSUserDefaults * defaults = [ NSUserDefaults standardUserDefaults ];
+
+    [ application registerForRemoteNotifications ];
 
     // Tab bar setups
 
@@ -52,8 +46,7 @@
     // notifications (for CloudKit changes), but the AppDelegate object has
     // to handle them - see -didReceiveRemoteNotification:... later.
     //
-    [ DataManager.dataManager awakenAllStores: self.splitViewController
-                               forApplication: application ];
+    [ DataManager.dataManager awakenAllStores: self.splitViewController ];
 
     // On a clean install, some iOS versions may not read the Settings bundle
     // into the NSUserDefaults unless the user has by happenstance manually
@@ -140,6 +133,16 @@
 - ( void ) applicationWillTerminate: ( UIApplication * ) application
 {
     [ DataManager.dataManager saveContext ];
+}
+
+#pragma mark - Notifications
+
+- ( void )         application: ( UIApplication * ) application
+  didReceiveRemoteNotification: ( NSDictionary  * ) userInfo
+        fetchCompletionHandler: ( void ( ^ ) ( UIBackgroundFetchResult ) ) completionHandler
+{
+    [ DataManager.dataManager handleNotification: userInfo
+                          fetchCompletionHandler: completionHandler ];
 }
 
 #pragma mark - Split view

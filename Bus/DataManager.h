@@ -25,8 +25,7 @@
 // Run this at startup, once you have a view controller to use for presenting
 // any alerts that might be needed.
 //
-- ( void ) awakenAllStores: ( UIViewController * ) viewController
-            forApplication: ( UIApplication    * ) application;
+- ( void ) awakenAllStores: ( UIViewController * ) viewController;
 
 // Call from AppDelegate's -application:didReceiveRemoteNotification:...
 // method, passing the second two parameters through. Handles CloudKit
