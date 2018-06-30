@@ -135,7 +135,8 @@
                     NSLog( @"On-startup: Would change: %@", record );
                 };
 
-                operation.recordWithIDWasDeletedBlock = ^ ( CKRecordID * _Nonnull recordID, CKRecordType  _Nonnull recordType )
+                operation.recordWithIDWasDeletedBlock =
+                ^ ( CKRecordID * _Nonnull recordID, NSString * _Nonnull recordType )
                 {
 // TODO: Remember to reinstate this
 //                    [ defaults setBool: YES forKey: @"cloudKitUpdatesReceived" ];
