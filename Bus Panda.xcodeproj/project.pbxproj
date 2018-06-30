@@ -132,6 +132,7 @@
 		23063AF91AC7DAAC00C063DC /* ServiceDescriptionCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ServiceDescriptionCell.m; sourceTree = "<group>"; };
 		23063B031ACBF0BC00C063DC /* FavouritesCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FavouritesCell.h; sourceTree = "<group>"; };
 		23063B041ACBF0BC00C063DC /* FavouritesCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FavouritesCell.m; sourceTree = "<group>"; };
+		23065F6A20E82F3F00658D07 /* Constants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Constants.h; sourceTree = "<group>"; };
 		233CD79D1C3BDB7D00E0B6D6 /* ErrorPresenter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ErrorPresenter.h; sourceTree = "<group>"; };
 		23420A871C8EC7DC009F40F9 /* Bus Panda-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Bus Panda-Bridging-Header.h"; sourceTree = "<group>"; };
 		23420A881C8EC7DD009F40F9 /* ErrorPresenter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ErrorPresenter.swift; sourceTree = "<group>"; };
@@ -391,6 +392,7 @@
 				236FC34E1CAFDC4A00207C15 /* ShorteningLabel.m */,
 				23E1026D1C1D3A8700BEF3C6 /* StopLocation.h */,
 				23E1026E1C1D3A8700BEF3C6 /* StopLocation.m */,
+				23065F6A20E82F3F00658D07 /* Constants.h */,
 			);
 			name = Code;
 			sourceTree = "<group>";

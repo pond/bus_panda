@@ -97,9 +97,9 @@
             {
                 NSLog( @"-- !! Not signed in to iCloud" );
 
-                if ( [ defaults boolForKey: @"haveShownICloudSignInWarning" ] != YES )
+                if ( [ defaults boolForKey: HAVE_SHOWN_ICLOUD_SIGNIN_WARNING ] != YES )
                 {
-                    [ defaults setBool: YES forKey: @"haveShownICloudSignInWarning" ];
+                    [ defaults setBool: YES forKey: HAVE_SHOWN_ICLOUD_SIGNIN_WARNING ];
 
                     [ self showMessage: @"Sign in to iCloud to synchronise favourites between devices.\n\nOtherwise, Bus Panda can still save favourites but only on this device."
                              withTitle: @"Not signed in to iCloud"
@@ -121,7 +121,6 @@
                 CKContainer                  * container     = [ CKContainer defaultContainer ];
                 CKDatabase                   * database      = [ container privateCloudDatabase ];
                 CKRecordZone                 * zone          = [ [ CKRecordZone alloc ] initWithZoneName: CLOUDKIT_ZONE_NAME ];
-                CKRecordZoneID               * zoneID        = zone.zoneID;
                 CKModifyRecordZonesOperation * zoneOperation =
                 [
                     [ CKModifyRecordZonesOperation alloc ] initWithRecordZonesToSave: @[ zone ]
@@ -148,29 +147,7 @@
                         // there were no changes in Cloud Kit, it'll go and
                         // check the legacy Core Data store for information.
 
-                        CKFetchRecordZoneChangesOperation * changesOperation = [
-                            [ CKFetchRecordZoneChangesOperation alloc ] init
-                        ];
-
-                        changesOperation.qualityOfService = NSQualityOfServiceBackground;
-                        changesOperation.fetchAllChanges  = YES;
-                        changesOperation.recordZoneIDs    = @[ zoneID ];
-
-                        changesOperation.recordChangedBlock = ^ ( CKRecord * _Nonnull record )
-                        {
-// TODO: Remember to reinstate this
-//                            [ defaults setBool: YES forKey: @"cloudKitUpdatesReceived" ];
-                            [ self recordDidChange: record ];
-                        };
-
-                        changesOperation.recordWithIDWasDeletedBlock = (CKRecordID * _Nonnull recordID, NSString * _Nonnull recordType )
-                        {
-// TODO: Remember to reinstate this
-//                            [ defaults setBool: YES forKey: @"cloudKitUpdatesReceived" ];
-                            [ self recordDidDelete: recordID ];
-                        };
-
-                        changesOperation.fetchRecordZoneChangesCompletionBlock = ^ ( NSError * _Nullable error )
+                        id completionBlock = ^ ( NSError * _Nullable error )
                         {
                             // If no error & we had something from CloudKit, we're done as
                             // if anything is in there at all, it's considered data master.
@@ -182,10 +159,10 @@
 
                             NSLog( @"On-startup: Fetch changes complete: %@", error );
 
-                            BOOL hasReceivedUpdatesBefore = [ defaults boolForKey: @"cloudKitUpdatesReceived" ];
-                            BOOL haveReadLegacyCloudData  = [ defaults boolForKey: @"haveReadLegacyCloudData" ];
+                            BOOL hasReceivedUpdatesBefore = [ defaults boolForKey: HAVE_RECEIVED_CLOUDKIT_DATA  ];
+                            BOOL haveReadLegacyICloudData = [ defaults boolForKey: HAVE_READ_LEGACY_ICLOUD_DATA ];
 
-                            if ( hasReceivedUpdatesBefore != YES && haveReadLegacyCloudData != YES )
+                            if ( hasReceivedUpdatesBefore != YES && haveReadLegacyICloudData != YES )
                             {
                                 // This one-liner kicks off all the old iCloud Core Data
                                 // persistent storage stuff, leading in due course to
@@ -198,14 +175,17 @@
                             }
                         };
 
-                        [ database addOperation: changesOperation ];
+                        [ self fetchRecentChangesWithCompletionBlock: completionBlock
+                                            ignoringPriorChangeToken: YES ];
 
                         // With that underway, we can set up our subscription to
                         // CloudKit changes, to react at run-time - if need be.
                         //
                         if ( application != nil )
                         {
-                            [ application registerForRemoteNotifications ];
+                            [ application performSelectorOnMainThread: @selector( registerForRemoteNotifications )
+                                                           withObject: nil
+                                                        waitUntilDone: YES ];
 
     //                        CKRecordZoneSubscription * subscription = [
     //                            [ CKRecordZoneSubscription alloc] initWithZoneID: zoneID
@@ -217,9 +197,9 @@
                                 [ CKQuerySubscription alloc ] initWithRecordType: ENTITY_AND_RECORD_NAME
                                                                        predicate: predicate
                                                                   subscriptionID: CLOUDKIT_SUBSCRIPTION_ID
-                                                                  options:   CKQuerySubscriptionOptionsFiresOnRecordCreation |
-                                                                             CKQuerySubscriptionOptionsFiresOnRecordUpdate   |
-                                                                             CKQuerySubscriptionOptionsFiresOnRecordDeletion
+                                                                         options: CKQuerySubscriptionOptionsFiresOnRecordCreation |
+                                                                                  CKQuerySubscriptionOptionsFiresOnRecordUpdate   |
+                                                                                  CKQuerySubscriptionOptionsFiresOnRecordDeletion
                             ];
 
                             CKNotificationInfo * info = [ [ CKNotificationInfo alloc ] init ];
@@ -243,24 +223,6 @@
             }
         }
     ];
-}
-
-- ( void ) handleNotification: ( NSDictionary  * ) userInfo
-       fetchCompletionHandler: ( void ( ^ ) ( UIBackgroundFetchResult ) ) completionHandler
-{
-    CKContainer    * container    = [ CKContainer defaultContainer ];
-    CKDatabase     * database     = [ container privateCloudDatabase ];
-    CKNotification * notification = [ CKNotification notificationFromRemoteNotificationDictionary: userInfo ];
-
-    if ( notification.subscriptionID == database.subscriptionID )
-    {
-        //..handle
-        completionHandler( UIBackgroundFetchResultNewData );
-    }
-    else
-    {
-        completionHandler( UIBackgroundFetchResultNoData );
-    }
 }
 
 #pragma mark - Support utilities
@@ -648,11 +610,16 @@
 
             for ( NSManagedObject * object in results )
             {
-                BOOL       preferred       = [ [ object valueForKey: @"preferred"       ] integerValue ] == 0 ? NO : YES;
-                NSString * stopID          =   [ object valueForKey: @"stopID"          ];
-                NSString * stopDescription =   [ object valueForKey: @"stopDescription" ];
+                NSNumber * preferred       = [ object valueForKey: @"preferred"       ];
+                NSString * stopID          = [ object valueForKey: @"stopID"          ];
+                NSString * stopDescription = [ object valueForKey: @"stopDescription" ];
 
-                NSLog(@"RESULT: %@ (%d): %@", stopID, preferred, stopDescription);
+                NSLog(@"Legacy iCloud Core Data result: %@ (%@): %@", stopID, preferred, stopDescription);
+
+                [ self addOrEditFavourite: stopID
+                       settingDescription: stopDescription
+                         andPreferredFlag: preferred
+                        includingCloudKit: YES ];
             }
         }
     ];
@@ -895,31 +862,6 @@
     ];
 }
 
-// Call if a notification from CloudKit indicates that a record changed (or
-// was added).
-//
-- ( void ) recordDidChange: ( CKRecord * _Nonnull ) record
-{
-    NSLog( @"CloudKit change: Assert presence of %@", record );
-
-    [ self addOrEditFavourite: record.recordID.recordName
-           settingDescription: [ record objectForKey: @"stopDescription" ]
-             andPreferredFlag: [ record objectForKey: @"preferred"       ]
-            includingCloudKit: NO ];
-}
-
-// Call if a notification from CloudKit indicates that a record was deleted.
-//
-- ( void ) recordDidDelete: ( CKRecordID * _Nonnull ) recordID
-{
-    NSLog( @"CloudKit change: Assert removal of: %@", recordID );
-
-    [ self deleteFavourite: recordID.recordName
-         includingCloudKit: NO ];
-}
-
-
-
 #pragma mark - Query interfaces
 
 // Returns an existing NSFetchedResultsController instance or generates a new
@@ -1078,43 +1020,195 @@
     }
 }
 
-// Asynchronous, full CloudKit fetch of all stop data. Call with a completion
-// handler that might give an error, or an NSArray of CKRecords.
+//// Asynchronous, full CloudKit fetch of all stop data. Call with a completion
+//// handler that might give an error, or an NSArray of CKRecords.
+////
+//// Note that by "all", we mean "assumed less than 'a few hundreds'" since the
+//// CloudKit documentation tells us not to use the mechanism employed herein if
+//// the result set is likely to be larger than that (it'd only return the first
+//// few hundred if so). It seems very unlikely that someone would have more than
+//// even 50 or so favourite stops in Bus Panda.
+////
+//// TODO: Maybe one day turn this into a paginated interface using a
+/////      CKQueryOperation instead of using the convenience interface - just
+////       in case someone really *does* have that many favourites stored!
+////
+//// Simple example without any error handling:
+////
+////     [
+////         self fetchAllStopsViaCloudKit: ^ ( NSArray * _Nullable results, NSError * _Nullable error )
+////         {
+////             NSLog(@"%@", results);
+////         }
+////     ];
+////
+//- ( void ) fetchAllStopsViaCloudKit: ( CloudKitQueryCompletionHandler ) completionHandler
+//{
+//    CKContainer    * container  = [ CKContainer defaultContainer ];
+//    CKDatabase     * database   = [ container privateCloudDatabase ];
+//    CKRecordZoneID * zoneID     = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_NAME ownerName: CKCurrentUserDefaultName ];
+//    NSPredicate    * predicate  = [ NSPredicate predicateWithValue: YES ];
+//    CKQuery        * query      =
+//    [
+//        [ CKQuery alloc ] initWithRecordType: ENTITY_AND_RECORD_NAME
+//                                   predicate: predicate
+//    ];
 //
-// Note that by "all", we mean "assumed less than 'a few hundreds'" since the
-// CloudKit documentation tells us not to use the mechanism employed herein if
-// the result set is likely to be larger than that (it'd only return the first
-// few hundred if so). It seems very unlikely that someone would have more than
-// even 50 or so favourite stops in Bus Panda.
+//    [ database performQuery: query
+//               inZoneWithID: zoneID
+//          completionHandler: completionHandler ];
+//}
+
+#pragma mark - CloudKit change management
+
+// When called, creates a CloudKit operation that fetches recent changes from
+// the server. Fetches all possible changes, but will recursively call itself
+// if CloudKit indicates that more changes are coming in one of the updates.
+// Creates, updates or deletes records as required.
 //
-// TODO: Maybe one day turn this into a paginated interface using a
-///      CKQueryOperation instead of using the convenience interface - just
-//       in case someone really *does* have that many favourites stored!
+// The completion block is passed to the fetchRecordZoneChangesCompletionBlock
+// parameter of the operation and called with an error (or not) once the fetch
+// operation has finished. I'm not clear on whether this happens in the case of
+// a multi-fetch operation (where CloudKit indicates "more to come" during the
+// token update within the custom zone); it probably does. It may be 'nil'.
 //
-// Simple example without any error handling:
+// The boolean parameter is "YES" to ignore any local change token and fetch
+// from the very start of all data. This also raises the fetch priority from
+// Background to Utility on assumption of a full data refresh being performed
+// a little more urgently than normal, for the user's benefit.
 //
-//     [
-//         self fetchAllStopsViaCloudKit: ^ ( NSArray * _Nullable results, NSError * _Nullable error )
-//         {
-//             NSLog(@"%@", results);
-//         }
-//     ];
-//
-- ( void ) fetchAllStopsViaCloudKit: ( CloudKitQueryCompletionHandler ) completionHandler
+- ( void ) fetchRecentChangesWithCompletionBlock: ( void ( ^ )( NSError * _Nullable error ) ) completionHandler
+                        ignoringPriorChangeToken: ( BOOL ) forceFetchAll
 {
-    CKContainer    * container  = [ CKContainer defaultContainer ];
-    CKDatabase     * database   = [ container privateCloudDatabase ];
-    CKRecordZoneID * zoneID     = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_NAME ownerName: CKCurrentUserDefaultName ];
-    NSPredicate    * predicate  = [ NSPredicate predicateWithValue: YES ];
-    CKQuery        * query      =
-    [
-        [ CKQuery alloc ] initWithRecordType: ENTITY_AND_RECORD_NAME
-                                   predicate: predicate
+    NSUserDefaults      * defaults  = [ NSUserDefaults standardUserDefaults ];
+    CKContainer         * container = [ CKContainer defaultContainer ];
+    CKDatabase          * database  = [ container privateCloudDatabase ];
+    CKRecordZoneID      * zoneID    = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_NAME ownerName: CKCurrentUserDefaultName ];
+    CKServerChangeToken * token     = nil;
+
+    // Is there a previous change token we can start fetches using?
+
+    if ( forceFetchAll == NO )
+    {
+        NSData * archivedToken = [ defaults objectForKey: CLOUDKIT_FETCHED_CHANGES_TOKEN ];
+
+        if ( archivedToken != nil )
+        {
+            token = [ NSKeyedUnarchiver unarchiveObjectWithData: archivedToken ];
+        }
+    }
+
+    // Fetch changes
+
+    CKFetchRecordZoneChangesOptions * options = [ [ CKFetchRecordZoneChangesOptions alloc ] init ];
+    options.previousServerChangeToken = token;
+
+    NSDictionary                      * optionsMap       = @{ zoneID: options };
+    CKFetchRecordZoneChangesOperation * changesOperation = [
+        [ CKFetchRecordZoneChangesOperation alloc ] initWithRecordZoneIDs: @[ zoneID ]
+                                                    optionsByRecordZoneID: optionsMap
     ];
 
-    [ database performQuery: query
-               inZoneWithID: zoneID
-          completionHandler: completionHandler ];
+    changesOperation.qualityOfService = forceFetchAll ? NSQualityOfServiceUtility : NSQualityOfServiceBackground;
+    changesOperation.fetchAllChanges  = YES;
+    changesOperation.recordZoneIDs    = @[ zoneID ];
+
+    changesOperation.recordChangedBlock =
+    ^ ( CKRecord * _Nonnull record )
+    {
+// TODO: Remember to reinstate this
+//                            [ defaults setBool: YES forKey: HAVE_RECEIVED_CLOUDKIT_DATA ];
+        [ self recordDidChange: record ];
+    };
+
+    changesOperation.recordWithIDWasDeletedBlock =
+    ^ (
+        CKRecordID * _Nonnull recordID,
+        NSString   * _Nonnull recordType
+    )
+    {
+// TODO: Remember to reinstate this
+//                            [ defaults setBool: YES forKey: HAVE_RECEIVED_CLOUDKIT_DATA ];
+        [ self recordDidDelete: recordID ];
+    };
+
+    changesOperation.recordZoneChangeTokensUpdatedBlock =
+    ^ (
+        CKRecordZoneID      * _Nonnull  recordZone,
+        CKServerChangeToken * _Nullable serverChangeToken,
+        NSData              * _Nullable clientChangeTokenData
+    )
+    {
+        if ( serverChangeToken == nil ) return;
+
+        [ defaults setObject: [ NSKeyedArchiver archivedDataWithRootObject: serverChangeToken ]
+                      forKey: CLOUDKIT_FETCHED_CHANGES_TOKEN ];
+    };
+
+    changesOperation.recordZoneFetchCompletionBlock =
+    ^ (
+        CKRecordZoneID      * _Nonnull  recordZoneID,
+        CKServerChangeToken * _Nullable serverChangeToken,
+        NSData              * _Nullable clientChangeTokenData,
+        BOOL                            moreComing,
+        NSError             * _Nullable recordZoneError
+    )
+    {
+        if ( recordZoneError != nil || serverChangeToken == nil ) return;
+
+        [ defaults setObject: [ NSKeyedArchiver archivedDataWithRootObject: serverChangeToken ]
+                      forKey: CLOUDKIT_FETCHED_CHANGES_TOKEN ];
+    };
+
+    changesOperation.fetchRecordZoneChangesCompletionBlock = completionHandler;
+
+    [ database addOperation: changesOperation ];
+}
+
+// Called from AppDelegate when notifications arrive.
+//
+- ( void ) handleNotification: ( NSDictionary  * ) userInfo
+       fetchCompletionHandler: ( void ( ^ ) ( UIBackgroundFetchResult ) ) completionHandler
+{
+    CKNotification * notification = [ CKNotification notificationFromRemoteNotificationDictionary: userInfo ];
+
+    if ( [ notification.subscriptionID isEqualToString: CLOUDKIT_SUBSCRIPTION_ID ] )
+    {
+        [
+            self fetchRecentChangesWithCompletionBlock: ^ ( NSError * _Nullable error )
+                                                        {
+                                                            completionHandler( UIBackgroundFetchResultNewData );
+                                                        }
+                              ignoringPriorChangeToken: NO
+        ];
+    }
+    else
+    {
+        completionHandler( UIBackgroundFetchResultNoData );
+    }
+}
+
+// Call if a notification from CloudKit indicates that a record changed (or
+// was added).
+//
+- ( void ) recordDidChange: ( CKRecord * _Nonnull ) record
+{
+    NSLog( @"CloudKit change: Assert presence of %@", record );
+
+    [ self addOrEditFavourite: record.recordID.recordName
+           settingDescription: [ record objectForKey: @"stopDescription" ]
+             andPreferredFlag: [ record objectForKey: @"preferred"       ]
+            includingCloudKit: NO ];
+}
+
+// Call if a notification from CloudKit indicates that a record was deleted.
+//
+- ( void ) recordDidDelete: ( CKRecordID * _Nonnull ) recordID
+{
+    NSLog( @"CloudKit change: Assert removal of: %@", recordID );
+
+    [ self deleteFavourite: recordID.recordName
+         includingCloudKit: NO ];
 }
 
 #pragma mark - Cached bus stop location management

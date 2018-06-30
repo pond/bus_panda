@@ -63,11 +63,11 @@
     // e.g. StackOverflow but they all have issues with e.g. localized strings,
     // changes of iOS version, BOOL vs NSString values and so-on.
     //
-    id shouldNotBeNil = [ defaults objectForKey: @"shorten_names_preference" ];
+    id shouldNotBeNil = [ defaults objectForKey: SHORTEN_DISPLAYED_NAMES ];
 
     if ( shouldNotBeNil == nil )
     {
-        [ defaults setBool: YES forKey: @"shorten_names_preference" ];
+        [ defaults setBool: YES forKey: SHORTEN_DISPLAYED_NAMES ];
 
         // ...and in future, add any more settings here too.
     }
@@ -75,11 +75,11 @@
     // If this is the first time the application has ever been run, set up a
     // collection of predefined useful stops.
     //
-    BOOL hasRunBefore = [ defaults boolForKey: @"hasRunBefore" ];
+    BOOL hasRunBefore = [ defaults boolForKey: APP_HAS_RUN_BEFORE ];
 
     if ( hasRunBefore != YES )
     {
-        [ defaults setBool: YES forKey: @"hasRunBefore" ];
+        [ defaults setBool: YES forKey: APP_HAS_RUN_BEFORE ];
 
         // TODO: The below is used for screenshots in the simulator; for the
         // real world, something similar to load a sensible set of first-time

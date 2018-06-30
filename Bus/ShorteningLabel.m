@@ -23,6 +23,7 @@
 //  standard UILabel properties.
 //
 
+#import "Constants.h"
 #import "ShorteningLabel.h"
 #import "Bus_Panda-Swift.h"
 
@@ -142,7 +143,7 @@
 //
 - ( void ) drawTextInRect: ( CGRect ) rect
 {
-    if ( [ [ NSUserDefaults standardUserDefaults ] boolForKey: @"shorten_names_preference" ] == YES )
+    if ( [ [ NSUserDefaults standardUserDefaults ] boolForKey: SHORTEN_DISPLAYED_NAMES ] == YES )
     {
         if ( self.lastComputedWidth != self.bounds.size.width )
         {
