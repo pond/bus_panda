@@ -26,7 +26,8 @@
 {
     [ DataManager.dataManager addOrEditFavourite: stopID
                               settingDescription: stopDescription
-                                andPreferredFlag: nil ];
+                                andPreferredFlag: nil
+                               includingCloudKit: YES ];
 }
 
 // Subclasses should call this method when they want to be closed. It ensures

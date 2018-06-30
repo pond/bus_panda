@@ -36,7 +36,8 @@
 
     [ DataManager.dataManager addOrEditFavourite: [ self.sourceObject valueForKey: @"stopID" ]
                               settingDescription: self.descriptionField.text
-                                andPreferredFlag: nil ];
+                                andPreferredFlag: nil
+                               includingCloudKit: YES ];
 
     [ self dismissEditorView: nil ];
 }

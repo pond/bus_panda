@@ -64,9 +64,11 @@
 
 - ( void ) addOrEditFavourite: ( NSString * ) stopID
            settingDescription: ( NSString * ) stopDescription
-             andPreferredFlag: ( NSNumber * ) preferred;
+             andPreferredFlag: ( NSNumber * ) preferred
+            includingCloudKit: ( BOOL       ) includeCloudKit;
 
-- ( void )    deleteFavourite: ( NSString * ) stopID;
+- ( void )    deleteFavourite: ( NSString * ) stopID
+            includingCloudKit: ( BOOL       ) includeCloudKit;
 
 // Fetched results management and query interfaces
 

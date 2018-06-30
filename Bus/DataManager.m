@@ -167,19 +167,27 @@
                         {
 // TODO: Remember to reinstate this
 //                    [ defaults setBool: YES forKey: @"cloudKitUpdatesReceived" ];
-                            NSLog( @"On-startup: Would change: %@", record );
+                            NSLog( @"On-startup: Assert presence of %@", record );
+
+                            [ self addOrEditFavourite: record.recordID.recordName
+                                   settingDescription: [ record objectForKey: @"stopDescription" ]
+                                     andPreferredFlag: [ record objectForKey: @"preferred"       ]
+                                    includingCloudKit: NO ];
                         };
 
         //CKRecordZoneID * zoneID = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_ID ownerName: CKCurrentUserDefaultName ];
         //CKRecordZoneSubscription * subscription = [[
         //CKRecordZoneSubscription alloc] initWithZoneID: zoneID ];
 
-
                         changesOperation.recordWithIDWasDeletedBlock = ^ (CKRecordID * _Nonnull recordID, NSString * _Nonnull recordType )
                         {
+
 // TODO: Remember to reinstate this
 //                    [ defaults setBool: YES forKey: @"cloudKitUpdatesReceived" ];
-                            NSLog( @"On-startup: Would delete: %@", recordID );
+                            NSLog( @"On-startup: Assert removal of: %@", recordID );
+
+                            [ self deleteFavourite: recordID.recordName
+                                 includingCloudKit: NO ];
                         };
 
                         [ database addOperation: changesOperation ];
@@ -206,7 +214,7 @@
 
 // Send a notification saying that the iCloud data has changed. A listener is
 // set up in MasterViewController.m. The notification is sent via GCD on a
-// separate thread.
+// separate thread, which seems to make reception of it more reliable (!).
 //
 - ( void ) sendDataHasChangedNotification
 {
@@ -215,22 +223,6 @@
         dispatch_get_main_queue(),
         ^ ( void )
         {
-            // TODO: Can this hack be removed?
-            //
-            // This is a hack to avoid potential race conditions. For example,
-            // AppDelegate has to wake up iCloud (because it needs the various
-            // state variables available for when 'will terminate' happens and
-            // it has to quickly try and save context), but it's the
-            // MasterViewController which registers for data change
-            // notifications. Conceivably, AppDelegate could set up the iCloud
-            // wakeup thread and have it run before the MVC gets to whatever
-            // stage of initialisation is needed to register that handler. It
-            // is very unlikely, but might happen. A short sleep here reduces
-            // that chance to effectively zero by forcing a definite context
-            // switch to what will be at that time a very busy main thread.
-            //
-            usleep( 100 ); // 100 microseconds => 0.1 seconds
-
             [ [ NSNotificationCenter defaultCenter ] postNotificationName: DATA_CHANGED_NOTIFICATION_NAME
                                                                    object: self
                                                                  userInfo: nil ];
@@ -480,6 +472,14 @@
         NSLog( @"iCloudEnabledAppID: %@", ICLOUD_ENABLED_APP_ID );
         NSLog( @"iCloudDataURL: %@",      iCloudDataURL         );
 
+// https://stackoverflow.com/questions/2622017/suppressing-deprecated-warnings-in-xcode
+//
+// We need the old iCloud stuff for people migrating from Bus Panda V1 but
+// don't want the unnecessary build noise of deprecation warnings.
+//
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
         NSDictionary * options =
         @{
             NSMigratePersistentStoresAutomaticallyOption:        @YES,
@@ -487,6 +487,8 @@
             NSPersistentStoreUbiquitousContentNameKey:           ICLOUD_ENABLED_APP_ID,
             NSPersistentStoreRebuildFromUbiquitousContentOption: @YES
         };
+
+#pragma clang diagnostic pop
 
         [
             psc performBlockAndWait: ^ ( void )
@@ -642,12 +644,13 @@
 // for new records. Similarly, pass 'nil' for preferred flag if you want to
 // preserve that; default is 'not preferred' for new records.
 //
-// Modifies the local table view first, then iCloud next, so that the UI is
-// updated quickly rather than lagging as iCloud updates happen.
+// Modifies the local table view first, then will, if the final parameter is
+// YES, also push changes out to CloudKit; else it won't.
 //
 - ( void ) addOrEditFavourite: ( NSString * ) stopID
            settingDescription: ( NSString * ) stopDescription
              andPreferredFlag: ( NSNumber * ) preferred
+            includingCloudKit: ( BOOL       ) includeCloudKit
 {
     // First update local records.
 
@@ -655,6 +658,8 @@
     NSLog(@"StopID %@",          stopID);
     NSLog(@"stopDescription %@", stopDescription);
     NSLog(@"preferred %@",       preferred);
+
+    if ( stopID == nil ) return; // Indicates nasty bug, but try not to just crash...
 
     BOOL                     oldShowSectionFlag = self.shouldShowSectionHeader;
     NSNumber               * oldPreferred       = @( ! preferred.boolValue );
@@ -691,20 +696,12 @@
         return;
     }
 
-    NSLog(@"In theory, local addition is complete. Local list of stops: %@",
-          DataManager.dataManager.fetchedResultsController);
-
     // Avoid animation issues if the section headers appear or dispppear by
     // sending a 'data changed' notification that causes a full reload and
     // table redraw.
     //
     BOOL newShowSectionFlag = self.shouldShowSectionHeader;
-    if ( oldShowSectionFlag != newShowSectionFlag )
-    {
-        [ [ NSNotificationCenter defaultCenter ] postNotificationName: DATA_CHANGED_NOTIFICATION_NAME
-                                                               object: self
-                                                             userInfo: nil ];
-    }
+    if ( oldShowSectionFlag != newShowSectionFlag ) [ self sendDataHasChangedNotification ];
 
     if ( preferred.boolValue != oldPreferred.boolValue )
     {
@@ -729,7 +726,9 @@
         }
     }
 
-    // Now update iCloud.
+    // Now update iCloud?
+    //
+    if ( includeCloudKit == NO ) return;
 
     CKContainer    * container  = [ CKContainer defaultContainer ];
     CKDatabase     * database   = [ container privateCloudDatabase ];
@@ -772,8 +771,17 @@
     ];
 }
 
+// Modifies the local table view first, then will, if the final parameter is
+// YES, also push changes out to CloudKit; else it won't.
+//
 - ( void ) deleteFavourite: ( NSString * ) stopID
+         includingCloudKit: ( BOOL       ) includeCloudKit
 {
+    NSLog(@"REMOVE FAVOURITE");
+    NSLog(@"StopID %@", stopID);
+
+    if ( stopID == nil ) return; // Indicates nasty bug, but try not to just crash...
+
     NSManagedObject * object = [ DataManager.dataManager findFavouriteStopByID: stopID ];
 
     // Nothing being found implies strange bugs; can't trust the data; bail out.
@@ -799,14 +807,11 @@
     // table redraw.
     //
     BOOL newShowSectionFlag = self.shouldShowSectionHeader;
-    if ( oldShowSectionFlag != newShowSectionFlag )
-    {
-        [ [ NSNotificationCenter defaultCenter ] postNotificationName: DATA_CHANGED_NOTIFICATION_NAME
-                                                               object: self
-                                                             userInfo: nil ];
-    }
+    if ( oldShowSectionFlag != newShowSectionFlag ) [ self sendDataHasChangedNotification ];
 
-    // Now update iCloud.
+    // Now update iCloud?
+    //
+    if ( includeCloudKit == NO ) return;
 
     CKContainer    * container  = [ CKContainer defaultContainer ];
     CKDatabase     * database   = [ container privateCloudDatabase ];
@@ -867,6 +872,10 @@
 
     AppDelegate * appDelegate = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
     frc.delegate = appDelegate.masterViewController;
+
+    // Initial warm-up of local store.
+    //
+    [ frc performFetch: nil ];
 
     _fetchedResultsController = frc;
     return _fetchedResultsController;

@@ -62,8 +62,8 @@
     //
     [ [ NSNotificationCenter defaultCenter ] addObserver: self
                                                 selector: @selector( reloadFetchedResults: )
-                                                    name: DATA_CHANGED_NOTIFICATION_NAME // AppDelegate.h
-                                                  object: [ [ UIApplication sharedApplication ] delegate ] ];
+                                                    name: DATA_CHANGED_NOTIFICATION_NAME
+                                                  object: nil ];
 
     // Add an observer triggered whenever the Core Data list of favourite
     // stops changes; this is used to update the Watch.
@@ -71,7 +71,7 @@
     [ [ NSNotificationCenter defaultCenter ] addObserver: self
                                                 selector: @selector( updateWatch: )
                                                     name: NSManagedObjectContextObjectsDidChangeNotification
-                                                  object: [ [ UIApplication sharedApplication ] delegate ] ];
+                                                  object: nil ];
 
     // Watch for user defaults changes as we'll need to reload the table data
     // to reflect things like a 'shorten names to fit' settings change.
@@ -321,7 +321,11 @@
         NSManagedObject * object = [ dataManager.fetchedResultsController objectAtIndexPath: indexPath ];
         NSString        * stopID = [ object valueForKey: @"stopID" ];
 
-        if ( stopID != nil ) [ dataManager deleteFavourite: stopID ];
+        if ( stopID != nil )
+        {
+            [ dataManager deleteFavourite: stopID
+                        includingCloudKit: YES ];
+        }
     }
 }
 
@@ -345,7 +349,9 @@
                       backgroundColor: [ UIColor redColor ]
                              callback:  ^ BOOL ( MGSwipeTableCell * sender )
         {
-            [ dataManager deleteFavourite: stopID ];
+            [ dataManager deleteFavourite: stopID
+                        includingCloudKit: YES ];
+
             return YES; // Yes => do slide the table row back to normal position
         }
     ];
@@ -371,7 +377,8 @@
         {
             [ dataManager addOrEditFavourite: stopID
                           settingDescription: nil
-                            andPreferredFlag: STOP_IS_PREFERRED_VALUE ];
+                            andPreferredFlag: STOP_IS_PREFERRED_VALUE
+                           includingCloudKit: YES ];
 
             return YES; // Yes => do slide the table row back to normal position
         }
@@ -385,7 +392,8 @@
         {
             [ dataManager addOrEditFavourite: stopID
                           settingDescription: nil
-                            andPreferredFlag: STOP_IS_NOT_PREFERRED_VALUE ];
+                            andPreferredFlag: STOP_IS_NOT_PREFERRED_VALUE
+                           includingCloudKit: YES ];
 
             return YES; // Yes => do slide the table row back to normal position
         }
@@ -410,6 +418,8 @@
 //
 - ( void ) reloadFetchedResults: ( NSNotification * ) ignoredNotification
 {
+    ( void ) ignoredNotification;
+
     NSError * error = nil;
 
     NSLog( @"Underlying data changed... Refreshing" );
@@ -441,6 +451,8 @@
 //
 - ( void ) updateWatch: ( NSNotification * ) ignoredNotification
 {
+    ( void ) ignoredNotification;
+
     if ( WCSession.isSupported )
     {
         WCSession * session = [ WCSession defaultSession ];
@@ -501,6 +513,8 @@
 //
 - ( void ) defaultsDidChange: ( NSNotification * ) ignoredNotification
 {
+    ( void ) ignoredNotification;
+
     dispatch_async
     (
         dispatch_get_main_queue(),
