@@ -843,8 +843,7 @@
     NSEntityDescription * entity       = [ NSEntityDescription entityForName: ENTITY_AND_RECORD_NAME
                                                       inManagedObjectContext: self.managedObjectContextLocal ];
 
-    [ fetchRequest setEntity:         entity ];
-    [ fetchRequest setFetchBatchSize: 50     ];
+    [ fetchRequest setEntity: entity ];
 
     NSSortDescriptor * sortDescriptor1 = [ [ NSSortDescriptor alloc] initWithKey: @"preferred"
                                                                        ascending: NO ];
