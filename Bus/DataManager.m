@@ -70,7 +70,12 @@
 // A UIViewController is used purely for presenting error alerts, such as
 // the one-off at-startup warning that the user isn't signed into iCloud.
 //
+// The UIApplication is provided if you want to register for push notifications
+// inline. This should really only be done by the AppDelegate at launch time;
+// anyone else should pass 'nil'.
+//
 - ( void ) awakenAllStores: ( UIViewController * ) viewController
+            forApplication: ( UIApplication    * ) application
 {
     NSUserDefaults * defaults = [ NSUserDefaults standardUserDefaults ];
 
@@ -115,7 +120,7 @@
 
                 CKContainer                  * container     = [ CKContainer defaultContainer ];
                 CKDatabase                   * database      = [ container privateCloudDatabase ];
-                CKRecordZone                 * zone          = [ [ CKRecordZone alloc ] initWithZoneName: CLOUDKIT_ZONE_ID ];
+                CKRecordZone                 * zone          = [ [ CKRecordZone alloc ] initWithZoneName: CLOUDKIT_ZONE_NAME ];
                 CKRecordZoneID               * zoneID        = zone.zoneID;
                 CKModifyRecordZonesOperation * zoneOperation =
                 [
@@ -137,12 +142,33 @@
                     }
                     else
                     {
+                        // Now set up the operation which fetches all changes
+                        // for our first-time startup. This has a special
+                        // action for on-completion, because if it finds that
+                        // there were no changes in Cloud Kit, it'll go and
+                        // check the legacy Core Data store for information.
+
                         CKFetchRecordZoneChangesOperation * changesOperation = [
                             [ CKFetchRecordZoneChangesOperation alloc ] init
                         ];
 
-                        changesOperation.fetchAllChanges = YES;
-                        changesOperation.recordZoneIDs   = @[ zoneID ];
+                        changesOperation.qualityOfService = NSQualityOfServiceBackground;
+                        changesOperation.fetchAllChanges  = YES;
+                        changesOperation.recordZoneIDs    = @[ zoneID ];
+
+                        changesOperation.recordChangedBlock = ^ ( CKRecord * _Nonnull record )
+                        {
+// TODO: Remember to reinstate this
+//                            [ defaults setBool: YES forKey: @"cloudKitUpdatesReceived" ];
+                            [ self recordDidChange: record ];
+                        };
+
+                        changesOperation.recordWithIDWasDeletedBlock = (CKRecordID * _Nonnull recordID, NSString * _Nonnull recordType )
+                        {
+// TODO: Remember to reinstate this
+//                            [ defaults setBool: YES forKey: @"cloudKitUpdatesReceived" ];
+                            [ self recordDidDelete: recordID ];
+                        };
 
                         changesOperation.fetchRecordZoneChangesCompletionBlock = ^ ( NSError * _Nullable error )
                         {
@@ -172,34 +198,44 @@
                             }
                         };
 
-                        changesOperation.recordChangedBlock = ^ ( CKRecord * _Nonnull record )
-                        {
-// TODO: Remember to reinstate this
-//                    [ defaults setBool: YES forKey: @"cloudKitUpdatesReceived" ];
-                            NSLog( @"On-startup: Assert presence of %@", record );
-
-                            [ self addOrEditFavourite: record.recordID.recordName
-                                   settingDescription: [ record objectForKey: @"stopDescription" ]
-                                     andPreferredFlag: [ record objectForKey: @"preferred"       ]
-                                    includingCloudKit: NO ];
-                        };
-
-        //CKRecordZoneID * zoneID = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_ID ownerName: CKCurrentUserDefaultName ];
-        //CKRecordZoneSubscription * subscription = [[
-        //CKRecordZoneSubscription alloc] initWithZoneID: zoneID ];
-
-                        changesOperation.recordWithIDWasDeletedBlock = ^ (CKRecordID * _Nonnull recordID, NSString * _Nonnull recordType )
-                        {
-
-// TODO: Remember to reinstate this
-//                    [ defaults setBool: YES forKey: @"cloudKitUpdatesReceived" ];
-                            NSLog( @"On-startup: Assert removal of: %@", recordID );
-
-                            [ self deleteFavourite: recordID.recordName
-                                 includingCloudKit: NO ];
-                        };
-
                         [ database addOperation: changesOperation ];
+
+                        // With that underway, we can set up our subscription to
+                        // CloudKit changes, to react at run-time - if need be.
+                        //
+                        if ( application != nil )
+                        {
+                            [ application registerForRemoteNotifications ];
+
+    //                        CKRecordZoneSubscription * subscription = [
+    //                            [ CKRecordZoneSubscription alloc] initWithZoneID: zoneID
+    //                                                              subscriptionID: CLOUDKIT_SUBSCRIPTION_ID
+    //                        ];
+    //
+                            NSPredicate         * predicate    = [ NSPredicate predicateWithValue: YES ];
+                            CKQuerySubscription * subscription = [
+                                [ CKQuerySubscription alloc ] initWithRecordType: ENTITY_AND_RECORD_NAME
+                                                                       predicate: predicate
+                                                                  subscriptionID: CLOUDKIT_SUBSCRIPTION_ID
+                                                                  options:   CKQuerySubscriptionOptionsFiresOnRecordCreation |
+                                                                             CKQuerySubscriptionOptionsFiresOnRecordUpdate   |
+                                                                             CKQuerySubscriptionOptionsFiresOnRecordDeletion
+                            ];
+
+                            CKNotificationInfo * info = [ [ CKNotificationInfo alloc ] init ];
+
+                            info.shouldSendContentAvailable = true; // "Silent" notification
+                            subscription.notificationInfo   = info;
+
+                            CKModifySubscriptionsOperation * subscriptionsOperation = [
+                                [ CKModifySubscriptionsOperation alloc ] initWithSubscriptionsToSave: @[ subscription ]
+                                                                             subscriptionIDsToDelete: nil
+                            ];
+
+                            subscriptionsOperation.qualityOfService = NSQualityOfServiceUtility;
+
+                            [ database addOperation: subscriptionsOperation ];
+                        }
                     }
                 };
 
@@ -207,6 +243,24 @@
             }
         }
     ];
+}
+
+- ( void ) handleNotification: ( NSDictionary  * ) userInfo
+       fetchCompletionHandler: ( void ( ^ ) ( UIBackgroundFetchResult ) ) completionHandler
+{
+    CKContainer    * container    = [ CKContainer defaultContainer ];
+    CKDatabase     * database     = [ container privateCloudDatabase ];
+    CKNotification * notification = [ CKNotification notificationFromRemoteNotificationDictionary: userInfo ];
+
+    if ( notification.subscriptionID == database.subscriptionID )
+    {
+        //..handle
+        completionHandler( UIBackgroundFetchResultNewData );
+    }
+    else
+    {
+        completionHandler( UIBackgroundFetchResultNoData );
+    }
 }
 
 #pragma mark - Support utilities
@@ -741,7 +795,7 @@
 
     CKContainer    * container  = [ CKContainer defaultContainer ];
     CKDatabase     * database   = [ container privateCloudDatabase ];
-    CKRecordZoneID * zoneID     = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_ID ownerName: CKCurrentUserDefaultName ];
+    CKRecordZoneID * zoneID     = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_NAME ownerName: CKCurrentUserDefaultName ];
     CKRecordID     * recordID   = [ [ CKRecordID alloc ] initWithRecordName: stopID zoneID: zoneID ];
     NSString       * errorTitle = NSLocalizedString(
         @"Could not save changes in iCloud",
@@ -824,7 +878,7 @@
 
     CKContainer    * container  = [ CKContainer defaultContainer ];
     CKDatabase     * database   = [ container privateCloudDatabase ];
-    CKRecordZoneID * zoneID     = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_ID ownerName: CKCurrentUserDefaultName ];
+    CKRecordZoneID * zoneID     = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_NAME ownerName: CKCurrentUserDefaultName ];
     CKRecordID     * recordID   = [ [ CKRecordID alloc ] initWithRecordName: stopID zoneID: zoneID ];
     NSString       * errorTitle = NSLocalizedString(
         @"Could not remove favourite from in iCloud",
@@ -840,6 +894,31 @@
         }
     ];
 }
+
+// Call if a notification from CloudKit indicates that a record changed (or
+// was added).
+//
+- ( void ) recordDidChange: ( CKRecord * _Nonnull ) record
+{
+    NSLog( @"CloudKit change: Assert presence of %@", record );
+
+    [ self addOrEditFavourite: record.recordID.recordName
+           settingDescription: [ record objectForKey: @"stopDescription" ]
+             andPreferredFlag: [ record objectForKey: @"preferred"       ]
+            includingCloudKit: NO ];
+}
+
+// Call if a notification from CloudKit indicates that a record was deleted.
+//
+- ( void ) recordDidDelete: ( CKRecordID * _Nonnull ) recordID
+{
+    NSLog( @"CloudKit change: Assert removal of: %@", recordID );
+
+    [ self deleteFavourite: recordID.recordName
+         includingCloudKit: NO ];
+}
+
+
 
 #pragma mark - Query interfaces
 
@@ -1025,7 +1104,7 @@
 {
     CKContainer    * container  = [ CKContainer defaultContainer ];
     CKDatabase     * database   = [ container privateCloudDatabase ];
-    CKRecordZoneID * zoneID     = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_ID ownerName: CKCurrentUserDefaultName ];
+    CKRecordZoneID * zoneID     = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_NAME ownerName: CKCurrentUserDefaultName ];
     NSPredicate    * predicate  = [ NSPredicate predicateWithValue: YES ];
     CKQuery        * query      =
     [

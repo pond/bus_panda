@@ -18,6 +18,14 @@
 
 # pragma mark - Initialisation
 
+- ( void )         application: ( UIApplication * ) application
+  didReceiveRemoteNotification: ( NSDictionary  * ) userInfo
+        fetchCompletionHandler: ( void ( ^ ) ( UIBackgroundFetchResult ) ) completionHandler
+{
+    [ DataManager.dataManager handleNotification: userInfo
+                          fetchCompletionHandler: completionHandler ];
+}
+
 - ( BOOL )          application: ( UIApplication * ) application
   didFinishLaunchingWithOptions: ( NSDictionary  * ) launchOptions
 {
@@ -40,9 +48,12 @@
     self.masterNavigationController = self.splitViewController.viewControllers.firstObject;
     self.masterViewController = ( MasterViewController * ) self.masterNavigationController.topViewController;
 
-    // Wake up local Core Data and iCloud
+    // Wake up local Core Data and iCloud. This also registers for remote
+    // notifications (for CloudKit changes), but the AppDelegate object has
+    // to handle them - see -didReceiveRemoteNotification:... later.
     //
-    [ DataManager.dataManager awakenAllStores: self.splitViewController ];
+    [ DataManager.dataManager awakenAllStores: self.splitViewController
+                               forApplication: application ];
 
     // On a clean install, some iOS versions may not read the Settings bundle
     // into the NSUserDefaults unless the user has by happenstance manually

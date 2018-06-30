@@ -25,9 +25,11 @@
 
 // * V2 local Core Data store, to cache data from CloudKit
 // * Custom zone name so we can use the CloudKit 'getChanges' method etc.
+// * Custom subscription ID for subscription to changes in the custom zone
 //
 #define NEW_CORE_DATA_FILE_NAME        @"Bus-Panda-2.sqlite"
-#define CLOUDKIT_ZONE_ID               @"busPanda"
+#define CLOUDKIT_ZONE_NAME             @"busPanda"
+#define CLOUDKIT_SUBSCRIPTION_ID       @"busPandaChanges"
 
 // * Core Data entity name and CloudKit record name for Bus Stop model
 //   - In Core Data, there's a "stopID" field
@@ -47,7 +49,15 @@
 // Run this at startup, once you have a view controller to use for presenting
 // any alerts that might be needed.
 //
-- ( void ) awakenAllStores: ( UIViewController * ) viewController;
+- ( void ) awakenAllStores: ( UIViewController * ) viewController
+            forApplication: ( UIApplication    * ) application;
+
+// Call from AppDelegate's -application:didReceiveRemoteNotification:...
+// method, passing the second two parameters through. Handles CloudKit
+// notifications only.
+//
+- ( void ) handleNotification: ( NSDictionary  * ) userInfo
+       fetchCompletionHandler: ( void ( ^ ) ( UIBackgroundFetchResult ) ) completionHandler;
 
 // Local Core Data storage (with manual CloudKit sync)
 //
