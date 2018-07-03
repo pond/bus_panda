@@ -234,7 +234,7 @@
     if ( [ [ segue identifier ] isEqualToString: @"showDetail" ] )
     {
         NSIndexPath          * indexPath  = [ self.tableView indexPathForSelectedRow ];
-        NSManagedObject      * object     = [ DataManager.dataManager.fetchedResultsController objectAtIndexPath: indexPath ];
+        NSManagedObject      * object     = [ DataManager.dataManager.fetchedResultsControllerLocal objectAtIndexPath: indexPath ];
         DetailViewController * controller = ( DetailViewController * ) [ [ segue destinationViewController ] topViewController ];
 
         [ controller setDetailItem: object ];
@@ -255,7 +255,7 @@
 - ( NSInteger ) tableView: ( UITableView * ) tableView
     numberOfRowsInSection: ( NSInteger     ) section
 {
-    id <NSFetchedResultsSectionInfo> sectionInfo = DataManager.dataManager.fetchedResultsController.sections[ section ];
+    id <NSFetchedResultsSectionInfo> sectionInfo = DataManager.dataManager.fetchedResultsControllerLocal.sections[ section ];
     return [ sectionInfo numberOfObjects ];
 }
 
@@ -318,7 +318,7 @@
 
     if ( editingStyle == UITableViewCellEditingStyleDelete )
     {
-        NSManagedObject * object = [ dataManager.fetchedResultsController objectAtIndexPath: indexPath ];
+        NSManagedObject * object = [ dataManager.fetchedResultsControllerLocal objectAtIndexPath: indexPath ];
         NSString        * stopID = [ object valueForKey: @"stopID" ];
 
         if ( stopID != nil )
@@ -332,7 +332,7 @@
 - ( void ) configureCell: ( FavouritesCell * ) cell atIndexPath: ( NSIndexPath * ) indexPath
 {
     DataManager     * dataManager     = DataManager.dataManager;
-    NSManagedObject * object          = [ dataManager.fetchedResultsController objectAtIndexPath: indexPath ];
+    NSManagedObject * object          = [ dataManager.fetchedResultsControllerLocal objectAtIndexPath: indexPath ];
     NSString        * stopID          = [ object valueForKey: @"stopID"          ];
     NSString        * stopDescription = [ object valueForKey: @"stopDescription" ];
 
@@ -426,7 +426,7 @@
 
     // Deal with the local changes first
 
-    if ( ! [ DataManager.dataManager.fetchedResultsController performFetch: &error ] )
+    if ( ! [ DataManager.dataManager.fetchedResultsControllerLocal performFetch: &error ] )
     {
         [
             ErrorPresenter showModalAlertFor: self
@@ -477,7 +477,7 @@
             NSDictionary   * dictionary;
             NSInteger        sections = [ self numberOfSectionsInTableView: self.tableView ];
 
-            for ( NSManagedObject * object in DataManager.dataManager.fetchedResultsController.fetchedObjects )
+            for ( NSManagedObject * object in DataManager.dataManager.fetchedResultsControllerLocal.fetchedObjects )
             {
                 // If the table view thinks it only has one section, send all
                 // stops; they're either all normal, or all preferred. If there

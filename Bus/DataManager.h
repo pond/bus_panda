@@ -25,7 +25,7 @@
 // Run this at startup, once you have a view controller to use for presenting
 // any alerts that might be needed.
 //
-- ( void ) awakenAllStores: ( UIViewController * ) viewController;
+- ( void ) awakenAllStores;
 
 // Call from AppDelegate's -application:didReceiveRemoteNotification:...
 // method, passing the second two parameters through. Handles CloudKit
@@ -40,11 +40,6 @@
 @property ( readonly, strong, nonatomic ) NSManagedObjectContext       * managedObjectContextLocal;
 @property ( readonly, strong, nonatomic ) NSPersistentStoreCoordinator * persistentStoreCoordinatorLocal;
 
-// Legacy iCloud Core Data connections (now read-only)
-//
-@property ( readonly, strong, nonatomic ) NSManagedObjectContext       * managedObjectContextRemote;
-@property ( readonly, strong, nonatomic ) NSPersistentStoreCoordinator * persistentStoreCoordinatorRemote;
-
 // Updating records
 
 - ( void ) addOrEditFavourite: ( NSString * ) stopID
@@ -57,7 +52,7 @@
 
 // Fetched results management and query interfaces
 
-@property ( readonly, strong, nonatomic ) NSFetchedResultsController * fetchedResultsController;
+@property ( readonly, strong, nonatomic ) NSFetchedResultsController * fetchedResultsControllerLocal;
 
 - ( BOOL              ) shouldShowSectionHeader;
 - ( NSInteger         ) numberOfSections;

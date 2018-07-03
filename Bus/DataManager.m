@@ -15,6 +15,12 @@
 
 @interface DataManager ()
 
+// Legacy iCloud Core Data connections (now read-only)
+//
+@property ( readonly, strong, nonatomic ) NSManagedObjectContext       * managedObjectContextRemote;
+@property ( readonly, strong, nonatomic ) NSPersistentStoreCoordinator * persistentStoreCoordinatorRemote;
+@property ( readonly, strong, nonatomic ) NSFetchedResultsController   * fetchedResultsControllerRemote;
+
 // An application-wide cache of bus stop locations for the map view.
 // This is updated or cleared and refreshed via StopMapViewController,
 // but retained by the AppDelegate so that any number of new instances
@@ -37,11 +43,14 @@
 #pragma mark - Initialisation
 
 @synthesize managedObjectModel               = _managedObjectModel;
+
 @synthesize managedObjectContextLocal        = _managedObjectContextLocal;
 @synthesize persistentStoreCoordinatorLocal  = _persistentStoreCoordinatorLocal;
+@synthesize fetchedResultsControllerLocal    = _fetchedResultsControllerLocal;
+
 @synthesize managedObjectContextRemote       = _managedObjectContextRemote;
 @synthesize persistentStoreCoordinatorRemote = _persistentStoreCoordinatorRemote;
-@synthesize fetchedResultsController         = _fetchedResultsController;
+@synthesize fetchedResultsControllerRemote   = _fetchedResultsControllerRemote;
 
 + ( DataManager * ) dataManager
 {
@@ -67,150 +76,198 @@
     return self;
 }
 
-// A UIViewController is used purely for presenting error alerts, such as
-// the one-off at-startup warning that the user isn't signed into iCloud.
+// Cornerstone method which wakes up all the iCloud stuff - CloudKit, legacy
+// data and so forth. Sets up notifications (re-sets them up if need be!) and
+// establishes (or, again, re-establishes) custom CloudKit zones and change
+// subscriptions, syncs everything up and tries to ensure the UI ends up in a
+// consistent state locally relative to remote data.
 //
-- ( void ) awakenAllStores: ( UIViewController * ) viewController
+// Called internally by the iCloud availability change notification handliner
+// as well as by the app delegate at startup.
+//
+- ( void ) awakenAllStores
 {
     NSUserDefaults * defaults = [ NSUserDefaults standardUserDefaults ];
 
-    _dataStoreAwakeningQueue = [ [ NSOperationQueue alloc ] init ];
-
-//    [
-//        [ NSNotificationCenter defaultCenter ] addObserver: self
-//                                                  selector: @selector( iCloudAccountAvailabilityChanged: )
-//                                                      name: NSUbiquityIdentityDidChangeNotification
-//                                                    object: nil
-//    ];
-//
-//    [ self iCloudAccountAvailabilityChanged: nil ];
-
+    // The "old school" NSUbiquityIdentityDidChangeNotification event will
+    // tell us if the user signs in/out and lets us know the high level account
+    // status changes. CloudKit introduces more fine-grained levels such as
+    // 'restricted', but all we care about is signed in or out, or if the user
+    // changes. The signed in user is easily detected by the ubiquity token, so
+    // we keep using the old token change mechanism here.
+    //
     [
-        [ CKContainer defaultContainer ] accountStatusWithCompletionHandler: ^ ( CKAccountStatus accountStatus, NSError * error )
-        {
-            if ( accountStatus == CKAccountStatusNoAccount )
+        [ NSNotificationCenter defaultCenter ] addObserver: self
+                                                  selector: @selector( iCloudIdentityDidChange: )
+                                                      name: CKAccountChangedNotification// NSUbiquityIdentityDidChangeNotification
+                                                    object: nil
+    ];
+
+    // The handler above flushes out a bunch of settings and calls back here if
+    // it needs to re-run the at-startup-like checks on old Core Data migration
+    // and so forth. That's why we have an operation queue tracking the whole
+    // set of calls below and frequent cancellation checks; we may need to
+    // interrupt and restart this at any time.
+    //
+    if ( _dataStoreAwakeningQueue == nil )
+    {
+        _dataStoreAwakeningQueue = [ [ NSOperationQueue alloc ] init ];
+    }
+
+    [ _dataStoreAwakeningQueue cancelAllOperations ];
+
+    // Need to define the block operation object up here, so that inside the
+    // block we can reference this and check if "we" have been cancelled.
+    //
+    NSBlockOperation * awakenOperation = [ [ NSBlockOperation alloc ] init ];
+    __weak NSBlockOperation * thisOperation = awakenOperation;
+
+    // Define the one and only block that we'll pass to an NSBlockOperation
+    // instance and then place on the queue at the very end of this method.
+    //
+    id awakenOperationBlock = ^ ( void )
+    {
+        [
+            [ CKContainer defaultContainer ] accountStatusWithCompletionHandler: ^ ( CKAccountStatus accountStatus, NSError * error )
             {
-                NSLog( @"-- !! Not signed in to iCloud" );
+                if ( thisOperation.cancelled ) return;
 
-                if ( [ defaults boolForKey: HAVE_SHOWN_ICLOUD_SIGNIN_WARNING ] != YES )
+                if ( accountStatus == CKAccountStatusNoAccount )
                 {
-                    [ defaults setBool: YES forKey: HAVE_SHOWN_ICLOUD_SIGNIN_WARNING ];
+                    NSLog( @"-- !! Not signed in to iCloud" );
 
-                    [ self showMessage: @"Sign in to iCloud to synchronise favourites between devices.\n\nOtherwise, Bus Panda can still save favourites but only on this device."
-                             withTitle: @"Not signed in to iCloud"
+                    if ( [ defaults boolForKey: HAVE_SHOWN_ICLOUD_SIGNIN_WARNING ] != YES )
+                    {
+                        [ defaults setBool: YES forKey: HAVE_SHOWN_ICLOUD_SIGNIN_WARNING ];
+
+                        if ( thisOperation.cancelled ) return;
+
+                        [ self showMessage: @"Sign in to iCloud to synchronise favourites between devices.\n\nOtherwise, Bus Panda can still save favourites but only on this device."
+                                 withTitle: @"Not signed in to iCloud"
+                                 andButton: @"Got it!" ];
+                    }
+                }
+                else if ( accountStatus != CKAccountStatusAvailable )
+                {
+                    NSLog( @"-- !! Unusual iCloud account status %ld", accountStatus );
+
+                    if ( thisOperation.cancelled ) return;
+
+                    [ self showMessage: @"iCloud is not available, either due to parental controls or an error. Bus Panda will not be able to synchronise favourite stops with your other devices."
+                             withTitle: @"Cannot use iCloud"
                              andButton: @"Got it!" ];
                 }
-            }
-            else if ( accountStatus != CKAccountStatusAvailable )
-            {
-                NSLog( @"-- !! Unusual iCloud account status %ld", accountStatus );
-
-                [ self showMessage: @"iCloud is not available, either due to parental controls or an error. Bus Panda will not be able to synchronise favourite stops with your other devices."
-                         withTitle: @"Cannot use iCloud"
-                         andButton: @"Got it!" ];
-            }
-            else
-            {
-                NSLog(@"-- !! CloudKit is ready");
-
-                CKContainer                  * container     = [ CKContainer defaultContainer ];
-                CKDatabase                   * database      = [ container privateCloudDatabase ];
-                CKRecordZone                 * zone          = [ [ CKRecordZone alloc ] initWithZoneName: CLOUDKIT_ZONE_NAME ];
-                CKModifyRecordZonesOperation * zoneOperation =
-                [
-                    [ CKModifyRecordZonesOperation alloc ] initWithRecordZonesToSave: @[ zone ]
-                                                               recordZoneIDsToDelete: nil
-                ];
-
-                zoneOperation.qualityOfService                 = NSQualityOfServiceUtility;
-                zoneOperation.modifyRecordZonesCompletionBlock =
-                ^ (
-                    NSArray<CKRecordZone   *> * _Nullable savedRecordZones,
-                    NSArray<CKRecordZoneID *> * _Nullable deletedRecordZoneIDs,
-                    NSError                   * _Nullable operationError
-                )
+                else
                 {
-                    if ( error != nil )
-                    {
-                        NSLog( @"On-startup: FATAL: Could not create zone: %@", error );
-                    }
-                    else
-                    {
-                        // Now set up the operation which fetches all changes
-                        // for our first-time startup. This has a special
-                        // action for on-completion, because if it finds that
-                        // there were no changes in Cloud Kit, it'll go and
-                        // check the legacy Core Data store for information.
+                    NSLog(@"-- !! CloudKit is ready");
 
-                        id completionBlock = ^ ( NSError * _Nullable error )
+                    CKContainer                  * container     = [ CKContainer defaultContainer ];
+                    CKDatabase                   * database      = [ container privateCloudDatabase ];
+                    CKRecordZone                 * zone          = [ [ CKRecordZone alloc ] initWithZoneName: CLOUDKIT_ZONE_NAME ];
+                    CKModifyRecordZonesOperation * zoneOperation =
+                    [
+                        [ CKModifyRecordZonesOperation alloc ] initWithRecordZonesToSave: @[ zone ]
+                                                                   recordZoneIDsToDelete: nil
+                    ];
+
+                    zoneOperation.qualityOfService                 = NSQualityOfServiceUtility;
+                    zoneOperation.modifyRecordZonesCompletionBlock =
+                    ^ (
+                        NSArray<CKRecordZone   *> * _Nullable savedRecordZones,
+                        NSArray<CKRecordZoneID *> * _Nullable deletedRecordZoneIDs,
+                        NSError                   * _Nullable operationError
+                    )
+                    {
+                        if ( error != nil )
                         {
-                            // If no error & we had something from CloudKit, we're done as
-                            // if anything is in there at all, it's considered data master.
-                            //
-                            // If no error & user defaults say "nothing from CloudKit yet"
-                            // and user defaults say "I haven't migrated from old Core Data"
-                            // then this is assumed first app run on any device post-CloudKit
-                            // for this user. Pull old core data records.
+                            NSLog( @"On-startup: FATAL: Could not create zone: %@", error );
+                        }
+                        else
+                        {
+                            // Now set up the operation which fetches all changes
+                            // for our first-time startup. This has a special
+                            // action for on-completion, because if it finds that
+                            // there were no changes in Cloud Kit, it'll go and
+                            // check the legacy Core Data store for information.
 
-                            NSLog( @"On-startup: Fetch changes complete: %@", error );
-
-                            BOOL hasReceivedUpdatesBefore = [ defaults boolForKey: HAVE_RECEIVED_CLOUDKIT_DATA  ];
-                            BOOL haveReadLegacyICloudData = [ defaults boolForKey: HAVE_READ_LEGACY_ICLOUD_DATA ];
-
-                            if ( hasReceivedUpdatesBefore != YES && haveReadLegacyICloudData != YES )
+                            id completionBlock = ^ ( NSError * _Nullable error )
                             {
-                                // This one-liner kicks off all the old iCloud Core Data
-                                // persistent storage stuff, leading in due course to
-                                // various notifications (if things work!) about stores
-                                // changing & becoming available. This leads to all old
-                                // data from there being pulled down and re-stored in
-                                // the new local storage with CloudKit sync.
+                                if ( thisOperation.cancelled ) return;
 
-                                [ self managedObjectContextRemote ];
-                            }
-                        };
+                                // If no error & we had something from CloudKit, we're done as
+                                // if anything is in there at all, it's considered data master.
+                                //
+                                // If no error & user defaults say "nothing from CloudKit yet"
+                                // and user defaults say "I haven't migrated from old Core Data"
+                                // then this is assumed first app run on any device post-CloudKit
+                                // for this user. Pull old core data records.
 
-                        [ self fetchRecentChangesWithCompletionBlock: completionBlock
-                                            ignoringPriorChangeToken: YES ];
+                                NSLog( @"On-startup: Fetch changes complete: %@", error );
 
-                        // With that underway, we can set up our subscription to
-                        // CloudKit changes, to react at run-time.
+                                BOOL hasReceivedUpdatesBefore = [ defaults boolForKey: HAVE_RECEIVED_CLOUDKIT_DATA  ];
+                                BOOL haveReadLegacyICloudData = [ defaults boolForKey: HAVE_READ_LEGACY_ICLOUD_DATA ];
 
-//                        CKRecordZoneSubscription * subscription = [
-//                            [ CKRecordZoneSubscription alloc] initWithZoneID: zoneID
-//                                                              subscriptionID: CLOUDKIT_SUBSCRIPTION_ID
-//                        ];
-//
-                        NSPredicate         * predicate    = [ NSPredicate predicateWithValue: YES ];
-                        CKQuerySubscription * subscription = [
-                            [ CKQuerySubscription alloc ] initWithRecordType: ENTITY_AND_RECORD_NAME
-                                                                   predicate: predicate
-                                                              subscriptionID: CLOUDKIT_SUBSCRIPTION_ID
-                                                                     options: CKQuerySubscriptionOptionsFiresOnRecordCreation |
-                                                                              CKQuerySubscriptionOptionsFiresOnRecordUpdate   |
-                                                                              CKQuerySubscriptionOptionsFiresOnRecordDeletion
-                        ];
+                                if ( hasReceivedUpdatesBefore != YES && haveReadLegacyICloudData != YES )
+                                {
+                                    // This one-liner kicks off all the old iCloud Core Data
+                                    // persistent storage stuff, leading in due course to
+                                    // various notifications (if things work!) about stores
+                                    // changing & becoming available. This leads to all old
+                                    // data from there being pulled down and re-stored in
+                                    // the new local storage with CloudKit sync.
 
-                        CKNotificationInfo * info = [ [ CKNotificationInfo alloc ] init ];
+                                    if ( thisOperation.cancelled ) return;
+                                    [ self managedObjectContextRemote ];
+                                }
+                            };
 
-                        info.shouldSendContentAvailable = true; // "Silent" notification
-                        subscription.notificationInfo   = info;
+                            if ( thisOperation.cancelled ) return;
 
-                        CKModifySubscriptionsOperation * subscriptionsOperation = [
-                            [ CKModifySubscriptionsOperation alloc ] initWithSubscriptionsToSave: @[ subscription ]
-                                                                         subscriptionIDsToDelete: nil
-                        ];
+                            [ self fetchRecentChangesWithCompletionBlock: completionBlock
+                                                ignoringPriorChangeToken: YES ];
 
-                        subscriptionsOperation.qualityOfService = NSQualityOfServiceUtility;
+                            // With that underway, we can set up our subscription to
+                            // CloudKit changes, to react at run-time.
 
-                        [ database addOperation: subscriptionsOperation ];
-                    }
-                };
+                            NSPredicate         * predicate    = [ NSPredicate predicateWithValue: YES ];
+                            CKQuerySubscription * subscription = [
+                                [ CKQuerySubscription alloc ] initWithRecordType: ENTITY_AND_RECORD_NAME
+                                                                       predicate: predicate
+                                                                  subscriptionID: CLOUDKIT_SUBSCRIPTION_ID
+                                                                         options: CKQuerySubscriptionOptionsFiresOnRecordCreation |
+                                                                                  CKQuerySubscriptionOptionsFiresOnRecordUpdate   |
+                                                                                  CKQuerySubscriptionOptionsFiresOnRecordDeletion
+                            ];
 
-                [ database addOperation: zoneOperation ];
+                            CKNotificationInfo * info = [ [ CKNotificationInfo alloc ] init ];
+
+                            info.shouldSendContentAvailable = true; // "Silent" notification
+                            subscription.notificationInfo   = info;
+
+                            CKModifySubscriptionsOperation * subscriptionsOperation = [
+                                [ CKModifySubscriptionsOperation alloc ] initWithSubscriptionsToSave: @[ subscription ]
+                                                                             subscriptionIDsToDelete: nil
+                            ];
+
+                            subscriptionsOperation.qualityOfService = NSQualityOfServiceUtility;
+
+                            if ( thisOperation.cancelled ) return;
+                            [ database addOperation: subscriptionsOperation ];
+                        }
+                    };
+
+                    if ( thisOperation.cancelled ) return;
+                    [ database addOperation: zoneOperation ];
+                }
             }
-        }
-    ];
+        ];
+    };
+
+    // As per comments far above :-) now finally add the big block we just
+    // defined as a (cancelleable) operation that'll get run when iOS is ready.
+    //
+    [ awakenOperation addExecutionBlock: awakenOperationBlock ];
+    [ _dataStoreAwakeningQueue addOperation: awakenOperation ];
 }
 
 #pragma mark - Support utilities
@@ -244,15 +301,17 @@
 }
 
 // iCloud availability has changed - available <-> not available, or another
-// user has signed in. We have to treat this pretty much as if the app has
-// been installed from clean - flush everything and redo the whole Core Data
-// and CloudKit iCloud dance.
+// user has signed in.
 //
-- ( void ) iCloudAccountAvailabilityChanged: ( NSNotification * ) notification
+// We have to treat this pretty much as if the app has been installed from
+// clean - flush everything and redo the whole Core Data and CloudKit iCloud
+// dance.
+//
+- ( void ) iCloudIdentityDidChange: ( NSNotification * ) notification
 {
     ( void ) notification;
 
-    NSLog( @"iCloud ubiquity token has changed" );
+    NSLog( @"iCloud identity has changed" );
 
     NSUserDefaults * defaults           = [ NSUserDefaults standardUserDefaults ];
     NSFileManager  * fileManager        = [ NSFileManager defaultManager ];
@@ -277,16 +336,45 @@
             [ defaults setObject: currentTokenData
                           forKey: ICLOUD_TOKEN_ID_DEFAULTS_KEY ];
 
-            [ self sendDataHasChangedNotification ];
+            // Since the user may have changed, we have to flush all of the
+            // local data and resync from scratch.
+            //
+            [ defaults setBool: NO forKey: HAVE_RECEIVED_CLOUDKIT_DATA  ];
+            [ defaults setBool: NO forKey: HAVE_READ_LEGACY_ICLOUD_DATA ];
+
+            NSError * error   = nil;
+            BOOL      success = [ self.fetchedResultsControllerLocal performFetch: &error ];
+
+            if ( success != YES || error != nil )
+            {
+                NSLog( @"iCloud identity has changed: Cannot read local data, halting here - %@", error );
+            }
+            else
+            {
+                NSArray * results = self.fetchedResultsControllerLocal.fetchedObjects;
+
+                NSLog( @"iCloud identity has changed: Purging all local data" );
+
+                for ( NSManagedObject * object in results )
+                {
+                    NSString * stopID = [ object valueForKey: @"stopID" ];
+                    [ self deleteFavourite: stopID includingCloudKit: NO ];
+                }
+
+                // Now we need to re-awaken everything to make sure we try and
+                // resync to CloudKit and/or legacy iCloud Core Data stores.
+                //
+                [ self awakenAllStores ];
+            }
         }
     }
     else
     {
         // iCloud seems to no longer be available. Remove any stored iCloud
-        // token and send the 'data changed' notification.
-
+        // token but leave things otherwise as they are; the local data is
+        // still available, we just can't sync it to CloudKit now.
+        //
         [ defaults removeObjectForKey: ICLOUD_TOKEN_ID_DEFAULTS_KEY ];
-        [ self sendDataHasChangedNotification ];
     }
 
     NSLog( @"iCloud ubiquity token now: %@", currentiCloudToken );
@@ -317,8 +405,8 @@
              withTitle: ( NSString * ) title
              andButton: ( NSString * ) button
 {
-    AppDelegate           * delegate  = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
-    UISplitViewController * presenter = [ delegate splitViewController ];
+    AppDelegate          * delegate  = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
+    MasterViewController * presenter = [ delegate masterViewController ];
 
     dispatch_async
     (
@@ -731,8 +819,8 @@
 
         if (
                newShowSectionFlag == NO &&
-               self.fetchedResultsController.fetchedObjects.count == 1 &&
-               [ [ self.fetchedResultsController.fetchedObjects[ 0 ] valueForKey: @"preferred" ] isEqual: STOP_IS_PREFERRED_VALUE ] &&
+               self.fetchedResultsControllerLocal.fetchedObjects.count == 1 &&
+               [ [ self.fetchedResultsControllerLocal.fetchedObjects[ 0 ] valueForKey: @"preferred" ] isEqual: STOP_IS_PREFERRED_VALUE ] &&
                [ defaults boolForKey: @"haveShownSingleSectionWarning" ] != YES
            )
         {
@@ -855,11 +943,11 @@
 // Returns an existing NSFetchedResultsController instance or generates a new
 // one when called for the first time. Reads the local Core Data store only.
 //
-- ( NSFetchedResultsController * ) fetchedResultsController
+- ( NSFetchedResultsController * ) fetchedResultsControllerLocal
 {
-    if ( _fetchedResultsController != nil )
+    if ( _fetchedResultsControllerLocal != nil )
     {
-        return _fetchedResultsController;
+        return _fetchedResultsControllerLocal;
     }
 
     NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
@@ -895,8 +983,41 @@
     //
     [ frc performFetch: nil ];
 
-    _fetchedResultsController = frc;
-    return _fetchedResultsController;
+    _fetchedResultsControllerLocal = frc;
+    return _fetchedResultsControllerLocal;
+}
+
+// Returns an existing NSFetchedResultsController instance or generates a new
+// one when called for the first time. Reads the remote legacy iCloud data only.
+//
+- ( NSFetchedResultsController * ) fetchedResultsControllerRemote
+{
+    if ( _fetchedResultsControllerRemote != nil )
+    {
+        return _fetchedResultsControllerRemote;
+    }
+
+    NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
+    NSEntityDescription * entity       = [ NSEntityDescription entityForName: ENTITY_AND_RECORD_NAME
+                                                      inManagedObjectContext: self.managedObjectContextRemote ];
+
+    [ fetchRequest setEntity: entity ];
+
+    // Fetch requests must include at least one sort descriptor. This is a
+    // fairly arbitary choice...
+    //
+    NSSortDescriptor * sortDescriptor = [ [ NSSortDescriptor alloc] initWithKey: @"stopDescription"
+                                                                      ascending: YES ];
+
+    [ fetchRequest setSortDescriptors: @[ sortDescriptor ] ];
+
+    NSFetchedResultsController * frc = [ [ NSFetchedResultsController alloc ] initWithFetchRequest: fetchRequest
+                                                                              managedObjectContext: self.managedObjectContextRemote
+                                                                                sectionNameKeyPath: @"preferred"
+                                                                                         cacheName: nil ];
+
+    _fetchedResultsControllerRemote = frc;
+    return _fetchedResultsControllerRemote;
 }
 
 // Look up a stop in the local Core Data records by stop ID. Returns the
@@ -946,7 +1067,7 @@
 //
 - ( NSInteger ) numberOfSections
 {
-    return self.fetchedResultsController.sections.count;
+    return self.fetchedResultsControllerLocal.sections.count;
 }
 
 // Retrieve favourites data, if any, from the legacy iCloud Core Data store.
@@ -962,44 +1083,21 @@
 {
     NSLog( @"**** getLegacyFavouritesFromICloud" );
 
-    NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
-    NSEntityDescription * entity       = [ NSEntityDescription entityForName: ENTITY_AND_RECORD_NAME
-                                                      inManagedObjectContext: self.managedObjectContextRemote ];
-
-    [ fetchRequest setEntity: entity ];
-
-    // Fetch requests must include at least one sort descriptor. This is a
-    // fairly arbitary choice...
-    //
-    NSSortDescriptor * sortDescriptor = [ [ NSSortDescriptor alloc] initWithKey: @"stopDescription"
-                                                                      ascending: YES ];
-
-    [ fetchRequest setSortDescriptors: @[ sortDescriptor ] ];
-
-    // We don't use "self.fetchedResultsController" because that one is set
-    // up for the local Core Data store. Our intent here is to force a fetch
-    // from legacy iCloud Core Data information, so we require the remote
-    // managed object context.
-    //
-    NSFetchedResultsController * frc = [ [ NSFetchedResultsController alloc ] initWithFetchRequest: fetchRequest
-                                                                              managedObjectContext: self.managedObjectContextRemote
-                                                                                sectionNameKeyPath: @"preferred"
-                                                                                         cacheName: nil ];
     NSError * error   = nil;
-    BOOL      success = [ frc performFetch: &error ];
+    BOOL      success = [ self.fetchedResultsControllerRemote performFetch: &error ];
 
     // "Returns an empty array if things work but there are no results; a
     //  non-empty array if things work and there are results; or 'nil' if
     //  there was an error."
     //
-    if ( success != YES && error != nil )
+    if ( success != YES || error != nil )
     {
         NSLog( @"**** getLegacyFavouritesFromICloud: FAILED: %@", error );
         return nil;
     }
     else
     {
-        NSArray * results = self.fetchedResultsController.fetchedObjects;
+        NSArray * results = self.fetchedResultsControllerRemote.fetchedObjects;
         if ( results == nil ) results = @[];
 
         NSLog(@"**** getLegacyFavouritesFromICloud: Results count: %lu", results.count );
@@ -1104,8 +1202,7 @@
     changesOperation.recordChangedBlock =
     ^ ( CKRecord * _Nonnull record )
     {
-// TODO: Remember to reinstate this
-//                            [ defaults setBool: YES forKey: HAVE_RECEIVED_CLOUDKIT_DATA ];
+        [ defaults setBool: YES forKey: HAVE_RECEIVED_CLOUDKIT_DATA ];
         [ self recordDidChange: record ];
     };
 
@@ -1115,8 +1212,7 @@
         NSString   * _Nonnull recordType
     )
     {
-// TODO: Remember to reinstate this
-//                            [ defaults setBool: YES forKey: HAVE_RECEIVED_CLOUDKIT_DATA ];
+        [ defaults setBool: YES forKey: HAVE_RECEIVED_CLOUDKIT_DATA ];
         [ self recordDidDelete: recordID ];
     };
 
