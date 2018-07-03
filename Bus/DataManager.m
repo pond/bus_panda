@@ -738,6 +738,30 @@
         database saveRecord: record
           completionHandler: ^ ( CKRecord * _Nullable record, NSError * _Nullable error )
         {
+            // So, there are complex conditions for CloudKit errors. See e.g.:
+            //
+            //   https://stackoverflow.com/questions/43553969/handling-cloudkit-errors#43575025
+            //   https://www.whatmatrix.com/portal/a-guide-to-cloudkit-how-to-sync-user-data-across-ios-devices/
+            //
+            // ...and note the lengths it goes to in order to handle conflicts
+            // when attempting to save.
+            //
+            // Bus Panda is a simple beast. If someone's changing things on
+            // two devices and there are sync issues, the way that we sweep
+            // from CloudKit at startup and reset the local UI is our chosen
+            // way to recover. The user gets an error, inelegant but workable,
+            // unlikely given the app domain and small user base; support info
+            // would be that *one* of the devices won, so force quit & restart
+            // the app and see what you've got.
+            //
+            // This is not a gold standard implementation as a result, but it
+            // is pragmatic, really simple to implement - we just report any
+            // and all errors - and extremely easy to test.
+            //
+            // TODO: One exception here I really ought to code soon is the
+            //       "rate limited" case, where I'd simply repeat the call to
+            //       this method using a delay timer.
+            //
             [ self handleError: error withTitle: errorTitle ];
         }
     ];
