@@ -46,6 +46,7 @@
     // notifications (for CloudKit changes), but the AppDelegate object has
     // to handle them - see -didReceiveRemoteNotification:... later.
     //
+    [ DataManager.dataManager setMasterViewController: self.masterViewController ];
     [ DataManager.dataManager awakenAllStores ];
 
     // On a clean install, some iOS versions may not read the Settings bundle

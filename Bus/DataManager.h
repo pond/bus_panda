@@ -15,6 +15,7 @@
 
 #import "Constants.h"
 #import "UsefulTypes.h"
+#import "MasterViewController.h"
 
 @interface DataManager : NSObject
 
@@ -22,8 +23,15 @@
 //
 + ( DataManager * ) dataManager;
 
+// To avoid referencing AppDelegate from non-main threads, we have it
+// tell us where the MasterViewController is at startup then use this
+// local copy for reference.
+//
+@property ( strong ) MasterViewController * masterViewController;
+
 // Run this at startup, once you have a view controller to use for presenting
-// any alerts that might be needed.
+// any alerts that might be needed. Make sure you've set masterViewController
+// (see above) first.
 //
 - ( void ) awakenAllStores;
 

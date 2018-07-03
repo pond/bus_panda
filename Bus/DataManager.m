@@ -6,11 +6,7 @@
 //  Copyright © 2018 Andrew Hodgkinson. All rights reserved.
 //
 
-#import <unistd.h> // For usleep() only
-
 #import "DataManager.h"
-
-#import "AppDelegate.h"
 #import "ErrorPresenter.h"
 
 @interface DataManager ()
@@ -405,14 +401,11 @@
              withTitle: ( NSString * ) title
              andButton: ( NSString * ) button
 {
-    AppDelegate          * delegate  = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
-    MasterViewController * presenter = [ delegate masterViewController ];
-
     dispatch_async
     (
         dispatch_get_main_queue(),
         ^ {
-            [ ErrorPresenter showModalPopupFor: presenter
+            [ ErrorPresenter showModalPopupFor: self.masterViewController
                                    withMessage: message
                                          title: title
                                         button: button
@@ -999,9 +992,8 @@
     //       for use with a table view, and that view is in the Master View
     //       Controller. In practice, the hack of "just knowing" that we must
     //       set the MVC as delegate works, but is nasty.
-
-    AppDelegate * appDelegate = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
-    frc.delegate = appDelegate.masterViewController;
+    //
+    frc.delegate = self.masterViewController;
 
     // Initial warm-up of local store.
     //
