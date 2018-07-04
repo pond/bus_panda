@@ -420,11 +420,11 @@
 {
     ( void ) ignoredNotification;
 
-    NSError * error = nil;
-
-    NSLog( @"Underlying data changed... Refreshing" );
+    NSLog( @"MasterViewController: Reloading data due to notification" );
 
     // Deal with the local changes first
+
+    NSError * error = nil;
 
     if ( ! [ DataManager.dataManager.fetchedResultsControllerLocal performFetch: &error ] )
     {
@@ -502,7 +502,7 @@
 
             if ( error != nil )
             {
-                NSLog( @"Error updating watch: %p", error.localizedDescription );
+                NSLog( @"Error updating watch: %@", error );
             }
         }
     }

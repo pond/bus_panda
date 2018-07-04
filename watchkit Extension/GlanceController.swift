@@ -209,11 +209,11 @@ class GlanceController: WKInterfaceController, WCSessionDelegate
     {
         if ( canUseWCSession() == false )
         {
-            NSLog( "Unexpected inabilty to use WCSession in requestBuses" )
+            NSLog( "requestBuses: Unexpected inabilty to use WCSession in requestBuses" )
             return
         }
 
-        NSLog("Send message");
+        NSLog( "requestBuses: Sending message" );
 
         WCSession.default.sendMessage(
             [ "action": "getNearest" ],

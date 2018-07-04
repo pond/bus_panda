@@ -1045,7 +1045,7 @@
 
     // First update local records.
 
-    NSLog(@"Add or edit: %@", stopID );
+    NSLog( @"Add or edit: %@", stopID );
 
     if ( stopID == nil ) return; // Indicates nasty bug, but try not to just crash...
 
@@ -1141,12 +1141,12 @@
                 [ record setObject: stopDescription forKey: @"stopDescription" ];
                 [ record setObject: preferred       forKey: @"preferred"       ];
 
-                NSLog(@"Add or edit: New record: Create %@", record);
+                NSLog( @"Add or edit: New record: Create %@", record.recordID.recordName );
                 [ self saveRecord: record inDatabase: database onErrorTitle: errorTitle ];
             }
             else if ( error != nil )
             {
-                NSLog(@"Add or edit: ERROR: %@", error);
+                NSLog( @"Add or edit: ERROR: %@", error );
                 [ self handleError: error withTitle: errorTitle ];
             }
             else
@@ -1154,7 +1154,7 @@
                 if ( stopDescription != nil ) [ record setObject: stopDescription forKey: @"stopDescription" ];
                 if ( preferred       != nil ) [ record setObject: preferred       forKey: @"preferred"       ];
 
-                NSLog(@"Add or edit: Existing record: Update %@", record);
+                NSLog( @"Add or edit: Existing record: Update %@", record.recordID.recordName );
                 [ self saveRecord: record inDatabase: database onErrorTitle: errorTitle ];
             }
         }
@@ -1167,14 +1167,12 @@
 - ( void ) deleteFavourite: ( NSString * ) stopID
          includingCloudKit: ( BOOL       ) includeCloudKit
 {
-    NSUserDefaults * defaults = NSUserDefaults.standardUserDefaults;
-
-    NSLog(@"REMOVE FAVOURITE");
-    NSLog(@"StopID %@", stopID);
+    NSLog( @"Remove: %@", stopID);
 
     if ( stopID == nil ) return; // Indicates nasty bug, but try not to just crash...
 
-    NSManagedObject * object = [ DataManager.dataManager findFavouriteStopByID: stopID ];
+    NSUserDefaults  * defaults = NSUserDefaults.standardUserDefaults;
+    NSManagedObject * object   = [ DataManager.dataManager findFavouriteStopByID: stopID ];
 
     // Nothing being found implies strange bugs; can't trust the data; bail out.
     //
@@ -1220,8 +1218,9 @@
         database deleteRecordWithID: recordID
                   completionHandler: ^ ( CKRecordID * _Nullable recordID, NSError * _Nullable error )
         {
+            NSLog( @"Remove: Finished; error? %@", error );
+
             [ self spinnerOff ];
-            NSLog(@"DELETE RECORD - %@ / error result: %@", recordID, error);
             [ self handleError: error withTitle: errorTitle ];
         }
     ];

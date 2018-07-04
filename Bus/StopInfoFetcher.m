@@ -57,7 +57,7 @@
         // radiusInMetres - for future expansion one day maybe?
     ];
 
-    NSLog( @"Retrieve stops via: %@", centreEnumerationURI );
+    NSLog( @"Get stops within radius: %@", centreEnumerationURI );
 
     // We will make a request to fetch the JSON at 'centreEnumerationURI' from
     // above, declaring the below block as the code to run upon completion
