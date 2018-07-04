@@ -143,7 +143,7 @@
 //
 - ( void ) drawTextInRect: ( CGRect ) rect
 {
-    if ( [ [ NSUserDefaults standardUserDefaults ] boolForKey: SHORTEN_DISPLAYED_NAMES ] == YES )
+    if ( [ NSUserDefaults.standardUserDefaults boolForKey: SHORTEN_DISPLAYED_NAMES ] == YES )
     {
         if ( self.lastComputedWidth != self.bounds.size.width )
         {

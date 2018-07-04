@@ -68,7 +68,7 @@
 
 // Shared utility methods
 
-- ( void                  ) saveContext;
+- ( void                  ) saveLocalContext;
 - ( NSMutableDictionary * ) getCachedStopLocationDictionary;
 - ( void                  ) clearCachedStops;
 

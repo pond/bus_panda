@@ -45,9 +45,7 @@ static NSString * contentBlockingRules = @"";
 
 #pragma mark - Spinner
 
-// Turn on an activity indicator of some sort. At the time of writing this
-// comment, the network activity indicator in the status bar is used. See
-// also -spinnerOff.
+// Turn on an activity indicator of some sort. See also -spinnerOff.
 //
 - ( void ) spinnerOn
 {

@@ -28,7 +28,16 @@
 // undertake every time iCloud availability alters in some way, or at
 // application startup. Can be cancelled and restarted at any time.
 //
-@property ( strong ) NSOperationQueue * dataStoreAwakeningQueue;
+@property ( strong ) NSOperationQueue * cloudOperationsQueue;
+
+// The above queue has the major awaken operation performed in it, but we
+// also do per-record saves using that queue too. This means that if one
+// save is delayed for some reason (e.g. rate limits) but then the same
+// record needs updating again, we can just cancel the old operation and
+// start a new one. We store the operations in this dictionary, keyed by
+// a recordID's "recordName" (i.e., stop ID).
+//
+@property ( strong ) NSMutableDictionary * recordUpdateOperations;
 
 - ( NSURL * ) applicationDocumentsDirectory;
 
@@ -36,6 +45,36 @@
 
 @implementation DataManager
 
+#pragma mark - Any-thread spinner
+
+// Turn on the network activity indicator in the status bar. Can be called
+// from any thread. See also -spinnerOff.
+//
+- ( void ) spinnerOn
+{
+    dispatch_async
+    (
+        dispatch_get_main_queue(),
+        ^ ( void )
+        {
+            UIApplication.sharedApplication.networkActivityIndicatorVisible = YES;
+        }
+    );
+}
+
+// Turn off the activity indicator started with -spinnerOn.
+//
+- ( void ) spinnerOff
+{
+    dispatch_async
+    (
+        dispatch_get_main_queue(),
+        ^ ( void )
+        {
+            UIApplication.sharedApplication.networkActivityIndicatorVisible = NO;
+        }
+    );
+}
 #pragma mark - Initialisation
 
 @synthesize managedObjectModel               = _managedObjectModel;
@@ -66,6 +105,31 @@
 {
     if ( self = [ super init ] )
     {
+        // The "old school" NSUbiquityIdentityDidChangeNotification event seems to
+        // not be reliable, so we use the CloudKit account notification instead;
+        // but within that, we check the ubiquity token to see if the signed-in
+        // user has changed.
+        //
+        [
+            [ NSNotificationCenter defaultCenter ] addObserver: self
+                                                      selector: @selector( iCloudIdentityDidChange: )
+                                                          name: CKAccountChangedNotification// NSUbiquityIdentityDidChangeNotification
+                                                        object: nil
+        ];
+
+        // The "account status changed" notification handler registered above
+        // flushes out a bunch of settings and calls back here if it wants to run
+        // the at-startup-like checks on old Core Data migration etc. again. So, we
+        // we have an operation queue tracking the whole set of calls below and
+        // frequent cancellation checks; we may need to interrupt and restart this
+        // at any time.
+        //
+        _cloudOperationsQueue = [ [ NSOperationQueue alloc ] init ];
+
+        // Used by the CloudKit save mechanism.
+        //
+        _recordUpdateOperations = [ [ NSMutableDictionary alloc ] init ];
+
         [ self clearCachedStops ]; // Initialises the cache
     }
 
@@ -83,34 +147,12 @@
 //
 - ( void ) awakenAllStores
 {
-    NSUserDefaults * defaults = [ NSUserDefaults standardUserDefaults ];
+    NSUserDefaults * defaults = NSUserDefaults.standardUserDefaults;
 
-    // The "old school" NSUbiquityIdentityDidChangeNotification event will
-    // tell us if the user signs in/out and lets us know the high level account
-    // status changes. CloudKit introduces more fine-grained levels such as
-    // 'restricted', but all we care about is signed in or out, or if the user
-    // changes. The signed in user is easily detected by the ubiquity token, so
-    // we keep using the old token change mechanism here.
+    // If we're already running an 'awaken' job, cancel it. This later one
+    // takes priority.
     //
-    [
-        [ NSNotificationCenter defaultCenter ] addObserver: self
-                                                  selector: @selector( iCloudIdentityDidChange: )
-                                                      name: CKAccountChangedNotification// NSUbiquityIdentityDidChangeNotification
-                                                    object: nil
-    ];
-
-    // The handler above flushes out a bunch of settings and calls back here if
-    // it needs to re-run the at-startup-like checks on old Core Data migration
-    // and so forth. That's why we have an operation queue tracking the whole
-    // set of calls below and frequent cancellation checks; we may need to
-    // interrupt and restart this at any time.
-    //
-    if ( _dataStoreAwakeningQueue == nil )
-    {
-        _dataStoreAwakeningQueue = [ [ NSOperationQueue alloc ] init ];
-    }
-
-    [ _dataStoreAwakeningQueue cancelAllOperations ];
+    [ self.cloudOperationsQueue cancelAllOperations ];
 
     // Need to define the block operation object up here, so that inside the
     // block we can reference this and check if "we" have been cancelled.
@@ -132,6 +174,8 @@
                 {
                     NSLog( @"-- !! Not signed in to iCloud" );
 
+                    [ defaults setBool: NO forKey: ICLOUD_IS_AVAILABLE ];
+
                     if ( [ defaults boolForKey: HAVE_SHOWN_ICLOUD_SIGNIN_WARNING ] != YES )
                     {
                         [ defaults setBool: YES forKey: HAVE_SHOWN_ICLOUD_SIGNIN_WARNING ];
@@ -147,6 +191,7 @@
                 {
                     NSLog( @"-- !! Unusual iCloud account status %ld", accountStatus );
 
+                    [ defaults setBool: NO forKey: ICLOUD_IS_AVAILABLE ];
                     if ( thisOperation.cancelled ) return;
 
                     [ self showMessage: @"iCloud is not available, either due to parental controls or an error. Bus Panda will not be able to synchronise favourite stops with your other devices."
@@ -156,6 +201,8 @@
                 else
                 {
                     NSLog(@"-- !! CloudKit is ready");
+
+                    [ defaults setBool: YES forKey: ICLOUD_IS_AVAILABLE ];
 
                     CKContainer                  * container     = [ CKContainer defaultContainer ];
                     CKDatabase                   * database      = [ container privateCloudDatabase ];
@@ -176,7 +223,7 @@
                     {
                         if ( error != nil )
                         {
-                            NSLog( @"On-startup: FATAL: Could not create zone: %@", error );
+                            NSLog( @"Awaken: FATAL: Could not create zone: %@", error );
                         }
                         else
                         {
@@ -198,7 +245,7 @@
                                 // then this is assumed first app run on any device post-CloudKit
                                 // for this user. Pull old core data records.
 
-                                NSLog( @"On-startup: Fetch changes complete: %@", error );
+                                NSLog( @"Awaken: Fetch changes complete, error? %@", error );
 
                                 BOOL hasReceivedUpdatesBefore = [ defaults boolForKey: HAVE_RECEIVED_CLOUDKIT_DATA  ];
                                 BOOL haveReadLegacyICloudData = [ defaults boolForKey: HAVE_READ_LEGACY_ICLOUD_DATA ];
@@ -219,6 +266,32 @@
 
                             if ( thisOperation.cancelled ) return;
 
+                            // If there is a note that a CloudKit save was
+                            // pending, then we have to trust our local data
+                            // over CloudKit. Otherwise, pull all CloudKit
+                            // records to force a resync locally.
+                            //
+                            NSDictionary * stopIDsInFlight = [ NSUserDefaults.standardUserDefaults dictionaryForKey: CLOUDKIT_STOP_IDS_PENDING ];
+
+                            NSLog( @"Awaken: Pending records to retry: %@", stopIDsInFlight );
+
+                            for ( NSString * stopID in stopIDsInFlight )
+                            {
+                                NSManagedObject * object = [ DataManager.dataManager findFavouriteStopByID: stopID ];
+
+                                if ( object != nil )
+                                {
+                                    [ self addOrEditFavourite: [ object valueForKey: @"stopID"          ]
+                                           settingDescription: [ object valueForKey: @"stopDescription" ]
+                                             andPreferredFlag: [ object valueForKey: @"preferred"       ]
+                                            includingCloudKit: YES ];
+                                }
+                            }
+
+                            // This will ignore any updates to objects that are
+                            // in the local user default records and therefore
+                            // already subject to updates.
+                            //
                             [ self fetchRecentChangesWithCompletionBlock: completionBlock
                                                 ignoringPriorChangeToken: YES ];
 
@@ -262,8 +335,11 @@
     // As per comments far above :-) now finally add the big block we just
     // defined as a (cancelleable) operation that'll get run when iOS is ready.
     //
+    awakenOperation.completionBlock = ^ ( void ) { [ self spinnerOff ]; };
+    [ self spinnerOn ];
+
     [ awakenOperation addExecutionBlock: awakenOperationBlock ];
-    [ _dataStoreAwakeningQueue addOperation: awakenOperation ];
+    [ self.cloudOperationsQueue addOperation: awakenOperation ];
 }
 
 #pragma mark - Support utilities
@@ -309,12 +385,14 @@
 
     NSLog( @"iCloud identity has changed" );
 
-    NSUserDefaults * defaults           = [ NSUserDefaults standardUserDefaults ];
+    NSUserDefaults * defaults           = NSUserDefaults.standardUserDefaults;
     NSFileManager  * fileManager        = [ NSFileManager defaultManager ];
     id               currentiCloudToken = fileManager.ubiquityIdentityToken;
 
     if ( currentiCloudToken )
     {
+        [ defaults setBool: YES forKey: ICLOUD_IS_AVAILABLE ];
+
         // The iCloud token may have changed. Read whatever old value was
         // stored ("nil" if not). If there's a change, record the new value
         // and send the 'data changed' notification. If there's no change in
@@ -335,8 +413,11 @@
             // Since the user may have changed, we have to flush all of the
             // local data and resync from scratch.
             //
-            [ defaults setBool: NO forKey: HAVE_RECEIVED_CLOUDKIT_DATA  ];
-            [ defaults setBool: NO forKey: HAVE_READ_LEGACY_ICLOUD_DATA ];
+            [ self.cloudOperationsQueue cancelAllOperations ];
+
+            [ defaults setObject: nil forKey: CLOUDKIT_STOP_IDS_PENDING    ];
+            [ defaults   setBool:  NO forKey: HAVE_RECEIVED_CLOUDKIT_DATA  ];
+            [ defaults   setBool:  NO forKey: HAVE_READ_LEGACY_ICLOUD_DATA ];
 
             NSError * error   = nil;
             BOOL      success = [ self.fetchedResultsControllerLocal performFetch: &error ];
@@ -366,14 +447,15 @@
     }
     else
     {
-        // iCloud seems to no longer be available. Remove any stored iCloud
-        // token but leave things otherwise as they are; the local data is
-        // still available, we just can't sync it to CloudKit now.
+        // iCloud seems to no longer be available. Note that it's gone away,
+        // but don't do anything else; iCloud might come back and may do so
+        // with the same ubiquity token, so need to throw any local data away
+        // just yet.
         //
-        [ defaults removeObjectForKey: ICLOUD_TOKEN_ID_DEFAULTS_KEY ];
+        [ defaults setBool: NO forKey: ICLOUD_IS_AVAILABLE ];
     }
 
-    NSLog( @"iCloud ubiquity token now: %@", currentiCloudToken );
+    NSLog( @"iCloud identity has changed: Ubiquity token now %@", currentiCloudToken );
 }
 
 // Utility method - call with a pointer to an NSError instance, which may be
@@ -388,7 +470,11 @@
 {
     if ( error )
     {
-        [ self showMessage: [ error localizedDescription ]
+        NSString * message = [ NSString stringWithFormat: @"%@ (%lu)",
+                                                          error.localizedDescription,
+                                                          error.code ];
+
+        [ self showMessage: message
                  withTitle: title
                  andButton: @"OK" ];
     }
@@ -696,7 +782,7 @@
 
 #pragma mark - Core Data saving support
 
-- ( void ) saveContext
+- ( void ) saveLocalContext
 {
     NSManagedObjectContext * managedObjectContext = self.managedObjectContextLocal;
 
@@ -710,7 +796,7 @@
                 // This is called from -applicationWillTerminate, so there is
                 // really nothing much we can do here other than log the fault.
                 //
-                NSLog( @"Unresolved error %@, %@", error, [ error userInfo ] );
+                NSLog( @"Save local context: ERROR %@, %@", error, [ error userInfo ] );
             }
         }
     ];
@@ -718,46 +804,226 @@
 
 #pragma mark - Adding and modifying favourites
 
+// Call if a stop ID is going to be persisted to the database. Sets up local
+// and user defaults tracking so we have some vague chance of a retry later if
+// there's no network, the app is killed, or whatever.
+//
+// See also -stopIDDidSave:.
+//
+- ( void ) stopIDWillSave: ( NSString         * ) stopID
+           usingOperation: ( NSBlockOperation * ) saveOperation
+{
+    NSUserDefaults   * defaults         = NSUserDefaults.standardUserDefaults;
+    NSBlockOperation * oldSaveOperation = nil;
+
+    @synchronized ( self.recordUpdateOperations )
+    {
+        oldSaveOperation = self.recordUpdateOperations[ stopID ];
+        self.recordUpdateOperations[ stopID ] = saveOperation;
+
+        NSDictionary        * stopIDsInFlight        = [ defaults dictionaryForKey: CLOUDKIT_STOP_IDS_PENDING ];
+        NSMutableDictionary * mutableStopIDsInFlight = [ stopIDsInFlight mutableCopy ];
+
+        if ( mutableStopIDsInFlight == nil ) mutableStopIDsInFlight = [ [ NSMutableDictionary alloc ] init ];
+
+        mutableStopIDsInFlight[ stopID ] = @( YES );
+        [ defaults setObject: mutableStopIDsInFlight forKey: CLOUDKIT_STOP_IDS_PENDING ];
+
+        NSLog( @">> Noted intent to save %@", stopID );
+    };
+
+    if ( oldSaveOperation ) [ oldSaveOperation cancel ];
+}
+
+// Call if -stopIDWillSave:usingOperation: has been called previously for a
+// stop ID, and this stop has now been successfully persisted via CloudKit.
+//
+- ( void ) stopIDDidSave: ( NSString * ) stopID
+{
+    NSUserDefaults * defaults = NSUserDefaults.standardUserDefaults;
+
+    @synchronized ( self.recordUpdateOperations )
+    {
+        [ self.recordUpdateOperations removeObjectForKey: stopID ];
+
+        NSDictionary        * stopIDsInFlight        = [ defaults dictionaryForKey: CLOUDKIT_STOP_IDS_PENDING ];
+        NSMutableDictionary * mutableStopIDsInFlight = [ stopIDsInFlight mutableCopy ];
+
+        [ mutableStopIDsInFlight removeObjectForKey: stopID ];
+        [ defaults setObject: mutableStopIDsInFlight forKey: CLOUDKIT_STOP_IDS_PENDING ];
+
+        NSLog( @">> Noted successful save of %@", stopID );
+    };
+}
+
 // Utility method - save the given CloudKit record into the given CloudKit
-// database, reporting an error to the user if it fails but taking no other
-// remedial action. The third parameter is the title string to use if there
-// is an error to report.
+// database, reporting an error to the user if it fails with extended error
+// handling to attempt retries and so-forth. The third parameter is the title
+// string to use if there is an unrecoverable error to report.
 //
 - ( void ) saveRecord: ( CKRecord   * ) record
            inDatabase: ( CKDatabase * ) database
          onErrorTitle: ( NSString   * ) errorTitle
 {
-    [
-        database saveRecord: record
-          completionHandler: ^ ( CKRecord * _Nullable record, NSError * _Nullable error )
+           NSBlockOperation * saveOperation = [ [ NSBlockOperation alloc ] init ];
+    __weak NSBlockOperation * thisOperation = saveOperation;
+
+    [ self stopIDWillSave: record.recordID.recordName
+           usingOperation: saveOperation ];
+
+    id saveOperationBlock = ^ ( void )
+    {
+        [
+            database saveRecord: record
+              completionHandler: ^ ( CKRecord * _Nullable record, NSError * _Nullable error )
+            {
+                // So, there are complex conditions for CloudKit errors. See e.g.:
+                //
+                //   https://stackoverflow.com/questions/43553969/handling-cloudkit-errors#43575025
+                //   https://www.whatmatrix.com/portal/a-guide-to-cloudkit-how-to-sync-user-data-across-ios-devices/
+                //
+                // ...and note the lengths it goes to in order to handle conflicts
+                // when attempting to save. Bus Panda is a simple beast, but we do
+                // at least make an attempt to handle some of these cases.
+
+                if ( error == nil )
+                {
+                    [ self stopIDDidSave: record.recordID.recordName ];
+                    return;
+                }
+
+                if ( thisOperation.cancelled == YES ) return;
+
+                CKErrorCode   code             = error.code;
+                NSString    * alternateMessage = nil;
+                id            retryBlock       = ^ ( NSTimer * timer )
+                {
+                    ( void ) timer;
+
+                    [ self saveRecord: record
+                           inDatabase: database
+                         onErrorTitle: errorTitle ];
+                };
+
+                switch( code )
+                {
+                    // Two devices have attempted to save the same record without
+                    // fetching updates. The server thinks its copy is newer. We
+                    // will believe it and take its newer data instead of the
+                    // local changes.
+                    //
+                    case CKErrorServerRecordChanged:
+                    {
+                        CKRecord * newerServerRecord = error.userInfo[ CKRecordChangedErrorServerRecordKey ];
+                        id         persistBlock      = ^ ( NSTimer * timer )
+                        {
+                            [ self addOrEditFavourite: newerServerRecord.recordID.recordName
+                                   settingDescription: [ newerServerRecord objectForKey: @"stopDescription" ]
+                                     andPreferredFlag: [ newerServerRecord objectForKey: @"preferred"       ]
+                                    includingCloudKit: NO ];
+                        };
+
+                        // This is done on a timer rather than inline so that
+                        // the completion handler for the executing NSOperation
+                        // can remove the keyed-by-stop-ID operation record
+                        // from our local "recordUpdateOperations" dictionary
+                        // data, and be sure it's removing "this" old operation
+                        // instance, not one we just added by calling the
+                        // above from within this thread execution context.
+                        //
+                        if ( thisOperation.cancelled == NO )
+                        {
+                            [ NSTimer scheduledTimerWithTimeInterval: 1 // second
+                                                             repeats: NO
+                                                               block: persistBlock ];
+                        }
+
+                        return;
+                    }
+                    break;
+
+                    // Temporary rate limits; try again soon.
+                    //
+                    case CKErrorRequestRateLimited:
+                    case CKErrorZoneBusy:
+                    case CKErrorLimitExceeded:
+                    {
+                        if ( thisOperation.cancelled == NO )
+                        {
+                            NSTimeInterval interval = [ ( NSNumber * ) error.userInfo[ CKErrorRetryAfterKey ] doubleValue ];
+
+                            [ NSTimer scheduledTimerWithTimeInterval: interval
+                                                             repeats: NO
+                                                               block: retryBlock ];
+                        }
+
+                        return;
+                    }
+                    break;
+
+                    // Potential lengthy delays; try again in a while.
+                    //
+                    case CKErrorNetworkFailure:
+                    case CKErrorNetworkUnavailable:
+                    case CKErrorServiceUnavailable:
+                    {
+                        if ( thisOperation.cancelled == NO )
+                        {
+                            [ NSTimer scheduledTimerWithTimeInterval: 300 // 300 seconds; 5 minutes
+                                                             repeats: NO
+                                                               block: retryBlock ];
+                        }
+
+                        return;
+                    }
+                    break;
+
+                    // Should never get here - we're supposed to track iCloud
+                    // on/off changes.
+                    //
+                    case CKErrorNotAuthenticated:
+                    {
+                        NSLog( @"SERIOUS: Record save failed as iCloud not available - should never have even attempted this!" );
+                        return;
+                    }
+                    break;
+
+                    // Just set a more friendly error message for this one.
+                    //
+                    case CKErrorQuotaExceeded:
+                    {
+                        alternateMessage = @"Your iCloud account doesn't have enough space left to store these changes.";
+                    }
+                    break;
+
+                    default: break; // Drop through to error reporting code.
+                }
+
+                if ( alternateMessage != nil )
+                {
+                    [ error.userInfo setValue: alternateMessage forKey: NSLocalizedDescriptionKey ];
+                }
+
+                if ( thisOperation.cancelled == YES ) return;
+                [ self handleError: error withTitle: errorTitle ];
+            }
+        ];
+    };
+
+    saveOperation.completionBlock = ^ ( void )
+    {
+        @synchronized ( self.recordUpdateOperations )
         {
-            // So, there are complex conditions for CloudKit errors. See e.g.:
-            //
-            //   https://stackoverflow.com/questions/43553969/handling-cloudkit-errors#43575025
-            //   https://www.whatmatrix.com/portal/a-guide-to-cloudkit-how-to-sync-user-data-across-ios-devices/
-            //
-            // ...and note the lengths it goes to in order to handle conflicts
-            // when attempting to save.
-            //
-            // Bus Panda is a simple beast. If someone's changing things on
-            // two devices and there are sync issues, the way that we sweep
-            // from CloudKit at startup and reset the local UI is our chosen
-            // way to recover. The user gets an error, inelegant but workable,
-            // unlikely given the app domain and small user base; support info
-            // would be that *one* of the devices won, so force quit & restart
-            // the app and see what you've got.
-            //
-            // This is not a gold standard implementation as a result, but it
-            // is pragmatic, really simple to implement - we just report any
-            // and all errors - and extremely easy to test.
-            //
-            // TODO: One exception here I really ought to code soon is the
-            //       "rate limited" case, where I'd simply repeat the call to
-            //       this method using a delay timer.
-            //
-            [ self handleError: error withTitle: errorTitle ];
-        }
-    ];
+            [ self.recordUpdateOperations removeObjectForKey: record.recordID.recordName ];
+        };
+
+        [ self spinnerOff ];
+    };
+
+    [ self spinnerOn ];
+
+    [ saveOperation addExecutionBlock: saveOperationBlock ];
+    [ self.cloudOperationsQueue addOperation: saveOperation ];
 }
 
 // Create-or-update a favourite stop. Pass the stop ID. If an existing record
@@ -775,12 +1041,11 @@
              andPreferredFlag: ( NSNumber * ) preferred
             includingCloudKit: ( BOOL       ) includeCloudKit
 {
+    NSUserDefaults * defaults = NSUserDefaults.standardUserDefaults;
+
     // First update local records.
 
-    NSLog(@"ADD OR EDIT FAVOURITE");
-    NSLog(@"StopID %@",          stopID);
-    NSLog(@"stopDescription %@", stopDescription);
-    NSLog(@"preferred %@",       preferred);
+    NSLog(@"Add or edit: %@", stopID );
 
     if ( stopID == nil ) return; // Indicates nasty bug, but try not to just crash...
 
@@ -832,8 +1097,6 @@
         // stop, (B) is that stop now preferred and (C) have we detected this
         // condition before? If not, tell the user what's going on.
         //
-        NSUserDefaults * defaults = [ NSUserDefaults standardUserDefaults ];
-
         if (
                newShowSectionFlag == NO &&
                self.fetchedResultsControllerLocal.fetchedObjects.count == 1 &&
@@ -851,7 +1114,7 @@
 
     // Now update iCloud?
     //
-    if ( includeCloudKit == NO ) return;
+    if ( includeCloudKit == NO || [ defaults boolForKey: ICLOUD_IS_AVAILABLE ] == NO ) return;
 
     CKContainer    * container  = [ CKContainer defaultContainer ];
     CKDatabase     * database   = [ container privateCloudDatabase ];
@@ -862,10 +1125,14 @@
         @"Error message shown when trying to save favourite stop changes to iCloud"
     );
 
+    [ self spinnerOn ];
+
     [
         database fetchRecordWithID: recordID
                  completionHandler: ^ ( CKRecord * _Nullable record, NSError * _Nullable error )
         {
+            [ self spinnerOff ];
+
             if ( record == nil || error.code == CKErrorUnknownItem ) // (If 'error' is nil, dereference of code will be 'nil' and comparison will fail)
             {
                 CKRecord * record = [ [ CKRecord alloc ] initWithRecordType: ENTITY_AND_RECORD_NAME
@@ -874,12 +1141,12 @@
                 [ record setObject: stopDescription forKey: @"stopDescription" ];
                 [ record setObject: preferred       forKey: @"preferred"       ];
 
-                NSLog(@"NEW RECORD create %@", record);
+                NSLog(@"Add or edit: New record: Create %@", record);
                 [ self saveRecord: record inDatabase: database onErrorTitle: errorTitle ];
             }
             else if ( error != nil )
             {
-                NSLog(@"CLOUD KIT ERROR %@", error);
+                NSLog(@"Add or edit: ERROR: %@", error);
                 [ self handleError: error withTitle: errorTitle ];
             }
             else
@@ -887,7 +1154,7 @@
                 if ( stopDescription != nil ) [ record setObject: stopDescription forKey: @"stopDescription" ];
                 if ( preferred       != nil ) [ record setObject: preferred       forKey: @"preferred"       ];
 
-                NSLog(@"EXISTING RECORD update %@", record);
+                NSLog(@"Add or edit: Existing record: Update %@", record);
                 [ self saveRecord: record inDatabase: database onErrorTitle: errorTitle ];
             }
         }
@@ -900,6 +1167,8 @@
 - ( void ) deleteFavourite: ( NSString * ) stopID
          includingCloudKit: ( BOOL       ) includeCloudKit
 {
+    NSUserDefaults * defaults = NSUserDefaults.standardUserDefaults;
+
     NSLog(@"REMOVE FAVOURITE");
     NSLog(@"StopID %@", stopID);
 
@@ -934,7 +1203,7 @@
 
     // Now update iCloud?
     //
-    if ( includeCloudKit == NO ) return;
+    if ( includeCloudKit == NO || [ defaults boolForKey: ICLOUD_IS_AVAILABLE ] == NO ) return;
 
     CKContainer    * container  = [ CKContainer defaultContainer ];
     CKDatabase     * database   = [ container privateCloudDatabase ];
@@ -945,10 +1214,13 @@
         @"Error message shown when trying to remove favourite stop from iCloud"
     );
 
+    [ self spinnerOn ];
+
     [
         database deleteRecordWithID: recordID
                   completionHandler: ^ ( CKRecordID * _Nullable recordID, NSError * _Nullable error )
         {
+            [ self spinnerOff ];
             NSLog(@"DELETE RECORD - %@ / error result: %@", recordID, error);
             [ self handleError: error withTitle: errorTitle ];
         }
@@ -1168,6 +1440,10 @@
 // if CloudKit indicates that more changes are coming in one of the updates.
 // Creates, updates or deletes records as required.
 //
+// Regardless of input parameters and changes found, any stop with an ID that
+// has pending changes according to local user defaults will be kept instead
+// of overwritten by CloudKit data.
+//
 // The completion block is passed to the fetchRecordZoneChangesCompletionBlock
 // parameter of the operation and called with an error (or not) once the fetch
 // operation has finished. I'm not clear on whether this happens in the case of
@@ -1179,10 +1455,15 @@
 // Background to Utility on assumption of a full data refresh being performed
 // a little more urgently than normal, for the user's benefit.
 //
+// If the boolean parameter is "NO" but CloudKit returns an error saying that
+// the existing change token has expired, the method re-calls itself with the
+// boolean forced to "YES" and only invokes the caller-supplied completion
+// handler when this internal second retry completes (with or without error).
+//
 - ( void ) fetchRecentChangesWithCompletionBlock: ( void ( ^ )( NSError * _Nullable error ) ) completionHandler
                         ignoringPriorChangeToken: ( BOOL ) forceFetchAll
 {
-    NSUserDefaults      * defaults  = [ NSUserDefaults standardUserDefaults ];
+    NSUserDefaults      * defaults  = NSUserDefaults.standardUserDefaults;
     CKContainer         * container = [ CKContainer defaultContainer ];
     CKDatabase          * database  = [ container privateCloudDatabase ];
     CKRecordZoneID      * zoneID    = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_NAME ownerName: CKCurrentUserDefaultName ];
@@ -1260,52 +1541,72 @@
                       forKey: CLOUDKIT_FETCHED_CHANGES_TOKEN ];
     };
 
-    changesOperation.fetchRecordZoneChangesCompletionBlock = completionHandler;
+    changesOperation.fetchRecordZoneChangesCompletionBlock = ^ ( NSError * _Nullable error )
+    {
+        if ( error != nil )
+        {
+            CKErrorCode code = error.code;
+
+            if ( code == CKErrorChangeTokenExpired && forceFetchAll == NO )
+            {
+                [ self fetchRecentChangesWithCompletionBlock: completionHandler
+                                    ignoringPriorChangeToken: YES ];
+
+                return;
+            }
+        }
+
+        completionHandler( error );
+    };
 
     [ database addOperation: changesOperation ];
 }
 
-// Called from AppDelegate when notifications arrive.
+// Called from AppDelegate when CloudKit subscription notifications arrive.
 //
 - ( void ) handleNotification: ( NSDictionary  * ) userInfo
        fetchCompletionHandler: ( void ( ^ ) ( UIBackgroundFetchResult ) ) completionHandler
 {
-    CKNotification * notification = [ CKNotification notificationFromRemoteNotificationDictionary: userInfo ];
-
-    if ( [ notification.subscriptionID isEqualToString: CLOUDKIT_SUBSCRIPTION_ID ] )
-    {
-        [
-            self fetchRecentChangesWithCompletionBlock: ^ ( NSError * _Nullable error )
-                                                        {
-                                                            completionHandler( UIBackgroundFetchResultNewData );
-                                                        }
-                              ignoringPriorChangeToken: NO
-        ];
-    }
-    else
-    {
-        completionHandler( UIBackgroundFetchResultNoData );
-    }
+    [
+        self fetchRecentChangesWithCompletionBlock: ^ ( NSError * _Nullable error )
+                                                    {
+                                                        completionHandler( UIBackgroundFetchResultNewData );
+                                                    }
+                          ignoringPriorChangeToken: NO
+    ];
 }
 
 // Call if a notification from CloudKit indicates that a record changed (or
-// was added).
+// was added). *Only* call for this reason. Will skip the update if user
+// defaults indicate that changes for the associated bus stop are already in
+// flight up to CloudKit; the local changes are assumed to be newer.
 //
 - ( void ) recordDidChange: ( CKRecord * _Nonnull ) record
 {
-    NSLog( @"CloudKit change: Assert presence of %@", record );
+    NSLog( @"CloudKit change: Assert presence of %@", record.recordID.recordName );
 
-    [ self addOrEditFavourite: record.recordID.recordName
-           settingDescription: [ record objectForKey: @"stopDescription" ]
-             andPreferredFlag: [ record objectForKey: @"preferred"       ]
-            includingCloudKit: NO ];
+    NSDictionary * stopIDsInFlight = [ NSUserDefaults.standardUserDefaults dictionaryForKey: CLOUDKIT_STOP_IDS_PENDING ];
+
+    NSLog( @"CloudKit change: Pending record count: %lu", stopIDsInFlight.count );
+
+    if ( stopIDsInFlight[ record.recordID.recordName ] != nil )
+    {
+        NSLog( @"CloudKit change: Local changes are pending for this record; skipping" );
+    }
+    else
+    {
+        [ self addOrEditFavourite: record.recordID.recordName
+               settingDescription: [ record objectForKey: @"stopDescription" ]
+                 andPreferredFlag: [ record objectForKey: @"preferred"       ]
+                includingCloudKit: NO ];
+    }
 }
 
 // Call if a notification from CloudKit indicates that a record was deleted.
 //
 - ( void ) recordDidDelete: ( CKRecordID * _Nonnull ) recordID
 {
-    NSLog( @"CloudKit change: Assert removal of: %@", recordID );
+    NSLog( @"CloudKit change: Assert removal of: %@", recordID.recordName );
 
     [ self deleteFavourite: recordID.recordName
          includingCloudKit: NO ];

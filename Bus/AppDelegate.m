@@ -21,7 +21,7 @@
 - ( BOOL )          application: ( UIApplication * ) application
   didFinishLaunchingWithOptions: ( NSDictionary  * ) launchOptions
 {
-    NSUserDefaults * defaults = [ NSUserDefaults standardUserDefaults ];
+    NSUserDefaults * defaults = NSUserDefaults.standardUserDefaults;
 
     [ application registerForRemoteNotifications ];
 
@@ -133,17 +133,42 @@
 
 - ( void ) applicationWillTerminate: ( UIApplication * ) application
 {
-    [ DataManager.dataManager saveContext ];
+    [ DataManager.dataManager saveLocalContext ];
 }
 
 #pragma mark - Notifications
+
+- ( void )                             application: ( UIApplication * ) application
+  didRegisterForRemoteNotificationsWithDeviceToken: ( NSData        * ) deviceToken
+{
+    NSLog( @"Notifications: Registered successfully" );
+}
+
+- ( void )                             application: ( UIApplication * ) application
+  didFailToRegisterForRemoteNotificationsWithError: ( NSError       * ) error
+{
+    NSLog( @"Notifications: Failed to register: %@", error );
+}
 
 - ( void )         application: ( UIApplication * ) application
   didReceiveRemoteNotification: ( NSDictionary  * ) userInfo
         fetchCompletionHandler: ( void ( ^ ) ( UIBackgroundFetchResult ) ) completionHandler
 {
-    [ DataManager.dataManager handleNotification: userInfo
-                          fetchCompletionHandler: completionHandler ];
+    CKNotification * notification = [ CKNotification notificationFromRemoteNotificationDictionary: userInfo ];
+
+    NSLog( @"Notifications: Notification received" );
+
+    if ( [ notification.subscriptionID isEqualToString: CLOUDKIT_SUBSCRIPTION_ID ] )
+    {
+        NSLog(@ "Notifications: Is a CloudKit change notification; calling DataManager" );
+
+        [ DataManager.dataManager handleNotification: userInfo
+                              fetchCompletionHandler: completionHandler ];
+    }
+    else
+    {
+        completionHandler( UIBackgroundFetchResultNoData );
+    }
 }
 
 #pragma mark - Split view
@@ -344,7 +369,5 @@
         [ self.masterViewController updateWatch: nil ];
     }
 }
-
-#pragma mark - Core Data stack
 
 @end

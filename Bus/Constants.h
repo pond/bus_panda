@@ -15,8 +15,10 @@
 //
 #define APP_HAS_RUN_BEFORE               @"hasRunBefore"
 #define HAVE_SHOWN_ICLOUD_SIGNIN_WARNING @"haveShownICloudSignInWarning"
+#define ICLOUD_IS_AVAILABLE              @"iCloudIsAvailable"
 #define HAVE_RECEIVED_CLOUDKIT_DATA      @"cloudKitUpdatesReceived"
 #define HAVE_READ_LEGACY_ICLOUD_DATA     @"haveReadLegacyICloudData"
+#define CLOUDKIT_STOP_IDS_PENDING        @"cloudKitStopIDsPending"
 #define CLOUDKIT_FETCHED_CHANGES_TOKEN   @"cloudKitChangesToken"
 
 // User-facing preferences.

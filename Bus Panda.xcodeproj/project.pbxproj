@@ -353,6 +353,8 @@
 		23AB59A41CB08AFD0057688D /* Code */ = {
 			isa = PBXGroup;
 			children = (
+				23065F6A20E82F3F00658D07 /* Constants.h */,
+				23E1026C1C1D2A7100BEF3C6 /* UsefulTypes.h */,
 				23D75E221AC1654B0068C808 /* AppDelegate.h */,
 				23D75E231AC1654B0068C808 /* AppDelegate.m */,
 				235FF3C420E6D8380080FE67 /* DataManager.h */,
@@ -361,7 +363,6 @@
 				23D75E291AC1654B0068C808 /* MasterViewController.m */,
 				23D75E2B1AC1654B0068C808 /* DetailViewController.h */,
 				23D75E2C1AC1654B0068C808 /* DetailViewController.m */,
-				23E1026C1C1D2A7100BEF3C6 /* UsefulTypes.h */,
 				233CD79D1C3BDB7D00E0B6D6 /* ErrorPresenter.h */,
 				23420A881C8EC7DD009F40F9 /* ErrorPresenter.swift */,
 				23063B031ACBF0BC00C063DC /* FavouritesCell.h */,
@@ -392,7 +393,6 @@
 				236FC34E1CAFDC4A00207C15 /* ShorteningLabel.m */,
 				23E1026D1C1D3A8700BEF3C6 /* StopLocation.h */,
 				23E1026E1C1D3A8700BEF3C6 /* StopLocation.m */,
-				23065F6A20E82F3F00658D07 /* Constants.h */,
 			);
 			name = Code;
 			sourceTree = "<group>";
