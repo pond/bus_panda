@@ -66,6 +66,11 @@
 - ( NSInteger         ) numberOfSections;
 - ( NSManagedObject * ) findFavouriteStopByID: ( NSString * ) stopID;
 
+// CloudKit change management
+
+- ( void ) fetchRecentChangesWithCompletionBlock: ( void ( ^ )( NSError * _Nullable error ) ) completionHandler
+                        ignoringPriorChangeToken: ( BOOL ) forceFetchAll;
+
 // Shared utility methods
 
 - ( void                  ) saveLocalContext;

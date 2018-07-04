@@ -30,6 +30,15 @@
     self.tabBarController = ( UITabBarController * ) self.window.rootViewController;
     self.tabBarController.delegate = self;
 
+    // TODO: Implement "follow" and/or "settings".
+    //
+    NSMutableArray * viewControllers = [ ( NSMutableArray * ) self.tabBarController.viewControllers mutableCopy ];
+
+    [ viewControllers removeObjectAtIndex: 4 ]; // Settings
+    [ viewControllers removeObjectAtIndex: 2 ]; // Follow
+
+    [ self.tabBarController setViewControllers: viewControllers ];
+
     // Boilerplate master/detail view setup
 
     self.splitViewController = ( UISplitViewController * ) self.tabBarController.viewControllers.firstObject;

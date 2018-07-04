@@ -11,39 +11,49 @@
 
 @interface DataManager ()
 
-// Legacy iCloud Core Data connections (now read-only)
-//
-@property ( readonly, strong, nonatomic ) NSManagedObjectContext       * managedObjectContextRemote;
-@property ( readonly, strong, nonatomic ) NSPersistentStoreCoordinator * persistentStoreCoordinatorRemote;
-@property ( readonly, strong, nonatomic ) NSFetchedResultsController   * fetchedResultsControllerRemote;
+    // Legacy iCloud Core Data connections (now read-only)
+    //
+    @property ( readonly, strong, nonatomic ) NSManagedObjectContext       * managedObjectContextRemote;
+    @property ( readonly, strong, nonatomic ) NSPersistentStoreCoordinator * persistentStoreCoordinatorRemote;
+    @property ( readonly, strong, nonatomic ) NSFetchedResultsController   * fetchedResultsControllerRemote;
 
-// An application-wide cache of bus stop locations for the map view.
-// This is updated or cleared and refreshed via StopMapViewController,
-// but retained by the AppDelegate so that any number of new instances
-// of the map view's controller will be able to reuse the same data.
-//
-@property ( strong ) NSMutableDictionary * cachedStopLocations;
+    // An application-wide cache of bus stop locations for the map view.
+    // This is updated or cleared and refreshed via StopMapViewController,
+    // but retained by the AppDelegate so that any number of new instances
+    // of the map view's controller will be able to reuse the same data.
+    //
+    @property ( strong ) NSMutableDictionary * cachedStopLocations;
 
-// Queue with a big nested block full of a series of complex actions we
-// undertake every time iCloud availability alters in some way, or at
-// application startup. Can be cancelled and restarted at any time.
-//
-@property ( strong ) NSOperationQueue * cloudOperationsQueue;
+    // Queue with a big nested block full of a series of complex actions we
+    // undertake every time iCloud availability alters in some way, or at
+    // application startup. Can be cancelled and restarted at any time.
+    //
+    @property ( strong ) NSOperationQueue * cloudOperationsQueue;
 
-// The above queue has the major awaken operation performed in it, but we
-// also do per-record saves using that queue too. This means that if one
-// save is delayed for some reason (e.g. rate limits) but then the same
-// record needs updating again, we can just cancel the old operation and
-// start a new one. We store the operations in this dictionary, keyed by
-// a recordID's "recordName" (i.e., stop ID).
-//
-@property ( strong ) NSMutableDictionary * recordUpdateOperations;
+    // The above queue has the major awaken operation performed in it, but we
+    // also do per-record saves using that queue too. This means that if one
+    // save is delayed for some reason (e.g. rate limits) but then the same
+    // record needs updating again, we can just cancel the old operation and
+    // start a new one. We store the operations in this dictionary, keyed by
+    // a recordID's "recordName" (i.e., stop ID).
+    //
+    @property ( strong ) NSMutableDictionary * recordUpdateOperations;
 
-- ( NSURL * ) applicationDocumentsDirectory;
+    - ( NSURL * ) applicationDocumentsDirectory;
 
 @end
 
 @implementation DataManager
+
+    @synthesize managedObjectModel               = _managedObjectModel;
+
+    @synthesize managedObjectContextLocal        = _managedObjectContextLocal;
+    @synthesize persistentStoreCoordinatorLocal  = _persistentStoreCoordinatorLocal;
+    @synthesize fetchedResultsControllerLocal    = _fetchedResultsControllerLocal;
+
+    @synthesize managedObjectContextRemote       = _managedObjectContextRemote;
+    @synthesize persistentStoreCoordinatorRemote = _persistentStoreCoordinatorRemote;
+    @synthesize fetchedResultsControllerRemote   = _fetchedResultsControllerRemote;
 
 #pragma mark - Any-thread spinner
 
@@ -76,16 +86,6 @@
     );
 }
 #pragma mark - Initialisation
-
-@synthesize managedObjectModel               = _managedObjectModel;
-
-@synthesize managedObjectContextLocal        = _managedObjectContextLocal;
-@synthesize persistentStoreCoordinatorLocal  = _persistentStoreCoordinatorLocal;
-@synthesize fetchedResultsControllerLocal    = _fetchedResultsControllerLocal;
-
-@synthesize managedObjectContextRemote       = _managedObjectContextRemote;
-@synthesize persistentStoreCoordinatorRemote = _persistentStoreCoordinatorRemote;
-@synthesize fetchedResultsControllerRemote   = _fetchedResultsControllerRemote;
 
 + ( DataManager * ) dataManager
 {

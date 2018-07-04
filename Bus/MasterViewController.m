@@ -17,9 +17,17 @@
 #import "StopMapViewController.h"
 #import "FavouritesCell.h"
 
-#define CLOUDKIT
+@interface MasterViewController ()
+
+    // Pull-to-refresh to force full CloudKit resync.
+    //
+    @property ( strong, nonatomic ) UIRefreshControl * refreshControl;
+
+@end
 
 @implementation MasterViewController
+
+    @synthesize refreshControl = _refreshControl;
 
 #pragma mark - View lifecycle
 
@@ -80,6 +88,16 @@
                                                 selector: @selector( defaultsDidChange: )
                                                     name: NSUserDefaultsDidChangeNotification
                                                   object: nil ];
+
+    // Pull-to-refresh for CloudKit resync.
+    //
+    self.refreshControl = [ [ UIRefreshControl alloc ] init ];
+
+    [ self.refreshControl addTarget: self
+                             action: @selector( resyncFromCloudKit )
+                   forControlEvents: UIControlEventValueChanged ];
+
+    [ self.tableView addSubview: self.refreshControl ];
 
     // We don't try an update the Apple Watch app here because we don't
     // necessarily have full access to Core Data yet. Instead, let the App
@@ -523,6 +541,21 @@
             [ self.tableView reloadData ];
         }
     );
+}
+
+#pragma mark - Refresh control handling
+
+- ( void ) resyncFromCloudKit
+{
+    id completionHandler = ^ ( NSError * _Nullable error )
+    {
+        [ self.refreshControl performSelectorOnMainThread: @selector( endRefreshing )
+                                               withObject: nil
+                                            waitUntilDone: NO ];
+    };
+
+    [ DataManager.dataManager fetchRecentChangesWithCompletionBlock: completionHandler
+                                           ignoringPriorChangeToken: YES ];
 }
 
 #pragma mark - Table updates from the controller
