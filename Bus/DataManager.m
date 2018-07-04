@@ -189,7 +189,7 @@
                 }
                 else if ( accountStatus != CKAccountStatusAvailable )
                 {
-                    NSLog( @"-- !! Unusual iCloud account status %ld", accountStatus );
+                    NSLog( @"-- !! Unusual iCloud account status %ld", ( long ) accountStatus );
 
                     [ defaults setBool: NO forKey: ICLOUD_IS_AVAILABLE ];
                     if ( thisOperation.cancelled ) return;
@@ -332,6 +332,32 @@
         ];
     };
 
+    // Before the main awaken operation runs, we have one simple check to do
+    // straight away. In version 2, we change the *local* SQLite filename to
+    // make sure that migration from remote Core Data stores works OK, but
+    // this means that non-iCloud users would lose their data if we don't
+    // at least migrate just that local information.
+    //
+    NSArray * newResults = [ self getCurrentFavouritesFromLocalStore ];
+
+    if ( newResults.count == 0 )
+    {
+        NSArray * legacyResults = [ self getLegacyFavouritesFromLocalStore ];
+
+        if ( legacyResults != nil && legacyResults.count > 0 )
+        {
+            NSLog( @"Awaken: Early local-only migration of legacy data" );
+
+            for ( NSManagedObject * object in legacyResults )
+            {
+                [ self addOrEditFavourite: [ object valueForKey: @"stopID"          ]
+                       settingDescription: [ object valueForKey: @"stopDescription" ]
+                         andPreferredFlag: [ object valueForKey: @"preferred"       ]
+                        includingCloudKit: NO ];
+            }
+        }
+    }
+
     // As per comments far above :-) now finally add the big block we just
     // defined as a (cancelleable) operation that'll get run when iOS is ready.
     //
@@ -419,17 +445,14 @@
             [ defaults   setBool:  NO forKey: HAVE_RECEIVED_CLOUDKIT_DATA  ];
             [ defaults   setBool:  NO forKey: HAVE_READ_LEGACY_ICLOUD_DATA ];
 
-            NSError * error   = nil;
-            BOOL      success = [ self.fetchedResultsControllerLocal performFetch: &error ];
+            NSArray * results = [ self getCurrentFavouritesFromLocalStore ];
 
-            if ( success != YES || error != nil )
+            if ( results == nil )
             {
-                NSLog( @"iCloud identity has changed: Cannot read local data, halting here - %@", error );
+                NSLog( @"iCloud identity has changed: Could not read local data, halting here" );
             }
             else
             {
-                NSArray * results = self.fetchedResultsControllerLocal.fetchedObjects;
-
                 NSLog( @"iCloud identity has changed: Purging all local data" );
 
                 for ( NSManagedObject * object in results )
@@ -472,7 +495,7 @@
     {
         NSString * message = [ NSString stringWithFormat: @"%@ (%lu)",
                                                           error.localizedDescription,
-                                                          error.code ];
+                                                          ( long ) error.code ];
 
         [ self showMessage: message
                  withTitle: title
@@ -689,9 +712,14 @@
     return _persistentStoreCoordinatorRemote;
 }
 
-// Return an NSManagedObjectContext instance for iCloud Core Data storage:
+// Migrate data from and return an NSManagedObjectContext instance for legacy
+// iCloud Core Data storage:
 //
 //   http://timroadley.com/2012/04/03/core-data-in-icloud/
+//
+// Registers notification handlers for stores-will-change and stores-did-change;
+// the stores-did-change handler takes all iCloud results and adds them to the
+// version 2 new store, with records sent out via CloudKit.
 //
 // You MUST NOT CALL THIS FROM THE MAIN THREAD. It has intentionally got
 // blocking semantics and must be called, directly or indirectly, only from
@@ -735,9 +763,11 @@
     return _managedObjectContextRemote;
 }
 
+// Note that legacy iCloud data stores are about to change.
+//
 - ( void ) storesWillChange: ( NSNotification * ) notification
 {
-    NSLog( @"**** Stores will change..." );
+    NSLog( @"**** Stores will change" );
 
     // No need to disable the GUI here, because it uses the local Core Data
     // store only with a different SQLite database file. This legacy code is
@@ -746,7 +776,7 @@
 
     NSManagedObjectContext * moc = self.managedObjectContextRemote;
 
-    [
+     [
         moc performBlock: ^
         {
             [ moc reset ];
@@ -754,9 +784,14 @@
     ];
 }
 
+// Note that legacy iCloud data stores have changed. We treat this as our cue
+// to migrate any data in there to CloudKit, then delete it. Any other device
+// using CloudKit will be able to read records from there, so the old Core
+// Data store is just wasting space.
+//
 - ( void ) storesDidChange: ( NSNotification * ) notification
 {
-    NSLog( @"**** Stores did change..." );
+    NSLog( @"**** Stores changed" );
 
     [
         self.managedObjectContextRemote performBlockAndWait: ^ ( void )
@@ -769,7 +804,7 @@
                 NSString * stopID          = [ object valueForKey: @"stopID"          ];
                 NSString * stopDescription = [ object valueForKey: @"stopDescription" ];
 
-                NSLog(@"Legacy iCloud Core Data result: %@ (%@): %@", stopID, preferred, stopDescription);
+                NSLog(@"**** Stores changed: Migrating legacy item: %@ (%@): %@", stopID, preferred, stopDescription);
 
                 [ self addOrEditFavourite: stopID
                        settingDescription: stopDescription
@@ -778,6 +813,21 @@
             }
         }
     ];
+
+    NSLog( @"**** Stores changed: Deleting legacy data (ignoring errors)" );
+
+    NSFetchRequest       * fetchRequest  = [ NSFetchRequest fetchRequestWithEntityName: ENTITY_AND_RECORD_NAME ];
+    NSBatchDeleteRequest * deleteRequest = [ [ NSBatchDeleteRequest alloc ] initWithFetchRequest: fetchRequest ];
+
+    [
+        self.managedObjectContextRemote performBlockAndWait: ^ ( void )
+        {
+            [ self.persistentStoreCoordinatorRemote executeRequest: deleteRequest
+                                                       withContext: self.managedObjectContextRemote
+                                                             error: nil ];
+        }
+    ];
+
 }
 
 #pragma mark - Core Data saving support
@@ -1274,6 +1324,77 @@
     return _fetchedResultsControllerLocal;
 }
 
+// This is a weird one - a non-cached, generated-every-time *local only* (not
+// iCloud aware) results controller which addresses the *old* filename local
+// Core Data store. We use this for first-time migration before iCloud checks.
+//
+- ( NSFetchedResultsController * ) legacyLocalStoreFetchedResultsControllerForMigration
+{
+    NSPersistentStoreCoordinator * legacyPSC;
+    NSManagedObjectContext       * legacyMOC;
+    NSFetchedResultsController   * legacyFRC;
+
+    // First have to build a Persistent Store Coordinator for the old Core Data
+    // storage filename.
+
+    legacyPSC = [
+        [ NSPersistentStoreCoordinator alloc ]
+        initWithManagedObjectModel: [ self managedObjectModel ]
+    ];
+
+    NSURL * legacyLocalStore = [
+        [ self applicationDocumentsDirectory ] URLByAppendingPathComponent: OLD_CORE_DATA_FILE_NAME
+    ];
+
+    NSDictionary * options =
+    @{
+        NSMigratePersistentStoresAutomaticallyOption: @YES,
+        NSInferMappingModelAutomaticallyOption:       @YES
+    };
+
+    [
+        legacyPSC performBlockAndWait: ^ ( void )
+        {
+            [ legacyPSC addPersistentStoreWithType: NSSQLiteStoreType
+                                     configuration: nil
+                                               URL: legacyLocalStore
+                                           options: options
+                                             error: nil ];
+        }
+    ];
+
+    // Now the Managed Object Context for the PSC.
+
+    legacyMOC = [
+        [ NSManagedObjectContext alloc ] initWithConcurrencyType: NSMainQueueConcurrencyType
+    ];
+
+    [
+        legacyMOC performBlockAndWait: ^ ( void )
+        {
+            [ legacyMOC setPersistentStoreCoordinator: legacyPSC ];
+        }
+    ];
+
+    NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
+    NSEntityDescription * entity       = [ NSEntityDescription entityForName: ENTITY_AND_RECORD_NAME
+                                                      inManagedObjectContext: legacyMOC ];
+
+    [ fetchRequest setEntity: entity ];
+
+    NSSortDescriptor * sortDescriptor = [ [ NSSortDescriptor alloc] initWithKey: @"stopDescription"
+                                                                      ascending: YES ];
+
+    [ fetchRequest setSortDescriptors: @[ sortDescriptor ] ];
+
+    legacyFRC = [ [ NSFetchedResultsController alloc ] initWithFetchRequest: fetchRequest
+                                                       managedObjectContext: legacyMOC
+                                                         sectionNameKeyPath: @"preferred"
+                                                                  cacheName: nil ];
+
+    return legacyFRC;
+}
+
 // Returns an existing NSFetchedResultsController instance or generates a new
 // one when called for the first time. Reads the remote legacy iCloud data only.
 //
@@ -1357,7 +1478,62 @@
     return self.fetchedResultsControllerLocal.sections.count;
 }
 
-// Retrieve favourites data, if any, from the legacy iCloud Core Data store.
+// Support method: Fetch all results using the given NSFetchResultsController,
+// which must be fully configured and ready for a "-performFetch:" message.
+//
+// Returns an empty array if things work but there are no results; a non-empty
+// array if things work and there are results; or 'nil' if there was an error.
+//
+- ( NSArray * ) fetchEverythingWith: ( NSFetchedResultsController * ) frc
+{
+    NSLog( @"Fetch everything" );
+
+    NSError * error   = nil;
+    BOOL      success = [ frc performFetch: &error ];
+
+    if ( success != YES || error != nil )
+    {
+        NSLog( @"Fetch everything: ERROR: %@", error );
+        return nil;
+    }
+    else
+    {
+        NSArray * results = frc.fetchedObjects;
+        if ( results == nil ) results = @[];
+
+        NSLog( @"Fetch everything: Results count: %lu", ( long ) results.count );
+        return results;
+    }
+}
+
+// Migration-related method: Return all current favourites read purely from
+// the local Core Data store.
+//
+// Returns an empty array if things work but there are no results; a non-empty
+// array if things work and there are results; or 'nil' if there was an error.
+//
+- ( NSArray * ) getCurrentFavouritesFromLocalStore
+{
+    NSLog( @"Get local current favourites" );
+    return [ self fetchEverythingWith: self.fetchedResultsControllerLocal ];
+}
+
+// Migration-related method: Return all favourites from the old version 1
+// local Core Data store, if any. No cacheing of any kind, so inefficient
+// to call multiple times; avoid this where possible.
+//
+// Returns an empty array if things work but there are no results; a non-empty
+// array if things work and there are results; or 'nil' if there was an error.
+//
+- ( NSArray * ) getLegacyFavouritesFromLocalStore
+{
+    NSLog( @"Get local legacy favourites" );
+    return [ self fetchEverythingWith: self.legacyLocalStoreFetchedResultsControllerForMigration ];
+}
+
+// Retrieve favourites data, if any, from the legacy iCloud Core Data store;
+// generally should be called only when iCloud availability is known-good.
+// Otherwise, maybe call -getLegacyFavouritesFromLocalStore instead.
 //
 // This is intended really just for one-shot data migrations and is not very
 // efficient as it intentionally does not provide any cache name for the
@@ -1368,29 +1544,8 @@
 //
 - ( NSArray * ) getLegacyFavouritesFromICloud
 {
-    NSLog( @"**** getLegacyFavouritesFromICloud" );
-
-    NSError * error   = nil;
-    BOOL      success = [ self.fetchedResultsControllerRemote performFetch: &error ];
-
-    // "Returns an empty array if things work but there are no results; a
-    //  non-empty array if things work and there are results; or 'nil' if
-    //  there was an error."
-    //
-    if ( success != YES || error != nil )
-    {
-        NSLog( @"**** getLegacyFavouritesFromICloud: FAILED: %@", error );
-        return nil;
-    }
-    else
-    {
-        NSArray * results = self.fetchedResultsControllerRemote.fetchedObjects;
-        if ( results == nil ) results = @[];
-
-        NSLog(@"**** getLegacyFavouritesFromICloud: Results count: %lu", results.count );
-
-        return results;
-    }
+    NSLog( @"Get legacy favourites from iCloud" );
+    return [ self fetchEverythingWith: self.fetchedResultsControllerRemote ];
 }
 
 //// Asynchronous, full CloudKit fetch of all stop data. Call with a completion
@@ -1586,7 +1741,7 @@
 
     NSDictionary * stopIDsInFlight = [ NSUserDefaults.standardUserDefaults dictionaryForKey: CLOUDKIT_STOP_IDS_PENDING ];
 
-    NSLog( @"CloudKit change: Pending record count: %lu", stopIDsInFlight.count );
+    NSLog( @"CloudKit change: Pending record count: %lu", ( long ) stopIDsInFlight.count );
 
     if ( stopIDsInFlight[ record.recordID.recordName ] != nil )
     {

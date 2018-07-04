@@ -308,7 +308,7 @@
 
                     when = etaMinutes < 2 ?
                            @"Due"         :
-                           [ NSString stringWithFormat: @"%lu mins", etaMinutes ];
+                           [ NSString stringWithFormat: @"%lu mins", ( long ) etaMinutes ];
                 }
 
                 if ( number && name && when )
