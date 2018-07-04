@@ -18,7 +18,6 @@
 		23420AAA1C92A34E009F40F9 /* StopsInterfaceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23420AA91C92A34E009F40F9 /* StopsInterfaceController.swift */; };
 		23420AAC1C92A34E009F40F9 /* ExtensionDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23420AAB1C92A34E009F40F9 /* ExtensionDelegate.swift */; };
 		23420AAE1C92A34E009F40F9 /* NotificationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23420AAD1C92A34E009F40F9 /* NotificationController.swift */; };
-		23420AB01C92A34E009F40F9 /* GlanceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23420AAF1C92A34E009F40F9 /* GlanceController.swift */; };
 		23420AB21C92A34E009F40F9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 23420AB11C92A34E009F40F9 /* Assets.xcassets */; };
 		23420AB61C92A34E009F40F9 /* watchkit.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 23420A961C92A34E009F40F9 /* watchkit.app */; };
 		235AA1981CA2A272006143B9 /* StopsRowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 235AA1961CA2A055006143B9 /* StopsRowController.swift */; };
@@ -145,7 +144,6 @@
 		23420AA91C92A34E009F40F9 /* StopsInterfaceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsInterfaceController.swift; sourceTree = "<group>"; };
 		23420AAB1C92A34E009F40F9 /* ExtensionDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionDelegate.swift; sourceTree = "<group>"; };
 		23420AAD1C92A34E009F40F9 /* NotificationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationController.swift; sourceTree = "<group>"; };
-		23420AAF1C92A34E009F40F9 /* GlanceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlanceController.swift; sourceTree = "<group>"; };
 		23420AB11C92A34E009F40F9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		23420AB31C92A34E009F40F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		235AA1961CA2A055006143B9 /* StopsRowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StopsRowController.swift; sourceTree = "<group>"; };
@@ -302,7 +300,6 @@
 				23E3415D1CA681A000EDB581 /* BusesInterfaceController.swift */,
 				23E3415F1CA68F5F00EDB581 /* BusesRowController.swift */,
 				23420AAD1C92A34E009F40F9 /* NotificationController.swift */,
-				23420AAF1C92A34E009F40F9 /* GlanceController.swift */,
 				236842401CAD3B7600548923 /* StringShortener.swift */,
 				23420AB11C92A34E009F40F9 /* Assets.xcassets */,
 				23420AB31C92A34E009F40F9 /* Info.plist */,
@@ -725,7 +722,6 @@
 				23E341651CA6A11400EDB581 /* RouteColours.swift in Sources */,
 				23420AAA1C92A34E009F40F9 /* StopsInterfaceController.swift in Sources */,
 				23E341641CA6A10600EDB581 /* BusesInterfaceController.swift in Sources */,
-				23420AB01C92A34E009F40F9 /* GlanceController.swift in Sources */,
 				236842411CAD3B7600548923 /* StringShortener.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
