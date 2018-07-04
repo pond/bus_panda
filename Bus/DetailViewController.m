@@ -23,9 +23,7 @@
 @property ( strong, nonatomic ) NSURLSessionTask * apiTask;
 @property ( strong, nonatomic ) NSURLSessionTask * scrapeTask;
 @property ( strong, nonatomic ) NSMutableArray   * parsedSections;
-
 @property ( strong, nonatomic ) UIRefreshControl * refreshControl;
-@property ( strong, nonatomic ) UIView           * activityView;
 
 - ( void ) showActivityViewer;
 - ( void ) hideActivityViewer;
@@ -38,63 +36,57 @@
 
 @implementation DetailViewController
 
-// This shows a full-screen modal activity spinner which stops the user doing
-// actions in the underlying application that might result in state confusion.
+// Back-end to -showActivityViewer; call on main thread only. The specific
+// dance done here between threads, waiting and timers is necessary to get
+// the right balance of the refresh control actually showing up, and hiding
+// properly with a smooth animation later.
+//
+// After much experimentation, I was unable to get a delayed appearance of
+// the refresh control, which I was doing in the hope that rapid-arriving
+// results (e.g. from a cache) would cause the table view to populate more
+// or less instantly and no distracting refresh control animations. In the
+// end, this just didn't work, so the refresh control is always seen.
+//
+- ( void ) showActivityViewerBackend
+{
+    UIApplication.sharedApplication.networkActivityIndicatorVisible = YES;
+    [ self.refreshControl beginRefreshing ];
+}
+
+// Show activity during a URL fetch.
 //
 // See also: -hideActivityViewer
 //
 - ( void ) showActivityViewer
 {
-    if ( self.activityView ) return;
-
-    UIApplication.sharedApplication.networkActivityIndicatorVisible = YES;
-
-    AppDelegate * delegate = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
-    UIWindow    * window   = delegate.window;
-
-    self.activityView =
-    [
-        [ UIView alloc ] initWithFrame: CGRectMake( 0,
-                                                    0,
-                                                    window.bounds.size.width,
-                                                    window.bounds.size.height )
-    ];
-
-    self.activityView.backgroundColor = [ UIColor blackColor ];
-    self.activityView.alpha           = 0.5;
-
-    UIActivityIndicatorView * activityWheel =
-    [
-       [ UIActivityIndicatorView alloc ] initWithFrame: CGRectMake( window.bounds.size.width  / 2 - 12,
-                                                                    window.bounds.size.height / 2 - 12,
-                                                                    24,
-                                                                    24 )
-    ];
-
-    activityWheel.activityIndicatorViewStyle = UIActivityIndicatorViewStyleWhite;
-    activityWheel.autoresizingMask           = ( UIViewAutoresizingFlexibleLeftMargin  |
-                                                 UIViewAutoresizingFlexibleRightMargin |
-                                                 UIViewAutoresizingFlexibleTopMargin   |
-                                                 UIViewAutoresizingFlexibleBottomMargin );
-
-    [ self.activityView addSubview: activityWheel ];
-    [ window addSubview: self.activityView ];
-
-    [ [ [ self.activityView subviews ] objectAtIndex: 0 ] startAnimating ];
+    [ self performSelectorOnMainThread: @selector( showActivityViewerBackend )
+                            withObject: nil
+                         waitUntilDone: YES ];
 }
 
-// For details, see -showActivityViewer.
+// Back-end to -hideActivityViewer; call from main thread only. As with
+// -showActivityViewerBackend, the specifics here are all related to always
+// seeing the refresh control even for rapidly-arriving results. The small
+// delay for hiding it makes things look less stupid than the table contents
+// appearing to just jump down and up a little, with no time for the user to
+// see the refresh control which caused it.
+//
+-( void ) hideActivityViewerBackend
+{
+    [ self.refreshControl performSelector: @selector( endRefreshing )
+                               withObject: nil
+                               afterDelay: 0.25 ];
+
+    UIApplication.sharedApplication.networkActivityIndicatorVisible = NO;
+}
+
+// Hide the activity indications shown by -showActivityViewer.
 //
 -( void ) hideActivityViewer
 {
-    if ( ! self.activityView ) return;
-
-    UIApplication.sharedApplication.networkActivityIndicatorVisible = NO;
-
-    [ self.activityView removeFromSuperview ];
-    [ [ [ self.activityView subviews ] objectAtIndex: 0 ] stopAnimating ];
-
-    self.activityView = nil;
+    [ self performSelectorOnMainThread: @selector( hideActivityViewerBackend )
+                            withObject: nil
+                         waitUntilDone: YES ];
 }
 
 #pragma mark - Managing the detail item
@@ -111,13 +103,12 @@
 - ( void ) configureView
 {
     if ( ! self.detailItem ) return;
-    if ( self.activityView != nil ) return;
 
     NSString * stopID          = [ self.detailItem valueForKey: @"stopID"          ];
     NSString * stopDescription = [ self.detailItem valueForKey: @"stopDescription" ];
 
     self.title = stopDescription;
-    if ( self.refreshControl.refreshing == NO ) [ self showActivityViewer ];
+    [ self showActivityViewer ];
 
     // Kick off fetcher tasks for both the API and the web scraper.
     //
@@ -164,9 +155,12 @@
     {
         self.parsedSections = sections;
 
+        // For the refresh control hiding to work properly with smooth
+        // animation, the table data MUST be reloaded *before* we hide
+        // the activity viewer.
+        //
+        [ self.tableView reloadData ];
         [ self hideActivityViewer ];
-        [ self.refreshControl endRefreshing ];
-        [ self.tableView      reloadData    ];
 
         // NOTE EARLY EXIT to reduce unnecessary code indentation in a
         // simple either-or method.

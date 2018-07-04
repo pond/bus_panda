@@ -1103,7 +1103,6 @@
     NSNumber               * oldPreferred       = @( ! preferred.boolValue );
     NSManagedObject        * object             = [ DataManager.dataManager findFavouriteStopByID: stopID ];
     NSManagedObjectContext * context            = self.managedObjectContextLocal;
-    NSError                * error              = nil;
 
     if ( object == nil )
     {
@@ -1125,6 +1124,8 @@
 
     if ( stopDescription != nil ) [ object setValue: stopDescription forKey: @"stopDescription" ];
     if ( preferred       != nil ) [ object setValue: preferred       forKey: @"preferred"       ];
+
+    NSError * error = nil;
 
     if ( ! [ context save: &error ] )
     {
