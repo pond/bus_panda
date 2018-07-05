@@ -1094,9 +1094,11 @@
 
     NSLog( @"Add or edit: %@ (%@): %@", stopID, preferred, stopDescription );
 
+    if ( preferred == nil ) preferred = @( NO );
+
     // Indicates nasty bug, but try not to just crash...
     //
-    if ( stopID == nil || preferred == nil || stopDescription == nil )
+    if ( stopID == nil || stopDescription == nil )
     {
         NSLog( @"Add or edit: SERIOUS: Unexpected 'nil'!" );
         return;
