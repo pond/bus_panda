@@ -82,12 +82,14 @@
                                                   object: nil ];
 
     // Watch for user defaults changes as we'll need to reload the table data
-    // to reflect things like a 'shorten names to fit' settings change.
+    // to reflect a 'shorten names to fit' settings change.
     //
-    [ [ NSNotificationCenter defaultCenter ] addObserver: self
-                                                selector: @selector( defaultsDidChange: )
-                                                    name: NSUserDefaultsDidChangeNotification
-                                                  object: nil ];
+    NSUserDefaults * defaults = NSUserDefaults.standardUserDefaults;
+
+    [ defaults addObserver: self
+                forKeyPath: SHORTEN_DISPLAYED_NAMES
+                   options: NSKeyValueObservingOptionNew
+                   context: nil ];
 
     // Pull-to-refresh for CloudKit resync.
     //
@@ -117,6 +119,9 @@
 
 - ( void ) dealloc
 {
+    NSUserDefaults * defaults = NSUserDefaults.standardUserDefaults;
+    [ defaults removeObserver: self forKeyPath: SHORTEN_DISPLAYED_NAMES ];
+
     [ [ NSNotificationCenter defaultCenter ] removeObserver: self ];
 }
 
@@ -427,7 +432,7 @@
     }
 }
 
-#pragma mark - NSNotificationCenter observers
+#pragma mark - Observers (NSNotificationCentre and KVO)
 
 // Reload results (i.e. favourites) from iCloud / local storage; "notification"
 // parameter is ignored.
@@ -526,21 +531,25 @@
     }
 }
 
-// Called via NSNotificationCenter when the user defaults change;
-// "notification" parameter is ignored.
+// Called via KVO when the user defaults change.
 //
-- ( void ) defaultsDidChange: ( NSNotification * ) ignoredNotification
+- ( void ) observeValueForKeyPath: ( NSString     * ) keyPath
+                         ofObject: ( id             ) object
+                           change: ( NSDictionary * ) change
+                          context: ( void         * ) context
 {
-    ( void ) ignoredNotification;
+    ( void ) object;
+    ( void ) change;
+    ( void ) context;
 
-    dispatch_async
-    (
-        dispatch_get_main_queue(),
-        ^ ( void )
-        {
-            [ self.tableView reloadData ];
-        }
-    );
+    if ( [ keyPath isEqualToString: SHORTEN_DISPLAYED_NAMES ] )
+    {
+        NSLog( @"KVO shorten-displayed-names changed, updating view" );
+
+        [ self.tableView performSelector: @selector( reloadData )
+                              withObject: nil
+                              afterDelay: 0.5 ];
+    }
 }
 
 #pragma mark - Refresh control handling

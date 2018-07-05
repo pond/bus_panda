@@ -14,7 +14,18 @@
 #import "BusInfoFetcher.h"
 #import "NearestStopBusInfoFetcher.h"
 
+@interface AppDelegate ()
+
+    // Keep a permanent reference to the data manager singleton, so it
+    // doesn't go away at inconvenient moments!
+    //
+    @property ( strong ) DataManager * dataManager;
+
+@end
+
 @implementation AppDelegate
+
+    @synthesize dataManager = _dataManager;
 
 # pragma mark - Initialisation
 
@@ -55,8 +66,9 @@
     // notifications (for CloudKit changes), but the AppDelegate object has
     // to handle them - see -didReceiveRemoteNotification:... later.
     //
-    [ DataManager.dataManager setMasterViewController: self.masterViewController ];
-    [ DataManager.dataManager awakenAllStores ];
+    _dataManager = DataManager.dataManager;
+    [ _dataManager setMasterViewController: self.masterViewController ];
+    [ _dataManager awakenAllStores ];
 
     // On a clean install, some iOS versions may not read the Settings bundle
     // into the NSUserDefaults unless the user has by happenstance manually
@@ -73,6 +85,13 @@
         [ defaults setBool: YES forKey: SHORTEN_DISPLAYED_NAMES ];
 
         // ...and in future, add any more settings here too.
+    }
+
+    shouldNotBeNil = [ defaults objectForKey: WEATHER_PROVIDER ];
+
+    if ( shouldNotBeNil == nil )
+    {
+        [ defaults setValue: WEATHER_PROVIDER_METSERVICE forKey: WEATHER_PROVIDER ];
     }
 
     // If this is the first time the application has ever been run, set up a

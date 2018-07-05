@@ -1091,14 +1091,20 @@
              andPreferredFlag: ( NSNumber * ) preferred
             includingCloudKit: ( BOOL       ) includeCloudKit
 {
-    NSUserDefaults * defaults = NSUserDefaults.standardUserDefaults;
+
+    NSLog( @"Add or edit: %@ (%@): %@", stopID, preferred, stopDescription );
+
+    // Indicates nasty bug, but try not to just crash...
+    //
+    if ( stopID == nil || preferred == nil || stopDescription == nil )
+    {
+        NSLog( @"Add or edit: SERIOUS: Unexpected 'nil'!" );
+        return;
+    }
 
     // First update local records.
 
-    NSLog( @"Add or edit: %@", stopID );
-
-    if ( stopID == nil ) return; // Indicates nasty bug, but try not to just crash...
-
+    NSUserDefaults         * defaults           = NSUserDefaults.standardUserDefaults;
     BOOL                     oldShowSectionFlag = self.shouldShowSectionHeader;
     NSNumber               * oldPreferred       = @( ! preferred.boolValue );
     NSManagedObject        * object             = [ DataManager.dataManager findFavouriteStopByID: stopID ];

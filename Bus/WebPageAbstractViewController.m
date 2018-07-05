@@ -17,8 +17,6 @@
 
 @implementation WebPageAbstractViewController
 
-static NSString * contentBlockingRules = @"";
-
 #pragma mark - Subclasses must implement...
 
 // Fetch whatever the subclass considers the "home page" into self.webView.
@@ -134,30 +132,7 @@ static NSString * contentBlockingRules = @"";
     [ self.view addSubview: self.webView      ];
     [ self.view addSubview: self.activityView ];
 
-    NSString * contentBlockingRules = [ self contentBlockingRules ];
-
-    if ( @available( iOS 11, * ) )
-    {
-        [
-            WKContentRuleListStore.defaultStore
-                compileContentRuleListForIdentifier: @"ContentBlockingRules"
-                             encodedContentRuleList: contentBlockingRules
-                                  completionHandler: ^ ( WKContentRuleList * ruleList, NSError * error )
-            {
-                [ super viewDidLoad ];
-
-                if ( error == nil )
-                {
-                    [ self.webView.configuration.userContentController addContentRuleList: ruleList ];
-                    [ self goHome ];
-                }
-            }
-        ];
-    }
-    else
-    {
-        [ self goHome ];
-    }
+    [ self reloadContentBlockingRulesAndGoHome ];
 }
 
 - ( void ) viewDidAppear: ( BOOL ) animated
@@ -200,6 +175,34 @@ static NSString * contentBlockingRules = @"";
           withError: ( NSError      * ) error
 {
     [ self reportError: error ];
+}
+
+#pragma mark - Custom methods
+
+- ( void ) reloadContentBlockingRulesAndGoHome
+{
+    if ( @available( iOS 11, * ) )
+    {
+        [
+            WKContentRuleListStore.defaultStore
+                compileContentRuleListForIdentifier: @"ContentBlockingRules"
+                             encodedContentRuleList: [ self contentBlockingRules ]
+                                  completionHandler: ^ ( WKContentRuleList * ruleList, NSError * error )
+            {
+                [ super viewDidLoad ];
+
+                if ( error == nil )
+                {
+                    [ self.webView.configuration.userContentController addContentRuleList: ruleList ];
+                    [ self goHome ];
+                }
+            }
+        ];
+    }
+    else
+    {
+        [ self goHome ];
+    }
 }
 
 @end

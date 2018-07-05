@@ -8,13 +8,64 @@
 
 #import "WeatherWebViewController.h"
 
+#import "Constants.h"
 #import "INTULocationManager.h"
 
-// "MetService" or "DarkSky"
-//
-#define WEATHER_SERVICE MetService
+// TODO: WUnderground and Weather.com disabled as experience is very poor.
+//       See settings PList.
 
 @implementation WeatherWebViewController
+
+- ( void ) viewDidLoad
+{
+    [ super viewDidLoad ];
+
+    // Watch for user defaults changes as we'll need to reload the weather page
+    // if someone changes their weather provider settings.
+    //
+    // Watch for user defaults changes as we'll need to reload the table data
+    // to reflect a 'shorten names to fit' settings change.
+    //
+    NSUserDefaults * defaults = NSUserDefaults.standardUserDefaults;
+
+    [ defaults addObserver: self
+                forKeyPath: WEATHER_PROVIDER
+                   options: NSKeyValueObservingOptionNew
+                   context: nil ];
+}
+
+- ( void ) dealloc
+{
+    NSUserDefaults * defaults = NSUserDefaults.standardUserDefaults;
+    [ defaults removeObserver: self forKeyPath: WEATHER_PROVIDER ];
+}
+
+// Called via KVO when the user defaults change.
+//
+- ( void ) observeValueForKeyPath: ( NSString     * ) keyPath
+                         ofObject: ( id             ) object
+                           change: ( NSDictionary * ) change
+                          context: ( void         * ) context
+{
+    ( void ) object;
+    ( void ) change;
+    ( void ) context;
+
+    if ( [ keyPath isEqualToString: WEATHER_PROVIDER ] )
+    {
+        dispatch_async
+        (
+            dispatch_get_main_queue(),
+            ^ ( void )
+            {
+                if ( self.isViewLoaded == YES && self.view.window != nil )
+                {
+                    [ self reloadContentBlockingRulesAndGoHome ];
+                }
+            }
+        );
+    }
+}
 
 #pragma mark - Methods that the superclass requires
 
@@ -22,73 +73,169 @@
 {
     [ self spinnerOn ];
 
-#if WEATHER_SERVICE == MetService
+    NSString * provider = [ NSUserDefaults.standardUserDefaults stringForKey: WEATHER_PROVIDER ];
 
-    // MetService
-    //
+    if      ( [ provider isEqualToString: WEATHER_PROVIDER_DARK_SKY     ] ) [ self visitDarkSky            ];
+    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WEATHER_COM  ] ) [ self visitWeatherCom         ];
+    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WUNDERGROUND ] ) [ self visitWeatherUnderground ];
+    else                                                                    [ self visitMetService         ];
+}
+
+
+- ( NSString * ) contentBlockingRules
+{
+    NSString * provider = [ NSUserDefaults.standardUserDefaults stringForKey: WEATHER_PROVIDER ];
+
+    if      ( [ provider isEqualToString: WEATHER_PROVIDER_DARK_SKY     ] ) return [ self rulesForDarkSky            ];
+    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WEATHER_COM  ] ) return [ self rulesForWeatherCom         ];
+    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WUNDERGROUND ] ) return [ self rulesForWeatherUnderground ];
+    else                                                                    return [ self rulesForMetService         ];
+}
+
+- ( NSString * ) errorTitle
+{
+    return @"Weather cannot be checked";
+}
+
+#pragma mark - Custom provider fetchers
+
+// MetService:
+// http://m.metservice.com/towns/wellington
+//
+- ( void ) visitMetService
+{
     NSURL        * url     = [ NSURL         URLWithString: @"http://m.metservice.com/towns/wellington" ];
     NSURLRequest * request = [ NSURLRequest requestWithURL: url ];
 
     [ self.webView loadRequest: request ];
-
-#elif WEATHER_SERVICE == DarkSky
-
-   // Dark Sky
-   //
-   dispatch_async
-   (
-       dispatch_get_main_queue(),
-       ^ ( void )
-       {
-           INTULocationManager *locMgr = [ INTULocationManager sharedInstance ];
-
-           [
-               locMgr requestLocationWithDesiredAccuracy: INTULocationAccuracyCity
-                                                 timeout: 2.5
-                                    delayUntilAuthorized: NO
-                                                   block:
-
-               ^ ( CLLocation           * currentLocation,
-                   INTULocationAccuracy   achievedAccuracy,
-                   INTULocationStatus     status )
-               {
-                   CLLocationCoordinate2D coordinates;
-
-                   if ( status == INTULocationStatusSuccess )
-                   {
-                       coordinates = currentLocation.coordinate;
-                   }
-                   else // Just give up and assume Wellington Central
-                   {
-                       coordinates.latitude  = -41.294649;
-                       coordinates.longitude = 174.772871;
-                   }
-
-                   NSString     * url_str = [ NSString   stringWithFormat: @"https://darksky.net/forecast/%f,%f/ca12/en", coordinates.latitude, coordinates.longitude ];
-                   NSURL        * url     = [ NSURL         URLWithString: url_str ];
-                   NSURLRequest * request = [ NSURLRequest requestWithURL: url ];
-
-                   [ self.webView performSelectorOnMainThread: @selector( loadRequest: )
-                                                   withObject: request
-                                                waitUntilDone: NO ];
-               }
-           ];
-       }
-   );
-
-#else
-#error Invalid 'WEATHER_SERVICE' value
-#endif
 }
 
-- ( NSString * ) contentBlockingRules
+// Dark Sky
+// https://darksky.net/forecast/-41.3135,174.776/ca12/en
+//
+- ( void ) visitDarkSky
 {
+    INTULocationManager *locMgr = [ INTULocationManager sharedInstance ];
 
-#if WEATHER_SERVICE == MetService
+    [
+        locMgr requestLocationWithDesiredAccuracy: INTULocationAccuracyCity
+                                          timeout: 2.5
+                             delayUntilAuthorized: NO
+                                            block:
 
-    // MetService:
-    // http://m.metservice.com/towns/wellington
-    //
+        ^ ( CLLocation           * currentLocation,
+            INTULocationAccuracy   achievedAccuracy,
+            INTULocationStatus     status )
+        {
+            CLLocationCoordinate2D coordinates;
+
+            if ( status == INTULocationStatusSuccess )
+            {
+                coordinates = currentLocation.coordinate;
+            }
+            else // Just give up and assume Wellington Central
+            {
+                coordinates.latitude  = -41.294649;
+                coordinates.longitude = 174.772871;
+            }
+
+            NSString     * url_str = [ NSString   stringWithFormat: @"https://darksky.net/forecast/%f,%f/ca12/en", coordinates.latitude, coordinates.longitude ];
+            NSURL        * url     = [ NSURL         URLWithString: url_str ];
+            NSURLRequest * request = [ NSURLRequest requestWithURL: url ];
+
+            [ self.webView performSelectorOnMainThread: @selector( loadRequest: )
+                                            withObject: request
+                                         waitUntilDone: NO ];
+        }
+    ];
+}
+
+// Weather.com
+// https://weather.com/en-NZ/weather/hourbyhour/l/-41.3135,174.776
+//
+- ( void ) visitWeatherCom
+{
+    INTULocationManager *locMgr = [ INTULocationManager sharedInstance ];
+
+    [
+        locMgr requestLocationWithDesiredAccuracy: INTULocationAccuracyCity
+                                          timeout: 2.5
+                             delayUntilAuthorized: NO
+                                            block:
+
+        ^ ( CLLocation           * currentLocation,
+            INTULocationAccuracy   achievedAccuracy,
+            INTULocationStatus     status )
+        {
+            CLLocationCoordinate2D coordinates;
+
+            if ( status == INTULocationStatusSuccess )
+            {
+                coordinates = currentLocation.coordinate;
+            }
+            else // Just give up and assume Wellington Central
+            {
+                coordinates.latitude  = -41.294649;
+                coordinates.longitude = 174.772871;
+            }
+
+            NSString     * url_str = [ NSString   stringWithFormat: @"https://weather.com/en-NZ/weather/hourbyhour/l/%f,%f", coordinates.latitude, coordinates.longitude ];
+            NSURL        * url     = [ NSURL         URLWithString: url_str ];
+            NSURLRequest * request = [ NSURLRequest requestWithURL: url ];
+
+            [ self.webView performSelectorOnMainThread: @selector( loadRequest: )
+                                            withObject: request
+                                         waitUntilDone: NO ];
+        }
+    ];
+}
+
+// Weather Underground
+// https://www.wunderground.com/weather/en/wellington/-41.3135%2C174.776
+//
+- ( void ) visitWeatherUnderground
+{
+    INTULocationManager *locMgr = [ INTULocationManager sharedInstance ];
+
+    [
+        locMgr requestLocationWithDesiredAccuracy: INTULocationAccuracyCity
+                                          timeout: 2.5
+                             delayUntilAuthorized: NO
+                                            block:
+
+        ^ ( CLLocation           * currentLocation,
+            INTULocationAccuracy   achievedAccuracy,
+            INTULocationStatus     status )
+        {
+            CLLocationCoordinate2D coordinates;
+
+            if ( status == INTULocationStatusSuccess )
+            {
+                coordinates = currentLocation.coordinate;
+            }
+            else // Just give up and assume Wellington Central
+            {
+                coordinates.latitude  = -41.294649;
+                coordinates.longitude = 174.772871;
+            }
+
+            NSString     * url_str = [ NSString   stringWithFormat: @"https://www.wunderground.com/weather/en/wellington/%f%%2C%f", coordinates.latitude, coordinates.longitude ];
+            NSURL        * url     = [ NSURL         URLWithString: url_str ];
+            NSURLRequest * request = [ NSURLRequest requestWithURL: url ];
+
+            [ self.webView performSelectorOnMainThread: @selector( loadRequest: )
+                                            withObject: request
+                                         waitUntilDone: NO ];
+        }
+    ];
+}
+
+#pragma mark - Custom provider content blocking rules
+
+// MetService
+//
+- ( NSString * ) rulesForMetService
+{
     return @" \
     [ \
       { \
@@ -121,12 +268,12 @@
         } \
       } \
     ]";
+}
 
-#elif WEATHER_SERVICE == DarkSky
-
-    // Dark Sky:
-    // https://darksky.net/forecast/-41.3135,174.776/ca12/en
-    //
+// Dark Sky
+//
+- ( NSString * ) rulesForDarkSky
+{
     return @" \
     [ \
       { \
@@ -158,15 +305,62 @@
         } \
       } \
     ]";
-
-#else
-#error Invalid 'WEATHER_SERVICE' value
-#endif
 }
 
-- ( NSString * ) errorTitle
+// Weather.com
+//
+- ( NSString * ) rulesForWeatherCom
 {
-    return @"Weather cannot be checked";
+    return @" \
+    [ \
+      { \
+        \"trigger\": { \
+          \"url-filter\": \".*\" \
+        }, \
+        \"action\": { \
+          \"type\": \"css-display-none\", \
+          \"selector\": \".wx-adWrapper, .ad_module, .adsbygoogle, .region.region-top.hourly\" \
+        } \
+      }, \
+      { \
+        \"trigger\": { \
+          \"url-filter\": \".*\", \
+          \"if-domain\": [ \"adservice.google.co.nz\", \"adservice.google.com\", \"googletagservices.com\", \"google-analytics.com\", \"amazon-adsystem.com\", \"doubleclick.net\", \"newrelic.com\", \"googlesyndication.com\", \"googlesyndication.com\" ], \
+          \"resource-type\": [ \"script\" ] \
+        }, \
+        \"action\": { \
+          \"type\": \"block\" \
+        } \
+      } \
+    ]";
+}
+
+// Weather Underground
+//
+- ( NSString * ) rulesForWeatherUnderground
+{
+    return @" \
+    [ \
+      { \
+        \"trigger\": { \
+          \"url-filter\": \".*\" \
+        }, \
+        \"action\": { \
+          \"type\": \"css-display-none\", \
+          \"selector\": \".ad-wrap, .ad-mobile, .region-favorites-bar\" \
+        } \
+      }, \
+      { \
+        \"trigger\": { \
+          \"url-filter\": \".*\", \
+          \"if-domain\": [ \"doubleclick.net\", \"facebook.net\", \"googletagservices.com\", \"google-analytics.com\", \"newrelic.com\" ], \
+          \"resource-type\": [ \"script\" ] \
+        }, \
+        \"action\": { \
+          \"type\": \"block\" \
+        } \
+      } \
+    ]";
 }
 
 #pragma mark - WKNavigationDelegate methods

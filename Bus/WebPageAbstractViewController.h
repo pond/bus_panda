@@ -16,5 +16,6 @@
 
 - ( void ) spinnerOn;
 - ( void ) spinnerOff;
+- ( void ) reloadContentBlockingRulesAndGoHome;
 
 @end
