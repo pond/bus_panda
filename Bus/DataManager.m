@@ -275,6 +275,10 @@
 
                             NSLog( @"Awaken: Pending records to retry: %@", stopIDsInFlight );
 
+#ifdef SCREENSHOT_BUILD
+                            NSLog( @"Awaken: (Skipping - this is a screenshot build)" );
+#else
+
                             for ( NSString * stopID in stopIDsInFlight )
                             {
                                 NSManagedObject * object = [ DataManager.dataManager findFavouriteStopByID: stopID ];
@@ -294,6 +298,7 @@
                             //
                             [ self fetchRecentChangesWithCompletionBlock: completionBlock
                                                 ignoringPriorChangeToken: YES ];
+#endif
 
                             // With that underway, we can set up our subscription to
                             // CloudKit changes, to react at run-time.
@@ -332,6 +337,8 @@
         ];
     };
 
+#ifndef SCREENSHOT_BUILD
+
     // Before the main awaken operation runs, we have one simple check to do
     // straight away. In version 2, we change the *local* SQLite filename to
     // make sure that migration from remote Core Data stores works OK, but
@@ -357,6 +364,8 @@
             }
         }
     }
+
+#endif
 
     // As per comments far above :-) now finally add the big block we just
     // defined as a (cancelleable) operation that'll get run when iOS is ready.
@@ -793,6 +802,13 @@
 {
     NSLog( @"**** Stores changed" );
 
+#ifdef SCREENSHOT_BUILD
+
+    NSLog( @"**** Stores changed: (Skipping - this is a screenshot build)" );
+    return;
+
+#endif
+
     [
         self.managedObjectContextRemote performBlockAndWait: ^ ( void )
         {
@@ -917,6 +933,10 @@
 {
            NSBlockOperation * saveOperation = [ [ NSBlockOperation alloc ] init ];
     __weak NSBlockOperation * thisOperation = saveOperation;
+
+#ifdef SCREENSHOT_BUILD
+    return;
+#endif
 
     [ self stopIDWillSave: record.recordID.recordName
            usingOperation: saveOperation ];
@@ -1175,6 +1195,11 @@
     //
     if ( includeCloudKit == NO || [ defaults boolForKey: ICLOUD_IS_AVAILABLE ] == NO ) return;
 
+#ifdef SCREENSHOT_BUILD
+    NSLog( @"Add or edit: (Skipping CloudKit save - this is a screenshot build)" );
+    return;
+#endif
+
     CKContainer    * container  = [ CKContainer defaultContainer ];
     CKDatabase     * database   = [ container privateCloudDatabase ];
     CKRecordZoneID * zoneID     = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_NAME ownerName: CKCurrentUserDefaultName ];
@@ -1261,6 +1286,11 @@
     // Now update iCloud?
     //
     if ( includeCloudKit == NO || [ defaults boolForKey: ICLOUD_IS_AVAILABLE ] == NO ) return;
+
+#ifdef SCREENSHOT_BUILD
+    NSLog( @"Remove: (Skipping CloudKit delete - this is a screenshot build)" );
+    return;
+#endif
 
     CKContainer    * container  = [ CKContainer defaultContainer ];
     CKDatabase     * database   = [ container privateCloudDatabase ];
@@ -1632,6 +1662,10 @@
     CKRecordZoneID      * zoneID    = [ [ CKRecordZoneID alloc ] initWithZoneName: CLOUDKIT_ZONE_NAME ownerName: CKCurrentUserDefaultName ];
     CKServerChangeToken * token     = nil;
 
+#ifdef SCREENSHOT_BUILD
+    return;
+#endif
+
     // Is there a previous change token we can start fetches using?
 
     if ( forceFetchAll == NO )
@@ -1748,6 +1782,11 @@
 {
     NSLog( @"CloudKit change: Assert presence of %@", record.recordID.recordName );
 
+#ifdef SCREENSHOT_BUILD
+    NSLog( @"CloudKit change: (Skipping update - this is a screenshot build)" );
+    return;
+#endif
+
     NSDictionary * stopIDsInFlight = [ NSUserDefaults.standardUserDefaults dictionaryForKey: CLOUDKIT_STOP_IDS_PENDING ];
 
     NSLog( @"CloudKit change: Pending record count: %lu", ( long ) stopIDsInFlight.count );
@@ -1770,6 +1809,11 @@
 - ( void ) recordDidDelete: ( CKRecordID * _Nonnull ) recordID
 {
     NSLog( @"CloudKit change: Assert removal of: %@", recordID.recordName );
+
+#ifdef SCREENSHOT_BUILD
+    NSLog( @"CloudKit change: (Skipping removal - this is a screenshot build)" );
+    return;
+#endif
 
     [ self deleteFavourite: recordID.recordName
          includingCloudKit: NO ];

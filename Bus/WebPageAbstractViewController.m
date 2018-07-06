@@ -138,13 +138,16 @@
 - ( void ) viewDidAppear: ( BOOL ) animated
 {
     [ super viewDidAppear: animated ];
+
     [ self goHome ];
 }
 
 - ( void ) viewWillDisappear: ( BOOL ) animated
 {
-    [ self spinnerOff ];
     [ super viewWillDisappear: animated ];
+
+    [ self spinnerOff ];
+    [ self.webView stopLoading ];
 }
 
 #pragma mark - WKNavigationDelegate methods

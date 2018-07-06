@@ -9,11 +9,14 @@
 #ifndef Constants_h
 #define Constants_h
 
+// Define this and run in the simulator for screenshots on the App Store.
+//
+#undef SCREENSHOT_BUILD
+
 #pragma mark - User default keys
 
 // Internal operational flags.
 //
-#define APP_HAS_RUN_BEFORE               @"hasRunBefore"
 #define HAVE_SHOWN_ICLOUD_SIGNIN_WARNING @"haveShownICloudSignInWarning"
 #define ICLOUD_IS_AVAILABLE              @"iCloudIsAvailable"
 #define HAVE_RECEIVED_CLOUDKIT_DATA      @"cloudKitUpdatesReceived"
