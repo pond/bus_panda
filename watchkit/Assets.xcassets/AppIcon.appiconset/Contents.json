@@ -39,6 +39,14 @@
       "subtype" : "38mm"
     },
     {
+      "size" : "44x44",
+      "idiom" : "watch",
+      "filename" : "44pt@2x.png",
+      "scale" : "2x",
+      "role" : "longLook",
+      "subtype" : "42mm"
+    },
+    {
       "size" : "86x86",
       "idiom" : "watch",
       "filename" : "86pt@2x.png",
@@ -53,6 +61,12 @@
       "scale" : "2x",
       "role" : "quickLook",
       "subtype" : "42mm"
+    },
+    {
+      "size" : "1024x1024",
+      "idiom" : "watch-marketing",
+      "filename" : "1024 App Store.png",
+      "scale" : "1x"
     }
   ],
   "info" : {

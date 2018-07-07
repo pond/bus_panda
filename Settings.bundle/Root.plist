@@ -16,6 +16,26 @@
 			<key>DefaultValue</key>
 			<true/>
 		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSMultiValueSpecifier</string>
+			<key>Title</key>
+			<string>FSWeather</string>
+			<key>Key</key>
+			<string>weather_provider</string>
+			<key>Titles</key>
+			<array>
+				<string>FSWeatherMetService</string>
+				<string>FSWeatherDarkSky</string>
+			</array>
+			<key>Values</key>
+			<array>
+				<string>metservice</string>
+				<string>darksky</string>
+			</array>
+			<key>DefaultValue</key>
+			<string>metservice</string>
+		</dict>
 	</array>
 </dict>
 </plist>

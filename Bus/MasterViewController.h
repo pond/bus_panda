@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <CloudKit/CloudKit.h>
 #import <CoreData/CoreData.h>
 
 @class DetailViewController;
@@ -16,17 +17,8 @@
 
 @interface MasterViewController : UITableViewController <NSFetchedResultsControllerDelegate>
 
-@property ( strong, nonatomic ) DetailViewController       * detailViewController;
+@property ( strong, nonatomic ) DetailViewController * detailViewController;
 
-@property ( strong, nonatomic ) NSFetchedResultsController * fetchedResultsController;
-@property ( strong, nonatomic ) NSManagedObjectContext     * managedObjectContext;
-
-- ( void )  addFavourite: ( NSString        * ) stopID
-         withDescription: ( NSString        * ) stopDescription;
-
-- ( void ) editFavourite: ( NSManagedObject * ) object
-      settingDescription: ( NSString        * ) stopDescription;
-
-- ( void )   updateWatch: ( NSNotification  * ) ignoredNotification;
+- ( void ) updateWatch: ( NSNotification * ) ignoredNotification;
 
 @end

@@ -6,63 +6,71 @@
 //  Copyright (c) 2015 Andrew Hodgkinson. All rights reserved.
 //
 
-#import <unistd.h> // For usleep() only
-
 #import "AppDelegate.h"
+
+#import "Constants.h"
+#import "DataManager.h"
 #import "DetailViewController.h"
 #import "MasterViewController.h"
+#import "StopMapViewController.h"
 #import "BusInfoFetcher.h"
 #import "NearestStopBusInfoFetcher.h"
 
 @interface AppDelegate ()
 
-// An application-wide cache of bus stop locations for the map view.
-// This is updated or cleared and refreshed via StopMapViewController,
-// but retained by the AppDelegate so that any number of new instances
-// of the map view's controller will be able to reuse the same data.
-
-@property ( strong ) NSMutableDictionary * cachedStopLocations;
+    // Keep a permanent reference to the data manager singleton, so it
+    // doesn't go away at inconvenient moments!
+    //
+    @property ( strong ) DataManager * dataManager;
 
 @end
 
 @implementation AppDelegate
+
+    @synthesize dataManager = _dataManager;
 
 # pragma mark - Initialisation
 
 - ( BOOL )          application: ( UIApplication * ) application
   didFinishLaunchingWithOptions: ( NSDictionary  * ) launchOptions
 {
-    NSUserDefaults * defaults = [ NSUserDefaults standardUserDefaults ];
+    NSUserDefaults * defaults = NSUserDefaults.standardUserDefaults;
+
+    [ application registerForRemoteNotifications ];
+
+    // Tab bar setups
+
+    self.tabBarController = ( UITabBarController * ) self.window.rootViewController;
+    self.tabBarController.delegate = self;
+
+    // TODO: Implement "follow" and/or "settings".
+    //
+    NSMutableArray * viewControllers = [ ( NSMutableArray * ) self.tabBarController.viewControllers mutableCopy ];
+
+    [ viewControllers removeObjectAtIndex: 4 ]; // Settings
+    [ viewControllers removeObjectAtIndex: 2 ]; // Follow
+
+    [ self.tabBarController setViewControllers: viewControllers ];
 
     // Boilerplate master/detail view setup
 
-    UISplitViewController  * splitViewController  = ( UISplitViewController * ) self.window.rootViewController;
-    UINavigationController * navigationController = splitViewController.viewControllers.lastObject;
+    self.splitViewController = ( UISplitViewController * ) self.tabBarController.viewControllers.firstObject;
+    self.splitViewController.delegate = self;
+    self.splitViewController.preferredDisplayMode = UISplitViewControllerDisplayModeAllVisible;
 
-    navigationController.topViewController.navigationItem.leftBarButtonItem = splitViewController.displayModeButtonItem;
+    self.detailNavigationController = self.splitViewController.viewControllers.lastObject;
+    self.detailNavigationController.topViewController.navigationItem.leftBarButtonItem = self.splitViewController.displayModeButtonItem;
 
-    splitViewController.delegate             = self;
-    splitViewController.preferredDisplayMode = UISplitViewControllerDisplayModeAllVisible;
+    self.masterNavigationController = self.splitViewController.viewControllers.firstObject;
+    self.masterViewController = ( MasterViewController * ) self.masterNavigationController.topViewController;
 
-    UINavigationController * masterNavigationController = splitViewController.viewControllers.firstObject;
-    MasterViewController   * masterViewController       = ( MasterViewController * ) masterNavigationController.topViewController;
-
-    // Set up iCloud and the associated data storage managed object context
-
-    [ self iCloudAccountAvailabilityChanged: nil ];
-
-    [
-        [ NSNotificationCenter defaultCenter ] addObserver: self
-                                                  selector: @selector( iCloudAccountAvailabilityChanged: )
-                                                      name: NSUbiquityIdentityDidChangeNotification
-                                                    object: nil
-    ];
-
-    masterViewController.managedObjectContext = self.managedObjectContext;
-
-    // Initialse the cached bus stop location data.
+    // Wake up local Core Data and iCloud. This also registers for remote
+    // notifications (for CloudKit changes), but the AppDelegate object has
+    // to handle them - see -didReceiveRemoteNotification:... later.
     //
-    [ self clearCachedStops ];
+    _dataManager = DataManager.dataManager;
+    [ _dataManager setMasterViewController: self.masterViewController ];
+    [ _dataManager awakenAllStores ];
 
     // On a clean install, some iOS versions may not read the Settings bundle
     // into the NSUserDefaults unless the user has by happenstance manually
@@ -72,65 +80,83 @@
     // e.g. StackOverflow but they all have issues with e.g. localized strings,
     // changes of iOS version, BOOL vs NSString values and so-on.
     //
-    id shouldNotBeNil = [ defaults objectForKey: @"shorten_names_preference" ];
+    id shouldNotBeNil = [ defaults objectForKey: SHORTEN_DISPLAYED_NAMES ];
 
     if ( shouldNotBeNil == nil )
     {
-        [ defaults setBool: YES forKey: @"shorten_names_preference" ];
+        [ defaults setBool: YES forKey: SHORTEN_DISPLAYED_NAMES ];
 
         // ...and in future, add any more settings here too.
-
-        [ defaults synchronize ];
     }
 
-    // If this is the first time the application has ever been run, set up a
-    // collection of predefined useful stops.
-    //
-    BOOL hasRunBefore = [ defaults boolForKey: @"hasRunBefore" ];
+    shouldNotBeNil = [ defaults objectForKey: WEATHER_PROVIDER ];
 
-    if ( hasRunBefore != YES )
+    if ( shouldNotBeNil == nil )
     {
-        [ defaults setBool: YES forKey: @"hasRunBefore" ];
-        [ defaults synchronize ];
-
-        // TODO: The below is used for screenshots in the simulator; for the
-        // real world, something similar to load a sensible set of first-time
-        // stops would be good. But a first-install on your *local* device
-        // does not mean you have a first-install for *any* of your devices;
-        // we have to check the ever-difficult, flaky, badly documented and
-        // hard to understand (especially in view of iOS 5/6 vs 7 vs 8 major
-        // changes) iCloud.
-        //
-        // There are a few online blogs which discuss possible approaches but
-        // until the most basic Core Data / iCloud stuff seems to actually
-        // work properly, I'm steering well clear.
-
-        //        NSDictionary * cannedStops = @{
-        //            @"5000": @"Courtenay Aroy",
-        //            @"5516": @"Courtenay Blair",
-        //            @"5514": @"Courtenay Reading",
-        //            @"7418": @"Express",
-        //            @"5513": @"Manners BK",
-        //            @"5515": @"Manners Body",
-        //            @"4113": @"Murphy Wellington Girls",
-        //            @"7018": @"Riddiford At Hall",
-        //            @"1200": @"Sparse",
-        //            @"6000": @"Station A",
-        //            @"6001": @"Station B",
-        //            @"5500": @"Station C",
-        //            @"7120": @"Rintoul At Stoke",
-        //            @"TALA": @"Talavera - Cable Car Station"
-        //        };
-        //
-        //        [
-        //            cannedStops enumerateKeysAndObjectsUsingBlock: ^ ( NSString * stopID,
-        //                                                               NSString * stopDescription,
-        //                                                               BOOL     * stop )
-        //            {
-        //                [ self addFavourite: stopID withDescription: stopDescription ];
-        //            }
-        //        ];
+        [ defaults setValue: WEATHER_PROVIDER_METSERVICE forKey: WEATHER_PROVIDER ];
     }
+
+#ifdef SCREENSHOT_BUILD
+
+    NSLog( @"Startup: Screenshot build: Checking local data" );
+
+    NSFetchedResultsController * frc     = DataManager.dataManager.fetchedResultsControllerLocal;
+    NSArray                    * results = nil;
+    NSError                    * error   = nil;
+    BOOL                         success;
+
+    success = [ frc performFetch: &error ];
+
+    if ( success == YES && error == nil ) results = [ frc fetchedObjects ];
+
+    if ( results != nil )
+    {
+        NSLog( @"Startup: Have %lu existing local entries to remove", ( unsigned long ) results.count );
+
+        for ( NSManagedObject * object in results )
+        {
+            NSString * stopID = [ object valueForKey: @"stopID" ];
+            [ DataManager.dataManager deleteFavourite: stopID includingCloudKit: NO ];
+        }
+    }
+    else
+    {
+        NSLog( @"Startup: No existing local entries, or error: %@", error );
+    }
+
+    NSDictionary * cannedStops = @{
+        @"5000": @"Courtenay Aroy",
+        @"5516": @"Courtenay Blair",
+        @"5514": @"Courtenay Reading",
+        @"7418": @"Express",
+        @"5513": @"Manners BK",
+        @"5515": @"Manners Body",
+        @"4113": @"Murphy Wellington Girls",
+        @"7018": @"Riddiford At Hall",
+        @"1200": @"Sparse",
+        @"6000": @"Station A",
+        @"6001": @"Station B",
+        @"5500": @"Station C",
+        @"7120": @"Rintoul At Stoke",
+        @"TALA": @"Talavera - Cable Car Station"
+    };
+
+    for ( NSString * key in cannedStops )
+    {
+        NSString * stopID          = key;
+        NSString * stopDescription = cannedStops[ key ];
+        NSNumber * preferred       = @( NO );
+
+        if ( [ key hasPrefix: @"6" ] ) preferred = @( YES );
+
+        NSLog( @"Startup: Add canned stop: %@ (%@): %@", stopID, preferred, stopDescription );
+
+        [ DataManager.dataManager addOrEditFavourite: stopID
+                                  settingDescription: stopDescription
+                                    andPreferredFlag: preferred
+                                   includingCloudKit: NO ];
+    }
+#endif
 
     // Wake up the WatchKit extension and this applicaftion via WCSession.
     //
@@ -147,59 +173,46 @@
     return YES;
 }
 
-// Wake up iCloud; "notification" parameter is ignored.
-//
-- ( void ) iCloudAccountAvailabilityChanged: ( NSNotification * ) notification
-{
-    ( void ) notification;
-
-    NSLog( @"iCloud ubiquity token has changed" );
-
-    NSUserDefaults * defaults           = [ NSUserDefaults standardUserDefaults ];
-    NSFileManager  * fileManager        = [ NSFileManager defaultManager ];
-    id               currentiCloudToken = fileManager.ubiquityIdentityToken;
-
-    if ( currentiCloudToken )
-    {
-        // The iCloud token may have changed. Read whatever old value was
-        // stored ("nil" if not). If there's a change, record the new value
-        // and send the 'data changed' notification. If there's no change in
-        // the token, do nothing.
-
-        id oldiCloudToken = [ defaults objectForKey: ICLOUD_TOKEN_ID_DEFAULTS_KEY ];
-
-        if ( [ currentiCloudToken isEqual: oldiCloudToken ] == NO )
-        {
-            NSData * currentTokenData =
-            [
-                NSKeyedArchiver archivedDataWithRootObject: currentiCloudToken
-            ];
-
-            [ defaults setObject: currentTokenData
-                          forKey: ICLOUD_TOKEN_ID_DEFAULTS_KEY ];
-
-            [ self sendDataHasChangedNotification ];
-        }
-    }
-    else
-    {
-        // iCloud seems to no longer be available. Remove any stored iCloud
-        // token and send the 'data changed' notification.
-
-        [ defaults removeObjectForKey: ICLOUD_TOKEN_ID_DEFAULTS_KEY ];
-        [ self sendDataHasChangedNotification ];
-    }
-
-    [ defaults synchronize ];
-
-    NSLog( @"iCloud ubiquity token now: %@", currentiCloudToken );
-}
-
 # pragma mark - Termination
 
 - ( void ) applicationWillTerminate: ( UIApplication * ) application
 {
-    [ self saveContext ];
+    [ DataManager.dataManager saveLocalContext ];
+}
+
+#pragma mark - Notifications
+
+- ( void )                             application: ( UIApplication * ) application
+  didRegisterForRemoteNotificationsWithDeviceToken: ( NSData        * ) deviceToken
+{
+    NSLog( @"Notifications: Registered successfully" );
+}
+
+- ( void )                             application: ( UIApplication * ) application
+  didFailToRegisterForRemoteNotificationsWithError: ( NSError       * ) error
+{
+    NSLog( @"Notifications: Failed to register: %@", error );
+}
+
+- ( void )         application: ( UIApplication * ) application
+  didReceiveRemoteNotification: ( NSDictionary  * ) userInfo
+        fetchCompletionHandler: ( void ( ^ ) ( UIBackgroundFetchResult ) ) completionHandler
+{
+    CKNotification * notification = [ CKNotification notificationFromRemoteNotificationDictionary: userInfo ];
+
+    NSLog( @"Notifications: Notification received" );
+
+    if ( [ notification.subscriptionID isEqualToString: CLOUDKIT_SUBSCRIPTION_ID ] )
+    {
+        NSLog(@ "Notifications: Is a CloudKit change notification; calling DataManager" );
+
+        [ DataManager.dataManager handleNotification: userInfo
+                              fetchCompletionHandler: completionHandler ];
+    }
+    else
+    {
+        completionHandler( UIBackgroundFetchResultNoData );
+    }
 }
 
 #pragma mark - Split view
@@ -221,6 +234,71 @@
     {
         return NO;
     }
+}
+
+# pragma mark - Tab controller
+
+// Here we take setup or restoration steps when the user switches between
+// tabs. The restoration identifier in the storyboard is used to determine
+// which tab has been selected when called here.
+//
+- ( BOOL ) tabBarController: ( UITabBarController * ) tabBarController
+ shouldSelectViewController: ( UIViewController   * ) viewController
+{
+    // Mostly relevant to iPhone where there's no split view.
+    //
+    // For Favourite Stops, make sure we always pop back from a timetable view,
+    // if present, to just showing the current stop when the tab is chosen.
+    // This is generally the Useful Thing To Do (though not always). If the
+    // *current* tab is already the 'favourites' view then allow repeated taps
+    // on that tap to act like "back" and pop down to the root if need be.
+    //
+    if ( [ viewController.restorationIdentifier isEqualToString: @"FavouriteStops" ] )
+    {
+        // If we've navigated beyond the master view of favourite stops...
+        //
+        if ( self.masterNavigationController.viewControllers.count == 2 )
+        {
+            UINavigationController * stopsNavigationController = self.masterNavigationController.viewControllers.lastObject;
+
+            // ...and we're showing a particular stop, but there isn't a
+            // timetable view pushed on top of that...
+            //
+            if ( stopsNavigationController.viewControllers.count == 1 )
+            {
+                // ...and we're already on the Favourites tab, then pop down
+                // to the root view.
+                //
+                if ( tabBarController.selectedIndex == 0 )
+                {
+                    [ self.masterNavigationController popToRootViewControllerAnimated: YES ];
+                }
+            }
+
+            // ...and we're showing a particular stop with a timetable view
+            // pushed on top, so pop it away.
+            //
+            else
+            {
+                [ stopsNavigationController popToRootViewControllerAnimated: YES ];
+            }
+        }
+    }
+
+    // For Nearby Stops, make sure we always pop back to the map when the
+    // tab is selected and be sure that the StopMapViewController presenting
+    // the content is configured for "nearby stops" mode.
+    //
+    else if ( [ viewController.restorationIdentifier isEqualToString: @"NearbyStops" ] )
+    {
+        UINavigationController * navigationController = ( UINavigationController * ) viewController;
+        [ navigationController popToRootViewControllerAnimated: YES ];
+
+        StopMapViewController * stopMapController = (StopMapViewController * ) navigationController.topViewController;
+        [ stopMapController configureForNearbyStops ];
+    }
+
+    return YES;
 }
 
 # pragma mark - WCSessionDelegate and related methods
@@ -293,6 +371,7 @@
         {
             [
                 BusInfoFetcher getAllBusesForStop: stopID
+                      usingWebScraperInsteadOfAPI: NO
                                 completionHandler: ^ ( NSMutableArray * allBuses )
                 {
                     replyHandler( @{ @"allBuses": allBuses } );
@@ -331,367 +410,8 @@
 {
     if ( [ WCSession isSupported ] && session.paired && session.watchAppInstalled )
     {
-        UISplitViewController  * splitViewController        = ( UISplitViewController * ) self.window.rootViewController;
-        UINavigationController * masterNavigationController = splitViewController.viewControllers.firstObject;
-        MasterViewController   * masterViewController       = ( MasterViewController * ) masterNavigationController.topViewController;
-
-        [ masterViewController updateWatch: nil ];
+        [ self.masterViewController updateWatch: nil ];
     }
-}
-
-#pragma mark - Core Data stack
-
-@synthesize managedObjectContext       = _managedObjectContext;
-@synthesize managedObjectModel         = _managedObjectModel;
-@synthesize persistentStoreCoordinator = _persistentStoreCoordinator;
-
-// Send a notification saying that the iCloud data has changed. A listener is
-// set up in MasterViewController.m. The notification is sent via GCD on a
-// separate thread.
-//
-- ( void ) sendDataHasChangedNotification
-{
-    dispatch_async
-    (
-        dispatch_get_main_queue(),
-        ^ ( void )
-        {
-            // TODO: Can this hack be removed?
-            //
-            // This is a hack to avoid potential race conditions. For example,
-            // AppDelegate has to wake up iCloud (because it needs the various
-            // state variables available for when 'will terminate' happens and
-            // it has to quickly try and save context), but it's the
-            // MasterViewController which registers for data change
-            // notifications. Conceivably, AppDelegate could set up the iCloud
-            // wakeup thread and have it run before the MVC gets to whatever
-            // stage of initialisation is needed to register that handler. It
-            // is very unlikely, but might happen. A short sleep here reduces
-            // that chance to effectively zero by forcing a definite context
-            // switch to what will be at that time a very busy main thread.
-            //
-            usleep( 100 ); // 100 microseconds => 0.1 seconds
-
-            [ [ NSNotificationCenter defaultCenter ] postNotificationName: DATA_CHANGED_NOTIFICATION_NAME
-                                                                   object: self
-                                                                 userInfo: nil ];
-        }
-    );
-}
-
-// The directory the application uses to store the Core Data store file. This
-// code uses a directory named "uk.org.pond.Bus-Panda" in the application's
-// documents directory.
-//
-- ( NSURL * ) applicationDocumentsDirectory
-{
-    return [ [ [ NSFileManager defaultManager ] URLsForDirectory: NSDocumentDirectory
-                                                       inDomains: NSUserDomainMask ] lastObject ];
-}
-
-// The managed object model for the application. It is a fatal error for the
-// application not to be able to find and load its model.
-//
-- ( NSManagedObjectModel * ) managedObjectModel
-{
-    if ( _managedObjectModel != nil )
-    {
-        return _managedObjectModel;
-    }
-
-    NSURL * modelURL = [ [ NSBundle mainBundle ] URLForResource: @"Bus-Panda" withExtension: @"momd" ];
-
-    _managedObjectModel = [ [ NSManagedObjectModel alloc ] initWithContentsOfURL: modelURL ];
-    return _managedObjectModel;
-}
-
-// http://timroadley.com/2012/04/03/core-data-in-icloud/
-//
-- ( NSPersistentStoreCoordinator * ) persistentStoreCoordinator
-{
-    if ( _persistentStoreCoordinator != nil )
-    {
-        return _persistentStoreCoordinator;
-    }
-
-    _persistentStoreCoordinator = [
-        [ NSPersistentStoreCoordinator alloc ]
-        initWithManagedObjectModel: [ self managedObjectModel ]
-    ];
-
-    NSPersistentStoreCoordinator * psc = _persistentStoreCoordinator;
-
-    // Set up iCloud in another thread: "In iOS, apps that use document storage
-    // must call the URLForUbiquityContainerIdentifier: method of the
-    // NSFileManager method for each supported iCloud container. Always call
-    // the URLForUbiquityContainerIdentifier: method from a background thread -
-    // not from your app’s main thread. This method depends on local and remote
-    // services and, for this reason, does not always return immediately"
-    //
-    // https://developer.apple.com/library/ios/documentation/General/Conceptual/iCloudDesignGuide/Chapters/iCloudFundametals.html#//apple_ref/doc/uid/TP40012094-CH6-SW1
-    //
-    dispatch_async
-    (
-        dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0 ), ^
-        {
-            NSString * iCloudEnabledAppID = @"XT4V976D8Y~uk~org~pond~Bus-Panda";
-            NSString * dataFileName       = @"Bus-Panda.sqlite";
-
-            // "nil" for container identifier => choose the first from the entitlements
-            // file's com.apple.developer.ubiquity-container-identifiers array. That's
-            // nice as it avoids duplicating info there and here.
-            //
-            NSFileManager * fileManager = [ NSFileManager defaultManager ];
-            NSURL         * iCloud      = [ fileManager URLForUbiquityContainerIdentifier: nil ];
-
-            if ( iCloud )
-            {
-                NSURL * iCloudDataURL = [ [ self applicationDocumentsDirectory ] URLByAppendingPathComponent: dataFileName ];
-
-                NSLog( @"iCloud is working: %@",  iCloud             );
-                NSLog( @"dataFileName: %@",       dataFileName       );
-                NSLog( @"iCloudEnabledAppID: %@", iCloudEnabledAppID );
-                NSLog( @"iCloudDataURL: %@",      iCloudDataURL      );
-
-                NSDictionary *options =
-                @{
-                    NSMigratePersistentStoresAutomaticallyOption: @YES,
-                    NSInferMappingModelAutomaticallyOption:       @YES,
-                    NSPersistentStoreUbiquitousContentNameKey:    iCloudEnabledAppID
-                };
-
-                [
-                    psc performBlockAndWait: ^ ( void )
-                    {
-                        [ psc addPersistentStoreWithType: NSSQLiteStoreType
-                                           configuration: nil
-                                                     URL: iCloudDataURL
-                                                 options: options
-                                                   error: nil ];
-                    }
-                ];
-            }
-            else
-            {
-                NSLog( @"iCloud is NOT working - using a local store" );
-
-                NSURL * localStore = [ [ self applicationDocumentsDirectory ] URLByAppendingPathComponent: dataFileName ];
-
-                NSLog( @"dataFileName = %@",   dataFileName );
-                NSLog( @"localStore URL = %@", localStore   );
-
-                NSDictionary * options =
-                @{
-                    NSMigratePersistentStoresAutomaticallyOption: @YES,
-                    NSInferMappingModelAutomaticallyOption:       @YES
-                };
-
-                [
-                    psc performBlockAndWait: ^ ( void )
-                    {
-                        [ psc addPersistentStoreWithType: NSSQLiteStoreType
-                                           configuration: nil
-                                                     URL: localStore
-                                                 options: options
-                                                   error: nil ];
-                    }
-                ];
-            }
-
-            [ self sendDataHasChangedNotification ];
-        }
-     );
-
-    return _persistentStoreCoordinator;
-}
-
-// http://timroadley.com/2012/04/03/core-data-in-icloud/
-//
-- ( NSManagedObjectContext * ) managedObjectContext
-{
-    if ( _managedObjectContext != nil )
-    {
-        return _managedObjectContext;
-    }
-
-    NSPersistentStoreCoordinator * psc = [ self persistentStoreCoordinator ];
-
-    if ( psc != nil )
-    {
-        NSManagedObjectContext * moc = [ [ NSManagedObjectContext alloc ] initWithConcurrencyType: NSMainQueueConcurrencyType ];
-
-        [
-            moc performBlockAndWait: ^ ( void )
-            {
-                [ moc setPersistentStoreCoordinator: psc ];
-
-                [ [ NSNotificationCenter defaultCenter ] addObserver: self
-                                                            selector: @selector( mergeChangesFromiCloud: )
-                                                                name: NSPersistentStoreDidImportUbiquitousContentChangesNotification
-                                                              object: psc ];
-
-                [ [ NSNotificationCenter defaultCenter ] addObserver: self
-                                                            selector: @selector( storesWillChange: )
-                                                                name: NSPersistentStoreCoordinatorStoresWillChangeNotification
-                                                              object: psc ];
-
-                [ [ NSNotificationCenter defaultCenter ] addObserver: self
-                                                            selector: @selector( storesDidChange: )
-                                                                name: NSPersistentStoreCoordinatorStoresDidChangeNotification
-                                                              object: psc ];
-            }
-        ];
-
-        moc.mergePolicy = NSMergeByPropertyStoreTrumpMergePolicy;
-
-        _managedObjectContext = moc;
-    }
-
-    return _managedObjectContext;
-}
-
-// http://timroadley.com/2012/04/03/core-data-in-icloud/
-//
-- ( void ) mergeChangesFromiCloud: ( NSNotification * ) notification
-{
-    NSLog( @"Merging changes from iCloud..." );
-
-    NSManagedObjectContext * moc = self.managedObjectContext;
-
-    [
-        moc performBlock: ^ ( void )
-        {
-            [ moc mergeChangesFromContextDidSaveNotification: notification ];
-
-            NSNotification * refreshNotification = [ NSNotification notificationWithName: DATA_CHANGED_NOTIFICATION_NAME
-                                                                                  object: self
-                                                                                userInfo: [ notification userInfo ] ];
-
-            [ [ NSNotificationCenter defaultCenter ] postNotification: refreshNotification];
-        }
-    ];
-}
-
-- ( void ) storesWillChange: ( NSNotification * ) notification
-{
-    NSLog( @"Stores will change..." );
-
-    // Close to copy-and-paste on 'savContext', except for the 'reset' call
-    // needed *inside* the atomicity wrapper of 'perform block and wait'.
-
-    NSManagedObjectContext * moc = self.managedObjectContext;
-
-    [
-        moc performBlockAndWait: ^
-        {
-            NSError * error = nil;
-
-            if ( [ moc hasChanges ] && ![ moc save: &error ] )
-            {
-                // Nothing much we can do here other than log the fault.
-                //
-                NSLog( @"Unresolved error %@, %@", error, [ error userInfo ] );
-            }
-
-            [ moc reset ];
-        }
-    ];
-
-    // Reset the GUI but don't load any new data yet - have to wait for 'stores
-    // did change' for that.
-
-    UISplitViewController  * splitViewController  = ( UISplitViewController * ) self.window.rootViewController;
-    UINavigationController * navigationController = splitViewController.viewControllers.lastObject;
-
-    [ navigationController popToRootViewControllerAnimated: YES ];
-}
-
-- ( void ) storesDidChange: ( NSNotification * ) notification
-{
-    NSLog( @"Stores did change..." );
-
-    // Close to copy-and-paste on 'mergeChangesFromiCloud', except it just
-    // posts the 'changed' notification for other bits of the app, rather than
-    // also trying to merge in changes.
-
-    NSManagedObjectContext * moc = self.managedObjectContext;
-
-    [
-        moc performBlock: ^ ( void )
-        {
-            NSNotification * refreshNotification = [ NSNotification notificationWithName: DATA_CHANGED_NOTIFICATION_NAME
-                                                                                  object: self
-                                                                                userInfo: [ notification userInfo ] ];
-
-            [ [ NSNotificationCenter defaultCenter ] postNotification: refreshNotification];
-        }
-    ];
-}
-
-// This is intended really just for one-shot data migrations and is not very
-// efficient as it intentionally does not provide any cache name for the
-// results, so it'll re-fetch every time.
-//
-- ( NSArray * ) getAllFavourites
-{
-    NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
-    NSEntityDescription * entity       = [ NSEntityDescription entityForName: @"BusStop"
-                                                      inManagedObjectContext: self.managedObjectContext ];
-
-    [ fetchRequest setEntity:         entity ];
-    [ fetchRequest setFetchBatchSize: 50     ];
-
-    NSSortDescriptor * sortDescriptor = [ [ NSSortDescriptor alloc] initWithKey: @"stopDescription"
-                                                                      ascending: YES ];
-
-    [ fetchRequest setSortDescriptors: @[ sortDescriptor ] ];
-
-    NSFetchedResultsController * frc = [ [ NSFetchedResultsController alloc ] initWithFetchRequest: fetchRequest
-                                                                              managedObjectContext: self.managedObjectContext
-                                                                                sectionNameKeyPath: @"preferred"
-                                                                                         cacheName: nil ];
-    return frc.fetchedObjects;
-}
-
-#pragma mark - Core Data saving support
-
-- ( void ) saveContext
-{
-    NSManagedObjectContext * managedObjectContext = self.managedObjectContext;
-
-    [
-        managedObjectContext performBlockAndWait: ^
-        {
-            NSError * error = nil;
-
-            if ( [ managedObjectContext hasChanges ] && ![ managedObjectContext save: &error ] )
-            {
-                // This is called from -applicationWillTerminate, so there is
-                // really nothing much we can do here other than log the fault.
-                //
-                NSLog( @"Unresolved error %@, %@", error, [ error userInfo ] );
-            }
-        }
-    ];
-}
-
-#pragma mark - Cached bus stop location management
-
-// The stops are managed by StopMapViewController entirely, so all we do here
-// is return a reference to the mutable dictionary that's being held by the
-// AppDelegate for reuse across multiple map view instances.
-//
-- ( NSMutableDictionary * ) getCachedStopLocationDictionary
-{
-    return self.cachedStopLocations;
-}
-
-// We still need to provide a way to clear out / reinitialise the set of
-// stops though.
-//
-- ( void ) clearCachedStops
-{
-    self.cachedStopLocations = [ [ NSMutableDictionary alloc ] init ];
 }
 
 @end

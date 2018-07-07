@@ -7,26 +7,22 @@
 //
 
 #import <UIKit/UIKit.h>
-#import <CoreData/CoreData.h>
 #import <WatchConnectivity/WatchConnectivity.h>
 
-#define ICLOUD_TOKEN_ID_DEFAULTS_KEY   @"uk.org.pond.Bus-Panda.UbiquityIdentityToken"
-#define DATA_CHANGED_NOTIFICATION_NAME @"BusPandaDataChanged"
+#import "MasterViewController.h"
 
 @interface AppDelegate : UIResponder < UIApplicationDelegate,
                                        UISplitViewControllerDelegate,
+                                       UITabBarControllerDelegate,
                                        WCSessionDelegate >
 
-@property (           strong, nonatomic ) UIWindow                     * window;
-@property ( readonly, strong, nonatomic ) NSManagedObjectContext       * managedObjectContext;
-@property ( readonly, strong, nonatomic ) NSManagedObjectModel         * managedObjectModel;
-@property ( readonly, strong, nonatomic ) NSPersistentStoreCoordinator * persistentStoreCoordinator;
+// Useful parts of the view hierarchy, established at startup
 
-- ( void    ) saveContext;
-- ( NSURL * ) applicationDocumentsDirectory;
-
-- ( NSMutableDictionary * ) getCachedStopLocationDictionary;
-- ( void                  ) clearCachedStops;
+@property ( strong, nonatomic ) UIWindow               * window;
+@property ( strong, nonatomic ) UITabBarController     * tabBarController;
+@property ( strong, nonatomic ) UISplitViewController  * splitViewController;
+@property ( strong, nonatomic ) UINavigationController * masterNavigationController;
+@property ( strong, nonatomic ) UINavigationController * detailNavigationController;
+@property ( strong, nonatomic ) MasterViewController   * masterViewController;
 
 @end
-

@@ -1,8 +1,12 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder.WatchKit.Storyboard" version="3.0" toolsVersion="10116" systemVersion="15E65" targetRuntime="watchKit" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="AgC-eL-Hgc">
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder.WatchKit.Storyboard" version="3.0" toolsVersion="14269.14" targetRuntime="watchKit" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="AgC-eL-Hgc">
+    <device id="watch38" orientation="portrait">
+        <adaptation id="fullscreen"/>
+    </device>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="10085"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBWatchKitPlugin" version="10032"/>
+        <deployment identifier="watchOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="14252.5"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBWatchKitPlugin" version="14224.4"/>
     </dependencies>
     <scenes>
         <!--Buses-->
@@ -32,18 +36,18 @@
                                                     <group height="0.90000000000000002" alignment="center" verticalAlignment="center" layout="vertical" spacing="0.0" id="nnP-0w-S5X">
                                                         <items>
                                                             <label width="1" alignment="center" verticalAlignment="center" text="-" textAlignment="center" baselineAdjustment="alignCenters" minimumScaleFactor="0.69999999999999996" id="ss3-fb-odJ">
-                                                                <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                                                <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                                                 <fontDescription key="font" type="boldSystem" pointSize="22"/>
                                                             </label>
                                                         </items>
-                                                        <color key="backgroundColor" red="0.5" green="0.0" blue="0.5" alpha="1" colorSpace="calibratedRGB"/>
+                                                        <color key="backgroundColor" red="0.5" green="0.0" blue="0.5" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                                         <edgeInsets key="margins" left="2" right="2" top="0.0" bottom="0.0"/>
                                                     </group>
                                                 </items>
                                                 <edgeInsets key="margins" left="0.0" right="0.0" top="0.0" bottom="0.0"/>
                                             </group>
                                         </items>
-                                        <color key="backgroundColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
+                                        <color key="backgroundColor" red="0.3333333432674408" green="0.3333333432674408" blue="0.3333333432674408" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                         <edgeInsets key="margins" left="5" right="5" top="5" bottom="5"/>
                                     </group>
                                     <connections>
@@ -83,7 +87,7 @@
                                                 <fontDescription key="font" style="UICTFontTextStyleHeadline"/>
                                             </label>
                                         </items>
-                                        <color key="backgroundColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
+                                        <color key="backgroundColor" red="0.3333333432674408" green="0.3333333432674408" blue="0.3333333432674408" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                         <edgeInsets key="margins" left="5" right="5" top="5" bottom="5"/>
                                     </group>
                                     <connections>
@@ -103,155 +107,6 @@
             </objects>
             <point key="canvasLocation" x="235" y="364"/>
         </scene>
-        <!--Glance-->
-        <scene sceneID="BOz-TT-tkC">
-            <objects>
-                <glanceController identifier="Glance" spacing="0.0" topTemplateType="body1Medium" id="0uZ-2p-rRc" customClass="GlanceController" customModule="watchkit_Extension">
-                    <items>
-                        <label alignment="left" text="Courtenay Blair" id="XOK-8H-nCY"/>
-                        <label alignment="left" text="5516" id="t5x-kn-N1q"/>
-                        <group alignment="left" layout="vertical" spacing="6" id="uCw-4Q-Ouw" userLabel="Four buses">
-                            <items>
-                                <imageView width="1" height="1" alignment="center" contentMode="center" id="bUM-jQ-2vZ"/>
-                                <group width="1" height="100" alignment="left" id="qN3-jJ-5f1" userLabel="Error message">
-                                    <items>
-                                        <label width="136" alignment="left" text="Please launch Bus Panda on your iPhone and grant location access." numberOfLines="5" id="8d4-1D-PDk"/>
-                                    </items>
-                                    <edgeInsets key="margins" left="0.0" right="0.0" top="0.0" bottom="0.0"/>
-                                </group>
-                                <group width="1" alignment="left" id="q7i-5V-ooy" userLabel="Row 1">
-                                    <items>
-                                        <group width="0.5" alignment="left" layout="vertical" spacing="0.0" id="5Vg-Mc-sl5" userLabel="Bus 1">
-                                            <items>
-                                                <group width="0.5" height="31" alignment="center" verticalAlignment="center" layout="vertical" spacing="0.0" id="YRW-oc-krj" userLabel="Bus 1 number">
-                                                    <items>
-                                                        <group height="1" alignment="center" verticalAlignment="center" layout="vertical" spacing="0.0" id="eMQ-qQ-laD">
-                                                            <items>
-                                                                <label width="1" alignment="center" verticalAlignment="center" text="999" textAlignment="center" baselineAdjustment="alignCenters" minimumScaleFactor="0.69999999999999996" id="Tlk-jt-ZpM">
-                                                                    <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
-                                                                    <fontDescription key="font" type="boldSystem" pointSize="18"/>
-                                                                </label>
-                                                            </items>
-                                                            <color key="backgroundColor" red="0.5" green="0.0" blue="0.5" alpha="1" colorSpace="calibratedRGB"/>
-                                                            <edgeInsets key="margins" left="2" right="2" top="0.0" bottom="0.0"/>
-                                                        </group>
-                                                    </items>
-                                                    <edgeInsets key="margins" left="0.0" right="0.0" top="0.0" bottom="0.0"/>
-                                                </group>
-                                                <label width="1" height="17" alignment="center" verticalAlignment="center" text="Due" textAlignment="center" id="FO0-85-Sdr">
-                                                    <fontDescription key="font" style="UICTFontTextStyleSubhead"/>
-                                                </label>
-                                            </items>
-                                            <edgeInsets key="margins" left="0.0" right="0.0" top="0.0" bottom="0.0"/>
-                                        </group>
-                                        <group width="0.5" alignment="left" layout="vertical" spacing="0.0" id="kOJ-nD-UYx" userLabel="Bus 2">
-                                            <items>
-                                                <group width="0.5" height="31" alignment="center" verticalAlignment="center" layout="vertical" spacing="0.0" id="fMy-sq-iwF" userLabel="Bus 2 number">
-                                                    <items>
-                                                        <group height="1" alignment="center" verticalAlignment="center" layout="vertical" spacing="0.0" id="R7i-mY-R7e">
-                                                            <items>
-                                                                <label width="1" alignment="center" verticalAlignment="center" text="999" textAlignment="center" baselineAdjustment="alignCenters" minimumScaleFactor="0.69999999999999996" id="trR-Qe-Gdc">
-                                                                    <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
-                                                                    <fontDescription key="font" type="boldSystem" pointSize="18"/>
-                                                                </label>
-                                                            </items>
-                                                            <color key="backgroundColor" red="0.5" green="0.0" blue="0.5" alpha="1" colorSpace="calibratedRGB"/>
-                                                            <edgeInsets key="margins" left="2" right="2" top="0.0" bottom="0.0"/>
-                                                        </group>
-                                                    </items>
-                                                    <edgeInsets key="margins" left="0.0" right="0.0" top="0.0" bottom="0.0"/>
-                                                </group>
-                                                <label width="1" height="17" alignment="center" verticalAlignment="center" text="5 mins" textAlignment="center" id="jZx-gX-dhI">
-                                                    <fontDescription key="font" style="UICTFontTextStyleSubhead"/>
-                                                </label>
-                                            </items>
-                                            <edgeInsets key="margins" left="0.0" right="0.0" top="0.0" bottom="0.0"/>
-                                        </group>
-                                    </items>
-                                </group>
-                                <group width="1" alignment="left" id="rrm-Fo-ALj" userLabel="Row 2">
-                                    <items>
-                                        <group width="0.5" alignment="left" layout="vertical" spacing="0.0" id="hyK-kH-qBO" userLabel="Bus 3">
-                                            <items>
-                                                <group width="0.5" height="31" alignment="center" verticalAlignment="center" layout="vertical" spacing="0.0" id="eXO-7S-Baz" userLabel="Bus 3 number">
-                                                    <items>
-                                                        <group height="1" alignment="center" verticalAlignment="center" layout="vertical" spacing="0.0" id="Fcp-3j-arr">
-                                                            <items>
-                                                                <label width="1" alignment="center" verticalAlignment="center" text="999" textAlignment="center" baselineAdjustment="alignCenters" minimumScaleFactor="0.69999999999999996" id="q8K-ZW-DWv">
-                                                                    <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
-                                                                    <fontDescription key="font" type="boldSystem" pointSize="18"/>
-                                                                </label>
-                                                            </items>
-                                                            <color key="backgroundColor" red="0.5" green="0.0" blue="0.5" alpha="1" colorSpace="calibratedRGB"/>
-                                                            <edgeInsets key="margins" left="2" right="2" top="0.0" bottom="0.0"/>
-                                                        </group>
-                                                    </items>
-                                                    <edgeInsets key="margins" left="0.0" right="0.0" top="0.0" bottom="0.0"/>
-                                                </group>
-                                                <label width="1" height="17" alignment="center" verticalAlignment="center" text="CAN" textAlignment="center" id="Ny4-su-vz4">
-                                                    <fontDescription key="font" style="UICTFontTextStyleSubhead"/>
-                                                </label>
-                                            </items>
-                                            <edgeInsets key="margins" left="0.0" right="0.0" top="0.0" bottom="0.0"/>
-                                        </group>
-                                        <group width="0.5" alignment="left" layout="vertical" spacing="0.0" id="c9b-Bf-atf" userLabel="Bus 4">
-                                            <items>
-                                                <group width="0.5" height="31" alignment="center" verticalAlignment="center" layout="vertical" spacing="0.0" id="k7D-qZ-wbU" userLabel="Bus 4 number">
-                                                    <items>
-                                                        <group height="1" alignment="center" verticalAlignment="center" layout="vertical" spacing="0.0" id="nM3-3i-XFf">
-                                                            <items>
-                                                                <label width="1" alignment="center" verticalAlignment="center" text="999" textAlignment="center" baselineAdjustment="alignCenters" minimumScaleFactor="0.69999999999999996" id="Pcg-de-dN6">
-                                                                    <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
-                                                                    <fontDescription key="font" type="boldSystem" pointSize="18"/>
-                                                                </label>
-                                                            </items>
-                                                            <color key="backgroundColor" red="0.5" green="0.0" blue="0.5" alpha="1" colorSpace="calibratedRGB"/>
-                                                            <edgeInsets key="margins" left="2" right="2" top="0.0" bottom="0.0"/>
-                                                        </group>
-                                                    </items>
-                                                    <edgeInsets key="margins" left="0.0" right="0.0" top="0.0" bottom="0.0"/>
-                                                </group>
-                                                <label width="1" height="17" alignment="center" verticalAlignment="center" text="12:40pm" textAlignment="center" id="TFz-hb-g7f">
-                                                    <fontDescription key="font" style="UICTFontTextStyleSubhead"/>
-                                                </label>
-                                            </items>
-                                            <edgeInsets key="margins" left="0.0" right="0.0" top="0.0" bottom="0.0"/>
-                                        </group>
-                                    </items>
-                                </group>
-                            </items>
-                        </group>
-                    </items>
-                    <edgeInsets key="margins" left="0.0" right="0.0" top="0.0" bottom="14"/>
-                    <connections>
-                        <outlet property="bus1Group" destination="5Vg-Mc-sl5" id="Gen-NL-ngM"/>
-                        <outlet property="bus1NumberBackground" destination="eMQ-qQ-laD" id="MED-Jz-fGh"/>
-                        <outlet property="bus1NumberLabel" destination="Tlk-jt-ZpM" id="0Ed-o1-nJg"/>
-                        <outlet property="bus1TimeLabel" destination="FO0-85-Sdr" id="Taq-Wc-9OK"/>
-                        <outlet property="bus2Group" destination="kOJ-nD-UYx" id="7JU-FC-Nsg"/>
-                        <outlet property="bus2NumberBackground" destination="R7i-mY-R7e" id="l1q-yG-tyw"/>
-                        <outlet property="bus2NumberLabel" destination="trR-Qe-Gdc" id="YUX-fz-VQO"/>
-                        <outlet property="bus2TimeLabel" destination="jZx-gX-dhI" id="4oF-Pn-sjD"/>
-                        <outlet property="bus3Group" destination="hyK-kH-qBO" id="l5M-ip-3Pw"/>
-                        <outlet property="bus3NumberBackground" destination="Fcp-3j-arr" id="oYa-pH-t9d"/>
-                        <outlet property="bus3NumberLabel" destination="q8K-ZW-DWv" id="HNc-JY-f5m"/>
-                        <outlet property="bus3TimeLabel" destination="Ny4-su-vz4" id="C3K-s5-dKG"/>
-                        <outlet property="bus4Group" destination="c9b-Bf-atf" id="5Cp-bE-eam"/>
-                        <outlet property="bus4NumberBackground" destination="nM3-3i-XFf" id="mbl-WM-eSq"/>
-                        <outlet property="bus4NumberLabel" destination="Pcg-de-dN6" id="lgF-6y-ujd"/>
-                        <outlet property="bus4TimeLabel" destination="TFz-hb-g7f" id="hT9-S9-nKW"/>
-                        <outlet property="errorMessageGroup" destination="qN3-jJ-5f1" id="FFe-b0-I02"/>
-                        <outlet property="errorMessageLabel" destination="8d4-1D-PDk" id="vUk-aw-ile"/>
-                        <outlet property="row1Group" destination="q7i-5V-ooy" id="9Ly-VQ-cl8"/>
-                        <outlet property="row2Group" destination="rrm-Fo-ALj" id="12u-PK-jjj"/>
-                        <outlet property="spinnerImage" destination="bUM-jQ-2vZ" id="PGZ-An-Xlo"/>
-                        <outlet property="stopNameLabel" destination="XOK-8H-nCY" id="F3N-qv-rJQ"/>
-                        <outlet property="stopNumberLabel" destination="t5x-kn-N1q" id="a1t-n6-64J"/>
-                    </connections>
-                </glanceController>
-            </objects>
-            <point key="canvasLocation" x="235" y="672"/>
-        </scene>
         <!--Static Notification Interface Controller-->
         <scene sceneID="AEw-b0-oYE">
             <objects>
@@ -266,15 +121,15 @@
                     </connections>
                 </notificationController>
             </objects>
-            <point key="canvasLocation" x="235" y="1001"/>
+            <point key="canvasLocation" x="235" y="697"/>
         </scene>
         <!--Notification Controller-->
         <scene sceneID="KIl-fV-djm">
             <objects>
                 <controller id="gdX-wl-uQE" customClass="NotificationController" customModule="watchkit" customModuleProvider="target"/>
             </objects>
-            <point key="canvasLocation" x="553" y="1001"/>
+            <point key="canvasLocation" x="505" y="697"/>
         </scene>
     </scenes>
-    <color key="tintColor" red="0.9882352941176471" green="0.93333333333333335" blue="0.63529411764705879" alpha="1" colorSpace="calibratedRGB"/>
+    <color key="tintColor" red="0.9882352941176471" green="0.93333333333333335" blue="0.63529411764705879" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
 </document>

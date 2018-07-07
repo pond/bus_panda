@@ -14,6 +14,8 @@
 
 #import "AddStopAbstractViewController.h"
 
+#import "DataManager.h"
+
 @implementation AddStopAbstractViewController
 
 // Subclasses should call here to add a new stop. Proxies to a presenting MVC
@@ -22,24 +24,10 @@
 - ( void ) addFavourite: ( NSString * ) stopID
         withDescription: ( NSString * ) stopDescription;
 {
-    MasterViewController  * masterController;
-    UISplitViewController * underlyingPresenter = ( UISplitViewController * ) self.presentingViewController;
-    id                      splitViewFirst      = [ underlyingPresenter.viewControllers firstObject ];
-
-    // Under the split view is either another navigation controller leading to
-    // the master view, or the master view directly.
-
-    if ( [ splitViewFirst isKindOfClass: [ MasterViewController class ] ] )
-    {
-        masterController = splitViewFirst;
-    }
-    else
-    {
-        masterController = [ [ splitViewFirst viewControllers ] firstObject ];
-    }
-
-    [ masterController addFavourite: stopID
-                    withDescription: stopDescription ];
+    [ DataManager.dataManager addOrEditFavourite: stopID
+                              settingDescription: stopDescription
+                                andPreferredFlag: nil
+                               includingCloudKit: YES ];
 }
 
 // Subclasses should call this method when they want to be closed. It ensures

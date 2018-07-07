@@ -5,12 +5,16 @@
 //  Created by Andrew Hodgkinson on 1/04/16.
 //  Copyright © 2016 Andrew Hodgkinson. All rights reserved.
 //
+//  For the Watch app, find nearby bus stops and service information.
+//  Tries to use stops marked as "preferred" in favour of other stops,
+//  even if they're a bit further away.
+//
 
 #import "NearestStopBusInfoFetcher.h"
 
+#import "DataManager.h"
 #import "StopInfoFetcher.h"
 #import "BusInfoFetcher.h"
-#import "AppDelegate.h"
 #import "MasterViewController.h"
 
 #import "INTULocationManager.h"
@@ -81,34 +85,6 @@
     ];
 }
 
-- ( NSManagedObject * ) findFavouriteStopByID: ( NSString * ) stopID
-{
-    AppDelegate            * appDelegate = ( AppDelegate * ) [ [ UIApplication sharedApplication ] delegate ];
-    NSError                * error       = nil;
-    NSManagedObjectContext * moc         = [ appDelegate managedObjectContext ];
-    NSManagedObjectModel   * mom         = [ appDelegate managedObjectModel   ];
-    NSEntityDescription    * styleEntity = [ mom entitiesByName ][ @"BusStop" ];
-    NSFetchRequest         * request     = [ [ NSFetchRequest alloc ] init ];
-    NSPredicate            * predicate   =
-    [
-        NSPredicate predicateWithFormat: @"(stopID == %@)",
-        stopID
-    ];
-
-    [ request setEntity:              styleEntity ];
-    [ request setIncludesSubentities: NO          ];
-    [ request setPredicate:           predicate   ];
-
-    NSArray * results = [ moc executeFetchRequest: request error: &error ];
-
-    if ( error != nil || [ results count ] < 1 )
-    {
-        return nil;
-    }
-
-    return results[ 0 ];
-}
-
 - ( void ) getBusesFromBestStopIn: ( NSMutableArray * ) allStops
                  withReplyHandler: ( nonnull void (^)( NSDictionary <NSString *, id> * _Nonnull ) ) replyHandler
 {
@@ -128,11 +104,12 @@
 
     NSDictionary * normalMatch;
     NSDictionary * preferredMatch;
+    DataManager  * dataManager = DataManager.dataManager;
 
     for ( NSDictionary * stop in allStops )
     {
         NSString        * stopID = stop[ @"stopID" ]; if ( stopID == nil ) continue;
-        NSManagedObject * obj    =[ self findFavouriteStopByID: stopID ];
+        NSManagedObject * obj    = [ dataManager findFavouriteStopByID: stopID ];
 
         if ( obj != nil )
         {
@@ -168,6 +145,7 @@
 
     [
         BusInfoFetcher getAllBusesForStop: stopID
+              usingWebScraperInsteadOfAPI: NO
                         completionHandler:
 
         ^ ( NSMutableArray * allBuses )

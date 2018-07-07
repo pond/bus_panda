@@ -35,15 +35,29 @@
                      ofLocation: ( CLLocationCoordinate2D   ) coordinate
               completionHandler: ( void ( ^ ) ( NSMutableArray * allStops, NSError * error ) ) handler
 {
+    // MetLink in around 2016 started using what looks like a formal internal
+    // API, which was perhaps going to be made public but never was. We can
+    // see that it fetches 'StopNearby' for its map of stops. This returns a
+    // fixed number of results, without taking a radius parameter. An exact
+    // number can be asked for, but only up to 99 and MetLink's own site does
+    // not do this. Fork of repo with more information:
+    //
+    //   https://github.com/pond/metlink-api-maybe
+    //
+    // As a result if you zoom out of the map and drag it a distance, you'll
+    // only get a small cluster of stops showing at the centre with nothing
+    // between this and the previous map centre. Due to the API limitations,
+    // both Bus Panda's map and MetLink's own website map behave this way.
+    //
     NSString * centreEnumerationURI =
     [
-        NSString stringWithFormat: @"https://www.metlink.org.nz/stop/nearbystopdata?lat=%f&lng=%f&radius=%f",
+        NSString stringWithFormat: @"https://www.metlink.org.nz/api/v1/StopNearby/%f/%f",
         coordinate.latitude,
-        coordinate.longitude,
-        radiusInMetres
+        coordinate.longitude
+        // radiusInMetres - for future expansion one day maybe?
     ];
 
-    NSLog( @"Retrieve stops via: %@", centreEnumerationURI );
+    NSLog( @"Get stops within radius: %@", centreEnumerationURI );
 
     // We will make a request to fetch the JSON at 'centreEnumerationURI' from
     // above, declaring the below block as the code to run upon completion

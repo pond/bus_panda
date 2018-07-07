@@ -7,7 +7,9 @@
 //
 
 #import "AppDelegate.h"
+#import "DataManager.h"
 #import "ErrorPresenter.h"
+
 #import "MasterViewController.h"
 #import "DetailViewController.h"
 #import "EnterStopIDViewController.h"
@@ -15,7 +17,17 @@
 #import "StopMapViewController.h"
 #import "FavouritesCell.h"
 
+@interface MasterViewController ()
+
+    // Pull-to-refresh to force full CloudKit resync.
+    //
+    @property ( strong, nonatomic ) UIRefreshControl * refreshControl;
+
+@end
+
 @implementation MasterViewController
+
+    @synthesize refreshControl = _refreshControl;
 
 #pragma mark - View lifecycle
 
@@ -58,8 +70,8 @@
     //
     [ [ NSNotificationCenter defaultCenter ] addObserver: self
                                                 selector: @selector( reloadFetchedResults: )
-                                                    name: DATA_CHANGED_NOTIFICATION_NAME // AppDelegate.h
-                                                  object: [ [ UIApplication sharedApplication ] delegate ] ];
+                                                    name: DATA_CHANGED_NOTIFICATION_NAME
+                                                  object: nil ];
 
     // Add an observer triggered whenever the Core Data list of favourite
     // stops changes; this is used to update the Watch.
@@ -67,26 +79,33 @@
     [ [ NSNotificationCenter defaultCenter ] addObserver: self
                                                 selector: @selector( updateWatch: )
                                                     name: NSManagedObjectContextObjectsDidChangeNotification
-                                                  object: [ [ UIApplication sharedApplication ] delegate ] ];
+                                                  object: nil ];
 
     // Watch for user defaults changes as we'll need to reload the table data
-    // to reflect things like a 'shorten names to fit' settings change.
+    // to reflect a 'shorten names to fit' settings change.
     //
-    [ [ NSNotificationCenter defaultCenter ] addObserver: self
-                                                selector: @selector( defaultsDidChange: )
-                                                    name: NSUserDefaultsDidChangeNotification
-                                                  object: nil ];
+    NSUserDefaults * defaults = NSUserDefaults.standardUserDefaults;
+
+    [ defaults addObserver: self
+                forKeyPath: SHORTEN_DISPLAYED_NAMES
+                   options: NSKeyValueObservingOptionNew
+                   context: nil ];
+
+    // Pull-to-refresh for CloudKit resync.
+    //
+    self.refreshControl = [ [ UIRefreshControl alloc ] init ];
+
+    [ self.refreshControl addTarget: self
+                             action: @selector( resyncFromCloudKit )
+                   forControlEvents: UIControlEventValueChanged ];
+
+    [ self.tableView addSubview: self.refreshControl ];
 
     // We don't try an update the Apple Watch app here because we don't
     // necessarily have full access to Core Data yet. Instead, let the App
     // Delegate deal with at-wakeup updates by calling through to our
     // "-updateWatch:" method once it's set the 'managedObjectContext'
     // property in this instance.
-}
-
-- ( void ) viewDidUnload
-{
-    [ [ NSNotificationCenter defaultCenter ] removeObserver: self ];
 }
 
 // http://stackoverflow.com/questions/19379510/uitableviewcell-doesnt-get-deselected-when-swiping-back-quickly
@@ -96,6 +115,14 @@
     [ super viewWillAppear: animated ];
     [ self.tableView deselectRowAtIndexPath: [ self.tableView indexPathForSelectedRow ]
                                    animated: animated ];
+}
+
+- ( void ) dealloc
+{
+    NSUserDefaults * defaults = NSUserDefaults.standardUserDefaults;
+    [ defaults removeObserver: self forKeyPath: SHORTEN_DISPLAYED_NAMES ];
+
+    [ [ NSNotificationCenter defaultCenter ] removeObserver: self ];
 }
 
 #pragma mark - Modal handling
@@ -148,26 +175,6 @@
         }
     ];
 
-    UIAlertAction * nearbyStopsAction =
-    [
-        UIAlertAction actionWithTitle: @"Nearby Stops"
-                                style: UIAlertActionStyleDefault
-                              handler: ^ ( UIAlertAction * action )
-        {
-            UINavigationController * stopMapNavigationController =
-            [
-                self.storyboard instantiateViewControllerWithIdentifier: @"StopMap"
-            ];
-
-            StopMapViewController * stopMapController = ( StopMapViewController * ) stopMapNavigationController.topViewController;
-
-            [ stopMapController configureForNearbyStops   ];
-            [ stopMapController setTitle: @"Nearby Stops" ];
-
-            [ self openSpecificModal: stopMapNavigationController ];
-        }
-    ];
-
     UIAlertAction * cancel =
     [
         UIAlertAction actionWithTitle: @"Cancel"
@@ -180,7 +187,6 @@
 
     [ actions addAction: stopMapAction     ];
     [ actions addAction: enterStopIDAction ];
-    [ actions addAction: nearbyStopsAction ];
     [ actions addAction: cancel            ];
 
     // On the iPhone (at the time of writing) modal action sheets implicitly
@@ -244,144 +250,6 @@
     [ self presentViewController: actions animated: YES completion: nil ];
 }
 
-#pragma mark - Adding and modifying favourites
-
-- ( void ) addFavourite: ( NSString * ) stopID
-        withDescription: ( NSString * ) stopDescription
-{
-    BOOL                     oldShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
-    NSManagedObjectContext * context            = self.fetchedResultsController.managedObjectContext;
-    NSEntityDescription    * entity             = self.fetchedResultsController.fetchRequest.entity;
-    NSError                * error              = nil;
-    NSManagedObject        * newManagedObject   =
-    [
-        NSEntityDescription insertNewObjectForEntityForName: entity.name
-                                     inManagedObjectContext: context
-    ];
-
-    // If appropriate, configure the new managed object.
-    //
-    // Normally you should use accessor methods, but using KVC here avoids
-    // the need to add a custom class to the template.
-
-    [ newManagedObject setValue: stopID          forKey: @"stopID"          ];
-    [ newManagedObject setValue: stopDescription forKey: @"stopDescription" ];
-
-    // Save the context.
-
-    if ( ! [ context save: &error ] )
-    {
-        [
-            ErrorPresenter showModalAlertFor: self
-                                   withError: error
-                                       title: @"Could not save favourites"
-                                  andHandler: ^( UIAlertAction *action ) {}
-        ];
-    }
-
-    // Avoid animation issues if the section headers appear or dispppear.
-    //
-    BOOL newShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
-    if ( oldShowSectionFlag != newShowSectionFlag ) [ self.tableView reloadData ];
-}
-
-- ( void ) editFavourite: ( NSManagedObject * ) object
-      settingDescription: ( NSString        * ) stopDescription;
-{
-    NSError                * error   = nil;
-    NSManagedObjectContext * context = [ self.fetchedResultsController managedObjectContext ];
-
-    [ object setValue: stopDescription forKey: @"stopDescription" ];
-
-    // Save the context.
-
-    if ( ! [ context save: &error ] )
-    {
-        [
-            ErrorPresenter showModalAlertFor: self
-                                   withError: error
-                                       title: NSLocalizedString( @"Could not update item", "Error message shown when changing a favourite stop's description fails" )
-                                  andHandler: ^( UIAlertAction *action ) {}
-        ];
-    }
-}
-
-- ( void ) setPreferredFlagOf: ( NSManagedObject * ) object to: ( NSNumber * ) newFlagValue
-{
-    BOOL                     oldShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
-    NSManagedObjectContext * context            = [ self.fetchedResultsController managedObjectContext ];
-    NSError                * error              = nil;
-
-    [ object setValue: newFlagValue forKey: @"preferred" ];
-
-    if ( ! [ context save: &error ] )
-    {
-        [
-            ErrorPresenter showModalAlertFor: self
-                                   withError: error
-                                       title: NSLocalizedString( @"Could not change 'preferred' stop setting", "Error message shown when changing the 'preferred' setting fails" )
-                                  andHandler: ^( UIAlertAction *action ) {}
-        ];
-    }
-
-    // Avoid animation issues if the section headers appear or dispppear.
-    //
-    BOOL newShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
-    if ( oldShowSectionFlag != newShowSectionFlag ) [ self.tableView reloadData ];
-
-    // If there's no section header than (A) is there only one favourite
-    // stop, (B) is that stop now preferred and (C) have we detected this
-    // condition before? If not, tell the user what's going on.
-    //
-    NSUserDefaults * defaults = [ NSUserDefaults standardUserDefaults ];
-
-    if (
-           newShowSectionFlag == NO &&
-           self.fetchedResultsController.fetchedObjects.count == 1 &&
-           [ [ self.fetchedResultsController.fetchedObjects[ 0 ] valueForKey: @"preferred" ] isEqual: STOP_IS_PREFERRED_VALUE ] &&
-           [ defaults boolForKey: @"haveShownSingleSectionWarning" ] != YES
-       )
-    {
-        [ defaults setBool: YES forKey: @"haveShownSingleSectionWarning" ];
-        [ defaults synchronize ];
-
-        UIAlertController * warning = [ UIAlertController alertControllerWithTitle: @"You have only one preferred and favourite stop"
-                                                                           message: @"When you have a mixture of preferred and normal stops, they show up in different sections.\n\nOtherwise, you only see one list."
-                                                                    preferredStyle: UIAlertControllerStyleAlert ];
-
-        UIAlertAction * action = [ UIAlertAction actionWithTitle: @"Got it!"
-                                                           style: UIAlertActionStyleDefault
-                                                         handler: nil ];
-
-        [ warning addAction: action ];
-        [ self presentViewController: warning animated: YES completion: nil ];
-    }
-}
-
-- ( void ) deleteObject: ( NSManagedObject * ) object
-{
-    BOOL                     oldShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
-    NSManagedObjectContext * context            = [ self.fetchedResultsController managedObjectContext ];
-    NSError                * error              = nil;
-
-    [ context deleteObject: object ];
-
-    if ( ! [ context save: &error ] )
-    {
-        [
-            ErrorPresenter showModalAlertFor: self
-                                   withError: error
-                                       title: NSLocalizedString( @"Could not delete favourite", "Error message shown when favourite stop deletion fails" )
-                                  andHandler: ^( UIAlertAction *action ) {}
-        ];
-    }
-
-    // Avoid animation issues if the section headers appear or dispppear.
-    //
-    BOOL newShowSectionFlag = [ self shouldShowSectionHeaderFor: self.tableView ];
-    if ( oldShowSectionFlag != newShowSectionFlag ) [ self.tableView reloadData ];
-}
-
 #pragma mark - Segues
 
 - ( void ) prepareForSegue: ( UIStoryboardSegue * ) segue sender: ( id ) sender
@@ -389,7 +257,7 @@
     if ( [ [ segue identifier ] isEqualToString: @"showDetail" ] )
     {
         NSIndexPath          * indexPath  = [ self.tableView indexPathForSelectedRow ];
-        NSManagedObject      * object     = [ [ self fetchedResultsController ] objectAtIndexPath: indexPath ];
+        NSManagedObject      * object     = [ DataManager.dataManager.fetchedResultsControllerLocal objectAtIndexPath: indexPath ];
         DetailViewController * controller = ( DetailViewController * ) [ [ segue destinationViewController ] topViewController ];
 
         [ controller setDetailItem: object ];
@@ -401,41 +269,23 @@
 
 #pragma mark - Table View
 
-// Support method - returns YES if the section header should be shown for the
-// table, else NO. The idea is to hide the section header when only one section
-// is present, because all bus stops are either normal or preferred. Things go
-// wrong in that case because we don't easily know e.g. the section title and
-// it looks odd to just have a one-section table anyway.
-//
-// In the case where the user has just one new favourite stop and toggles it to
-// a preferred state, it is a bit strange that no apparent change happens to
-// the UI. To avoid that confusion, this specific special case is trapped with
-// a one-time-only alert to let the user know what's happening.
-//
-- ( BOOL ) shouldShowSectionHeaderFor: ( UITableView * ) tableView
-{
-    NSInteger sectionCount = [ self numberOfSectionsInTableView: tableView ];
-    return ( sectionCount < 2 ) ? NO : YES;
-}
-
 - ( NSInteger ) numberOfSectionsInTableView: ( UITableView * ) tableView
 {
-    return [ [ self.fetchedResultsController sections ] count ];
+    ( void ) tableView;
+    return DataManager.dataManager.numberOfSections;
 }
 
 - ( NSInteger ) tableView: ( UITableView * ) tableView
     numberOfRowsInSection: ( NSInteger     ) section
 {
-    id <NSFetchedResultsSectionInfo> sectionInfo = [ self.fetchedResultsController sections ][ section ];
+    id <NSFetchedResultsSectionInfo> sectionInfo = DataManager.dataManager.fetchedResultsControllerLocal.sections[ section ];
     return [ sectionInfo numberOfObjects ];
 }
 
 - ( NSString * ) tableView: ( UITableView * ) tableView
    titleForHeaderInSection: ( NSInteger     ) section
 {
-    // Show no section title unless there are at least two sections.
-
-    if ( [ self shouldShowSectionHeaderFor: tableView ] == NO ) return @"";
+    if ( DataManager.dataManager.shouldShowSectionHeader == NO ) return @"";
 
     switch( section )
     {
@@ -452,8 +302,8 @@
 {
     // Show no section title unless there are at least two sections.
 
-    if ( [ self shouldShowSectionHeaderFor: tableView ] == NO ) return 0;
-    else                                                        return 32;
+    if ( DataManager.dataManager.shouldShowSectionHeader == NO ) return 0;
+    else                                                         return 32;
 }
 
 - ( void )    tableView: ( UITableView * ) tableView
@@ -487,22 +337,27 @@
   commitEditingStyle: ( UITableViewCellEditingStyle   ) editingStyle
    forRowAtIndexPath: ( NSIndexPath                 * ) indexPath
 {
+    DataManager * dataManager = DataManager.dataManager;
+
     if ( editingStyle == UITableViewCellEditingStyleDelete )
     {
-        NSManagedObject * object = [ self.fetchedResultsController objectAtIndexPath: indexPath ];
+        NSManagedObject * object = [ dataManager.fetchedResultsControllerLocal objectAtIndexPath: indexPath ];
+        NSString        * stopID = [ object valueForKey: @"stopID" ];
 
-        if ( object != nil )
+        if ( stopID != nil )
         {
-            [ self deleteObject: object ];
+            [ dataManager deleteFavourite: stopID
+                        includingCloudKit: YES ];
         }
     }
 }
 
 - ( void ) configureCell: ( FavouritesCell * ) cell atIndexPath: ( NSIndexPath * ) indexPath
 {
-    NSManagedObject * object          = [ self.fetchedResultsController objectAtIndexPath: indexPath ];
-    NSString        * stopID          = [ [ object valueForKey: @"stopID"          ] description ];
-    NSString        * stopDescription = [ [ object valueForKey: @"stopDescription" ] description ];
+    DataManager     * dataManager     = DataManager.dataManager;
+    NSManagedObject * object          = [ dataManager.fetchedResultsControllerLocal objectAtIndexPath: indexPath ];
+    NSString        * stopID          = [ object valueForKey: @"stopID"          ];
+    NSString        * stopDescription = [ object valueForKey: @"stopDescription" ];
 
     cell.stopID.text          = stopID;
     cell.stopDescription.text = stopDescription;
@@ -517,7 +372,9 @@
                       backgroundColor: [ UIColor redColor ]
                              callback:  ^ BOOL ( MGSwipeTableCell * sender )
         {
-            [ self deleteObject: object ];
+            [ dataManager deleteFavourite: stopID
+                        includingCloudKit: YES ];
+
             return YES; // Yes => do slide the table row back to normal position
         }
     ];
@@ -541,7 +398,11 @@
                       backgroundColor: [ UIColor colorWithRed: 0 green: 0.8 blue: 0 alpha: 1 ]
                              callback: ^ BOOL ( MGSwipeTableCell * sender )
         {
-            [ self setPreferredFlagOf: object to: STOP_IS_PREFERRED_VALUE ];
+            [ dataManager addOrEditFavourite: stopID
+                          settingDescription: nil
+                            andPreferredFlag: STOP_IS_PREFERRED_VALUE
+                           includingCloudKit: YES ];
+
             return YES; // Yes => do slide the table row back to normal position
         }
     ];
@@ -552,7 +413,11 @@
                       backgroundColor: [ UIColor blueColor ]
                              callback: ^ BOOL ( MGSwipeTableCell * sender )
         {
-            [ self setPreferredFlagOf: object to: STOP_IS_NOT_PREFERRED_VALUE ];
+            [ dataManager addOrEditFavourite: stopID
+                          settingDescription: nil
+                            andPreferredFlag: STOP_IS_NOT_PREFERRED_VALUE
+                           includingCloudKit: YES ];
+
             return YES; // Yes => do slide the table row back to normal position
         }
     ];
@@ -567,53 +432,7 @@
     }
 }
 
-#pragma mark - Fetched results management
-
-// Returns an existing NSFetchedResultsController instance or generates a new
-// one when called for the first time.
-//
-- ( NSFetchedResultsController * ) fetchedResultsController
-{
-    if ( _fetchedResultsController != nil )
-    {
-        return _fetchedResultsController;
-    }
-
-    NSFetchRequest      * fetchRequest = [ [ NSFetchRequest alloc] init ];
-    NSEntityDescription * entity       = [ NSEntityDescription entityForName: @"BusStop"
-                                                      inManagedObjectContext: self.managedObjectContext ];
-
-    [ fetchRequest setEntity:         entity ];
-    [ fetchRequest setFetchBatchSize: 50     ];
-
-    NSSortDescriptor * sortDescriptor1 = [ [ NSSortDescriptor alloc] initWithKey: @"preferred"
-                                                                       ascending: NO ];
-
-    NSSortDescriptor * sortDescriptor2 = [ [ NSSortDescriptor alloc] initWithKey: @"stopDescription"
-                                                                       ascending: YES ];
-
-    [ fetchRequest setSortDescriptors: @[ sortDescriptor1, sortDescriptor2 ] ];
-
-    NSString * cacheName = @"BusStops";
-
-    // Problems were seen in development once the 'preferred stops' feature was
-    // introduced that were solved by deleting the existing cache data when the
-    // NSFetchedResultsController instance is first created. Just in case any
-    // users in the field might see something similar, this code is retained.
-    //
-    [ NSFetchedResultsController deleteCacheWithName: cacheName ];
-
-    NSFetchedResultsController * frc = [ [ NSFetchedResultsController alloc ] initWithFetchRequest: fetchRequest
-                                                                              managedObjectContext: self.managedObjectContext
-                                                                                sectionNameKeyPath: @"preferred"
-                                                                                         cacheName: cacheName ];
-    frc.delegate = self;
-
-    self.fetchedResultsController = frc;
-    return _fetchedResultsController;
-}
-
-#pragma mark - NSNotificationCenter observers
+#pragma mark - Observers (NSNotificationCentre and KVO)
 
 // Reload results (i.e. favourites) from iCloud / local storage; "notification"
 // parameter is ignored.
@@ -622,13 +441,15 @@
 //
 - ( void ) reloadFetchedResults: ( NSNotification * ) ignoredNotification
 {
-    NSError *error = nil;
+    ( void ) ignoredNotification;
 
-    NSLog( @"Underlying data changed... Refreshing" );
+    NSLog( @"MasterViewController: Reloading data due to notification" );
 
     // Deal with the local changes first
 
-    if ( ! [ self.fetchedResultsController performFetch: &error ] )
+    NSError * error = nil;
+
+    if ( ! [ DataManager.dataManager.fetchedResultsControllerLocal performFetch: &error ] )
     {
         [
             ErrorPresenter showModalAlertFor: self
@@ -653,6 +474,8 @@
 //
 - ( void ) updateWatch: ( NSNotification * ) ignoredNotification
 {
+    ( void ) ignoredNotification;
+
     if ( WCSession.isSupported )
     {
         WCSession * session = [ WCSession defaultSession ];
@@ -677,7 +500,7 @@
             NSDictionary   * dictionary;
             NSInteger        sections = [ self numberOfSectionsInTableView: self.tableView ];
 
-            for ( NSManagedObject * object in self.fetchedResultsController.fetchedObjects )
+            for ( NSManagedObject * object in DataManager.dataManager.fetchedResultsControllerLocal.fetchedObjects )
             {
                 // If the table view thinks it only has one section, send all
                 // stops; they're either all normal, or all preferred. If there
@@ -702,25 +525,46 @@
 
             if ( error != nil )
             {
-                NSLog( @"Error updating watch: %p", error.localizedDescription );
+                NSLog( @"Error updating watch: %@", error );
             }
         }
     }
 }
 
-// Called via NSNotificationCenter when the user defaults change;
-// "notification" parameter is ignored.
+// Called via KVO when the user defaults change.
 //
-- ( void ) defaultsDidChange: ( NSNotification * ) ignoredNotification
+- ( void ) observeValueForKeyPath: ( NSString     * ) keyPath
+                         ofObject: ( id             ) object
+                           change: ( NSDictionary * ) change
+                          context: ( void         * ) context
 {
-    dispatch_async
-    (
-        dispatch_get_main_queue(),
-        ^ ( void )
-        {
-            [ self.tableView reloadData ];
-        }
-    );
+    ( void ) object;
+    ( void ) change;
+    ( void ) context;
+
+    if ( [ keyPath isEqualToString: SHORTEN_DISPLAYED_NAMES ] )
+    {
+        NSLog( @"KVO shorten-displayed-names changed, updating view" );
+
+        [ self.tableView performSelector: @selector( reloadData )
+                              withObject: nil
+                              afterDelay: 0.5 ];
+    }
+}
+
+#pragma mark - Refresh control handling
+
+- ( void ) resyncFromCloudKit
+{
+    id completionHandler = ^ ( NSError * _Nullable error )
+    {
+        [ self.refreshControl performSelectorOnMainThread: @selector( endRefreshing )
+                                               withObject: nil
+                                            waitUntilDone: NO ];
+    };
+
+    [ DataManager.dataManager fetchRecentChangesWithCompletionBlock: completionHandler
+                                           ignoringPriorChangeToken: YES ];
 }
 
 #pragma mark - Table updates from the controller

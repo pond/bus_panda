@@ -26,6 +26,33 @@ import UIKit
     //
     @objc class func colours() -> NSDictionary
     {
+        // On July 15th 2018, MetLink introduced major changes to all routes,
+        // including new colours and longer service names like "23e" and "32x".
+        //
+        if map.count == 0
+        {
+            for ( k, v ) in oldMap
+            {
+                map[ k ] = v
+            }
+
+            let nowDateTime = Date() // This will be, in essence, in UTC
+            let formatter   = DateFormatter()
+
+            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            formatter.timeZone   = TimeZone( identifier: "UTC" )
+
+            let routeChangeDateTime = formatter.date( from: "2018-07-14 11:59:59" )!
+
+            if nowDateTime > routeChangeDateTime
+            {
+                for ( k, v ) in newMap
+                {
+                    map[ k ] = v
+                }
+            }
+        }
+
         return map
     }
 
@@ -54,9 +81,76 @@ import UIKit
         )
     }
 
-    static let map: NSDictionary =
+    static let map:    NSMutableDictionary = [:]
+    static let newMap: NSDictionary        =
     [
-        // Wellington bus routes
+        // Wellington bus routes on or after 2018-07-15:
+        //
+        // https://www.metlink.org.nz/assets/2018-Wellington-City-Bus-Network/mid-2018-route-map.pdf
+
+        // High frequency routes
+
+        "1":   "E31937",
+        "2":   "0072BB",
+        "3":   "5E9732",
+        "7":   "A0208B",
+        "21":  "EE80B3",
+        "22":  "F4911D",
+
+        // Other standard routes
+
+        "12":  "59A1D2",
+        "14":  "59A1D2",
+        "17":  "59A1D2",
+        "18":  "59A1D2",
+        "19":  "59A1D2",
+        "20":  "59A1D2",
+        "23":  "59A1D2",
+        "24":  "59A1D2",
+        "25":  "59A1D2",
+        "29":  "59A1D2",
+        "60":  "59A1D2",
+
+        // Other peak, extended and express routes
+
+        "12E": "636466",
+        "13":  "636466",
+        "17E": "636466",
+        "18E": "636466",
+        "19E": "636466",
+        "23E": "636466",
+        "26":  "636466",
+        "28":  "636466",
+        "29E": "636466",
+        "30X": "636466",
+        "31X": "636466",
+        "32X": "636466",
+        "33":  "636466",
+        "34":  "636466",
+        "37":  "636466",
+        "56":  "636466",
+        "57":  "636466",
+        "58":  "636466",
+        "60E": "636466",
+
+        // Airport flyer
+
+        "91":  "000000",
+
+        // Wellington Harbour Ferry, rail
+
+        "CCL": "003F5F",
+        "WHF": "003F5F",
+        "HVL": "003F5F",
+        "MEL": "003F5F",
+        "JVL": "003F5F",
+        "KPL": "003F5F",
+        "WRL": "003F5F",
+    ]
+
+    static let oldMap: NSDictionary =
+    [
+        // Wellington bus routes before 2018-07-15
 
         "1":   "942192",
         "2":   "DF2134",

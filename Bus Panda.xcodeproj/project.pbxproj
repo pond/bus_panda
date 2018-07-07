@@ -18,10 +18,11 @@
 		23420AAA1C92A34E009F40F9 /* StopsInterfaceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23420AA91C92A34E009F40F9 /* StopsInterfaceController.swift */; };
 		23420AAC1C92A34E009F40F9 /* ExtensionDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23420AAB1C92A34E009F40F9 /* ExtensionDelegate.swift */; };
 		23420AAE1C92A34E009F40F9 /* NotificationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23420AAD1C92A34E009F40F9 /* NotificationController.swift */; };
-		23420AB01C92A34E009F40F9 /* GlanceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23420AAF1C92A34E009F40F9 /* GlanceController.swift */; };
 		23420AB21C92A34E009F40F9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 23420AB11C92A34E009F40F9 /* Assets.xcassets */; };
 		23420AB61C92A34E009F40F9 /* watchkit.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 23420A961C92A34E009F40F9 /* watchkit.app */; };
 		235AA1981CA2A272006143B9 /* StopsRowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 235AA1961CA2A055006143B9 /* StopsRowController.swift */; };
+		235FF3C320D78B8C0080FE67 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 235FF3C220D78B8C0080FE67 /* CloudKit.framework */; };
+		235FF3C620E6D8380080FE67 /* DataManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 235FF3C520E6D8380080FE67 /* DataManager.m */; };
 		236842411CAD3B7600548923 /* StringShortener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 236842401CAD3B7600548923 /* StringShortener.swift */; };
 		236842441CAD3E1600548923 /* NearestStopBusInfoFetcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 236842431CAD3E1600548923 /* NearestStopBusInfoFetcher.m */; };
 		236FC3451CAE124E00207C15 /* INTUHeadingRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 236FC33C1CAE124E00207C15 /* INTUHeadingRequest.m */; };
@@ -31,6 +32,9 @@
 		236FC34C1CAFC98900207C15 /* EditStopDescriptionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 236FC34B1CAFC98900207C15 /* EditStopDescriptionViewController.m */; };
 		236FC34F1CAFDC4A00207C15 /* ShorteningLabel.m in Sources */ = {isa = PBXBuildFile; fileRef = 236FC34E1CAFDC4A00207C15 /* ShorteningLabel.m */; };
 		23AB59A31CB088960057688D /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 23AB59A21CB088960057688D /* Settings.bundle */; };
+		23AC944C209B0A6400B670FC /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23AC944B209B0A6400B670FC /* WebKit.framework */; };
+		23AC944F209B146200B670FC /* WeatherWebViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23AC944E209B146200B670FC /* WeatherWebViewController.m */; };
+		23AC9452209C625A00B670FC /* WebPageAbstractViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23AC9451209C625900B670FC /* WebPageAbstractViewController.m */; };
 		23C937981ACDF51E00EF1441 /* TimetableWebViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */; };
 		23D75E211AC1654B0068C808 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E201AC1654B0068C808 /* main.m */; };
 		23D75E241AC1654B0068C808 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E231AC1654B0068C808 /* AppDelegate.m */; };
@@ -65,7 +69,6 @@
 		23E341651CA6A11400EDB581 /* RouteColours.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E341621CA6915100EDB581 /* RouteColours.swift */; };
 		23E341661CA6A1DF00EDB581 /* BusesRowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E3415F1CA68F5F00EDB581 /* BusesRowController.swift */; };
 		23E341691CA79F1A00EDB581 /* BusInfoFetcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E341681CA79F1A00EDB581 /* BusInfoFetcher.m */; };
-		23E341751CABACB800EDB581 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 23E3416F1CABACB800EDB581 /* Info.plist */; };
 		23E341761CABACB800EDB581 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 23E341701CABACB800EDB581 /* LICENSE */; };
 		23E341771CABACB800EDB581 /* MGSwipeButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E341721CABACB800EDB581 /* MGSwipeButton.m */; };
 		23E341781CABACB800EDB581 /* MGSwipeTableCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E341741CABACB800EDB581 /* MGSwipeTableCell.m */; };
@@ -128,6 +131,7 @@
 		23063AF91AC7DAAC00C063DC /* ServiceDescriptionCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ServiceDescriptionCell.m; sourceTree = "<group>"; };
 		23063B031ACBF0BC00C063DC /* FavouritesCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FavouritesCell.h; sourceTree = "<group>"; };
 		23063B041ACBF0BC00C063DC /* FavouritesCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FavouritesCell.m; sourceTree = "<group>"; };
+		23065F6A20E82F3F00658D07 /* Constants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Constants.h; sourceTree = "<group>"; };
 		233CD79D1C3BDB7D00E0B6D6 /* ErrorPresenter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ErrorPresenter.h; sourceTree = "<group>"; };
 		23420A871C8EC7DC009F40F9 /* Bus Panda-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Bus Panda-Bridging-Header.h"; sourceTree = "<group>"; };
 		23420A881C8EC7DD009F40F9 /* ErrorPresenter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ErrorPresenter.swift; sourceTree = "<group>"; };
@@ -140,10 +144,12 @@
 		23420AA91C92A34E009F40F9 /* StopsInterfaceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsInterfaceController.swift; sourceTree = "<group>"; };
 		23420AAB1C92A34E009F40F9 /* ExtensionDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionDelegate.swift; sourceTree = "<group>"; };
 		23420AAD1C92A34E009F40F9 /* NotificationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationController.swift; sourceTree = "<group>"; };
-		23420AAF1C92A34E009F40F9 /* GlanceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlanceController.swift; sourceTree = "<group>"; };
 		23420AB11C92A34E009F40F9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		23420AB31C92A34E009F40F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		235AA1961CA2A055006143B9 /* StopsRowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StopsRowController.swift; sourceTree = "<group>"; };
+		235FF3C220D78B8C0080FE67 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
+		235FF3C420E6D8380080FE67 /* DataManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DataManager.h; sourceTree = "<group>"; };
+		235FF3C520E6D8380080FE67 /* DataManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DataManager.m; sourceTree = "<group>"; };
 		236842401CAD3B7600548923 /* StringShortener.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StringShortener.swift; sourceTree = "<group>"; };
 		236842421CAD3E1600548923 /* NearestStopBusInfoFetcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NearestStopBusInfoFetcher.h; sourceTree = "<group>"; };
 		236842431CAD3E1600548923 /* NearestStopBusInfoFetcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NearestStopBusInfoFetcher.m; sourceTree = "<group>"; };
@@ -163,6 +169,11 @@
 		236FC34E1CAFDC4A00207C15 /* ShorteningLabel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ShorteningLabel.m; sourceTree = "<group>"; };
 		23AB59A21CB088960057688D /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; name = Settings.bundle; path = ../Settings.bundle; sourceTree = "<group>"; };
 		23AB59A51CB271C90057688D /* Bus-Panda 2.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Bus-Panda 2.xcdatamodel"; sourceTree = "<group>"; };
+		23AC944B209B0A6400B670FC /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
+		23AC944D209B146200B670FC /* WeatherWebViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WeatherWebViewController.h; sourceTree = "<group>"; };
+		23AC944E209B146200B670FC /* WeatherWebViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WeatherWebViewController.m; sourceTree = "<group>"; };
+		23AC9450209C625900B670FC /* WebPageAbstractViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WebPageAbstractViewController.h; sourceTree = "<group>"; };
+		23AC9451209C625900B670FC /* WebPageAbstractViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WebPageAbstractViewController.m; sourceTree = "<group>"; };
 		23C937961ACDF51E00EF1441 /* TimetableWebViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TimetableWebViewController.h; sourceTree = "<group>"; };
 		23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TimetableWebViewController.m; sourceTree = "<group>"; };
 		23D75E1B1AC1654B0068C808 /* Bus Panda.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Bus Panda.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -232,7 +243,6 @@
 		23E341621CA6915100EDB581 /* RouteColours.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = RouteColours.swift; path = Bus/RouteColours.swift; sourceTree = "<group>"; };
 		23E341671CA79F1A00EDB581 /* BusInfoFetcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BusInfoFetcher.h; sourceTree = "<group>"; };
 		23E341681CA79F1A00EDB581 /* BusInfoFetcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BusInfoFetcher.m; sourceTree = "<group>"; };
-		23E3416F1CABACB800EDB581 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		23E341701CABACB800EDB581 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		23E341711CABACB800EDB581 /* MGSwipeButton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGSwipeButton.h; sourceTree = "<group>"; };
 		23E341721CABACB800EDB581 /* MGSwipeButton.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MGSwipeButton.m; sourceTree = "<group>"; };
@@ -254,6 +264,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				235FF3C320D78B8C0080FE67 /* CloudKit.framework in Frameworks */,
+				23AC944C209B0A6400B670FC /* WebKit.framework in Frameworks */,
 				233CD79C1C37AB8000E0B6D6 /* MapKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -288,7 +300,6 @@
 				23E3415D1CA681A000EDB581 /* BusesInterfaceController.swift */,
 				23E3415F1CA68F5F00EDB581 /* BusesRowController.swift */,
 				23420AAD1C92A34E009F40F9 /* NotificationController.swift */,
-				23420AAF1C92A34E009F40F9 /* GlanceController.swift */,
 				236842401CAD3B7600548923 /* StringShortener.swift */,
 				23420AB11C92A34E009F40F9 /* Assets.xcassets */,
 				23420AB31C92A34E009F40F9 /* Info.plist */,
@@ -339,13 +350,16 @@
 		23AB59A41CB08AFD0057688D /* Code */ = {
 			isa = PBXGroup;
 			children = (
+				23065F6A20E82F3F00658D07 /* Constants.h */,
+				23E1026C1C1D2A7100BEF3C6 /* UsefulTypes.h */,
 				23D75E221AC1654B0068C808 /* AppDelegate.h */,
 				23D75E231AC1654B0068C808 /* AppDelegate.m */,
+				235FF3C420E6D8380080FE67 /* DataManager.h */,
+				235FF3C520E6D8380080FE67 /* DataManager.m */,
 				23D75E281AC1654B0068C808 /* MasterViewController.h */,
 				23D75E291AC1654B0068C808 /* MasterViewController.m */,
 				23D75E2B1AC1654B0068C808 /* DetailViewController.h */,
 				23D75E2C1AC1654B0068C808 /* DetailViewController.m */,
-				23E1026C1C1D2A7100BEF3C6 /* UsefulTypes.h */,
 				233CD79D1C3BDB7D00E0B6D6 /* ErrorPresenter.h */,
 				23420A881C8EC7DD009F40F9 /* ErrorPresenter.swift */,
 				23063B031ACBF0BC00C063DC /* FavouritesCell.h */,
@@ -358,8 +372,12 @@
 				23E3417A1CABD2E900EDB581 /* StopInfoFetcher.m */,
 				236842421CAD3E1600548923 /* NearestStopBusInfoFetcher.h */,
 				236842431CAD3E1600548923 /* NearestStopBusInfoFetcher.m */,
+				23AC9450209C625900B670FC /* WebPageAbstractViewController.h */,
+				23AC9451209C625900B670FC /* WebPageAbstractViewController.m */,
 				23C937961ACDF51E00EF1441 /* TimetableWebViewController.h */,
 				23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */,
+				23AC944D209B146200B670FC /* WeatherWebViewController.h */,
+				23AC944E209B146200B670FC /* WeatherWebViewController.m */,
 				23E102671C1D0B7C00BEF3C6 /* AddStopAbstractViewController.h */,
 				23E102681C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m */,
 				23063AF51AC7A4C800C063DC /* EnterStopIDViewController.h */,
@@ -376,6 +394,15 @@
 			name = Code;
 			sourceTree = "<group>";
 		};
+		23AC944A209B0A6400B670FC /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				235FF3C220D78B8C0080FE67 /* CloudKit.framework */,
+				23AC944B209B0A6400B670FC /* WebKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		23D75E121AC1654B0068C808 = {
 			isa = PBXGroup;
 			children = (
@@ -385,6 +412,7 @@
 				23420AA61C92A34E009F40F9 /* Bus Panda WatchKit Extension */,
 				23420A971C92A34E009F40F9 /* Bus Panda Watch App */,
 				23D75E1C1AC1654B0068C808 /* Products */,
+				23AC944A209B0A6400B670FC /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -489,7 +517,6 @@
 		23E3416E1CABACB800EDB581 /* MGSwipeTableCell */ = {
 			isa = PBXGroup;
 			children = (
-				23E3416F1CABACB800EDB581 /* Info.plist */,
 				23E341701CABACB800EDB581 /* LICENSE */,
 				23E341711CABACB800EDB581 /* MGSwipeButton.h */,
 				23E341721CABACB800EDB581 /* MGSwipeButton.m */,
@@ -580,13 +607,13 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0720;
-				LastUpgradeCheck = 0900;
+				LastUpgradeCheck = 0930;
 				ORGANIZATIONNAME = "Andrew Hodgkinson";
 				TargetAttributes = {
 					23420A951C92A34E009F40F9 = {
 						CreatedOnToolsVersion = 7.2.1;
 						DevelopmentTeam = XT4V976D8Y;
-						LastSwiftMigration = 0800;
+						LastSwiftMigration = "";
 					};
 					23420AA11C92A34E009F40F9 = {
 						CreatedOnToolsVersion = 7.2.1;
@@ -600,12 +627,15 @@
 						ProvisioningStyle = Automatic;
 						SystemCapabilities = {
 							com.apple.BackgroundModes = {
-								enabled = 0;
+								enabled = 1;
 							};
 							com.apple.GameCenter = {
 								enabled = 0;
 							};
 							com.apple.Maps.iOS = {
+								enabled = 1;
+							};
+							com.apple.Push = {
 								enabled = 1;
 							};
 							com.apple.iCloud = {
@@ -663,7 +693,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				23E341751CABACB800EDB581 /* Info.plist in Resources */,
 				23D75E301AC1654B0068C808 /* Main.storyboard in Resources */,
 				23D75E351AC1654B0068C808 /* LaunchScreen.xib in Resources */,
 				23D75E321AC1654B0068C808 /* Images.xcassets in Resources */,
@@ -693,7 +722,6 @@
 				23E341651CA6A11400EDB581 /* RouteColours.swift in Sources */,
 				23420AAA1C92A34E009F40F9 /* StopsInterfaceController.swift in Sources */,
 				23E341641CA6A10600EDB581 /* BusesInterfaceController.swift in Sources */,
-				23420AB01C92A34E009F40F9 /* GlanceController.swift in Sources */,
 				236842411CAD3B7600548923 /* StringShortener.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -718,6 +746,7 @@
 				23D75E751AC165A70068C808 /* HTMLDocumentType.m in Sources */,
 				23D75E7B1AC165A70068C808 /* HTMLParser.m in Sources */,
 				23063AFA1AC7DAAC00C063DC /* ServiceDescriptionCell.m in Sources */,
+				235FF3C620E6D8380080FE67 /* DataManager.m in Sources */,
 				236FC34F1CAFDC4A00207C15 /* ShorteningLabel.m in Sources */,
 				23E102691C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m in Sources */,
 				236FC3481CAE124E00207C15 /* INTURequestIDGenerator.m in Sources */,
@@ -732,6 +761,7 @@
 				236FC3461CAE124E00207C15 /* INTULocationManager.m in Sources */,
 				23E1026F1C1D3A8700BEF3C6 /* StopLocation.m in Sources */,
 				23D75E831AC165A70068C808 /* NSString+HTMLEntities.m in Sources */,
+				23AC944F209B146200B670FC /* WeatherWebViewController.m in Sources */,
 				23C937981ACDF51E00EF1441 /* TimetableWebViewController.m in Sources */,
 				23D75E2A1AC1654B0068C808 /* MasterViewController.m in Sources */,
 				23E341771CABACB800EDB581 /* MGSwipeButton.m in Sources */,
@@ -743,6 +773,7 @@
 				23D75E241AC1654B0068C808 /* AppDelegate.m in Sources */,
 				23E341631CA6915100EDB581 /* RouteColours.swift in Sources */,
 				23D75E211AC1654B0068C808 /* main.m in Sources */,
+				23AC9452209C625A00B670FC /* WebPageAbstractViewController.m in Sources */,
 				23D75E7D1AC165A70068C808 /* HTMLSelector.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -819,7 +850,7 @@
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 2.2;
+				WATCHOS_DEPLOYMENT_TARGET = 3.2;
 			};
 			name = Debug;
 		};
@@ -839,7 +870,7 @@
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 2.2;
+				WATCHOS_DEPLOYMENT_TARGET = 3.2;
 			};
 			name = Release;
 		};
@@ -855,15 +886,16 @@
 				GCC_NO_COMMON_BLOCKS = YES;
 				IBSC_MODULE = watchkit_Extension;
 				INFOPLIST_FILE = watchkit/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda.watchkitapp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 3.0;
+				SWIFT_SWIFT3_OBJC_INFERENCE = On;
+				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 2.1;
+				WATCHOS_DEPLOYMENT_TARGET = 3.2;
 			};
 			name = Debug;
 		};
@@ -879,14 +911,15 @@
 				GCC_NO_COMMON_BLOCKS = YES;
 				IBSC_MODULE = watchkit_Extension;
 				INFOPLIST_FILE = watchkit/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda.watchkitapp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 3.0;
+				SWIFT_SWIFT3_OBJC_INFERENCE = On;
+				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 2.1;
+				WATCHOS_DEPLOYMENT_TARGET = 3.2;
 			};
 			name = Release;
 		};
@@ -902,12 +935,14 @@
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
@@ -934,11 +969,11 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
-				SWIFT_SWIFT3_OBJC_INFERENCE = Off;
+				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -955,12 +990,14 @@
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
@@ -980,11 +1017,11 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
-				SWIFT_SWIFT3_OBJC_INFERENCE = Off;
+				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};
@@ -1001,7 +1038,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = XT4V976D8Y;
 				INFOPLIST_FILE = Bus/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 8.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1025,7 +1062,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = XT4V976D8Y;
 				INFOPLIST_FILE = Bus/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 8.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda";
 				PRODUCT_NAME = "$(TARGET_NAME)";

@@ -9,24 +9,43 @@
 import Foundation
 import UIKit
 
-@objc class ErrorPresenter : NSObject {
-    @objc class func showModalAlertFor(
+@objc class ErrorPresenter : NSObject
+{
+    @objc class func showModalAlertFor
+    (
         _ controller: UIViewController,
-        withError:  NSError,
-        title:      NSString,
-        andHandler: @escaping ( _ result: UIAlertAction ) -> Void
+        withError:    NSError,
+        title:        NSString,
+        andHandler:   @escaping ( _ result: UIAlertAction ) -> Void
     )
     {
-        let message = withError.localizedDescription
-        let alert   = UIAlertController(
-            title:          title as String,
-            message:        message,
+        showModalPopupFor(
+            controller,
+            withMessage: withError.localizedDescription as NSString,
+            title:       title,
+            button:      "OK",
+            andHandler:  andHandler
+        )
+    }
+
+    @objc class func showModalPopupFor
+    (
+        _ controller: UIViewController,
+         withMessage: NSString,
+               title: NSString,
+              button: NSString,
+          andHandler: @escaping ( _ result: UIAlertAction ) -> Void
+    )
+    {
+        let alert = UIAlertController(
+            title:          title       as String,
+            message:        withMessage as String,
             preferredStyle: .alert
         )
 
-        let action  = UIAlertAction(
-            title:   "OK",
-            style:   .default,
+        let action = UIAlertAction(
+            title:   button as String,
+            style:   .cancel,
             handler: andHandler
         )
 
