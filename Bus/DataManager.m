@@ -85,6 +85,7 @@
         }
     );
 }
+
 #pragma mark - Initialisation
 
 + ( DataManager * ) dataManager
