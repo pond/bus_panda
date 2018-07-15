@@ -1115,11 +1115,9 @@
 
     NSLog( @"Add or edit: %@ (%@): %@", stopID, preferred, stopDescription );
 
-    if ( preferred == nil ) preferred = @( NO );
-
     // Indicates nasty bug, but try not to just crash...
     //
-    if ( stopID == nil || stopDescription == nil )
+    if ( stopID == nil )
     {
         NSLog( @"Add or edit: SERIOUS: Unexpected 'nil'!" );
         return;
@@ -1129,30 +1127,34 @@
 
     NSUserDefaults         * defaults           = NSUserDefaults.standardUserDefaults;
     BOOL                     oldShowSectionFlag = self.shouldShowSectionHeader;
-    NSNumber               * oldPreferred       = @( ! preferred.boolValue );
+    BOOL                     preferredDidChange = NO;
     NSManagedObject        * object             = [ DataManager.dataManager findFavouriteStopByID: stopID ];
     NSManagedObjectContext * context            = self.managedObjectContextLocal;
 
     if ( object == nil )
     {
+        NSString * newStopDescription = ( stopDescription == nil ) ? [ stopID copy ]             : stopDescription;
+        NSNumber * newPreferred       = ( preferred       == nil ) ? STOP_IS_NOT_PREFERRED_VALUE : preferred;
+
         object =
         [
             NSEntityDescription insertNewObjectForEntityForName: ENTITY_AND_RECORD_NAME
                                          inManagedObjectContext: context
         ];
 
-        [ object setValue: stopID forKey: @"stopID" ];
-
-        if ( stopDescription == nil ) stopDescription = [ stopID copy ];
-        if ( preferred       == nil ) preferred       = STOP_IS_NOT_PREFERRED_VALUE;
+        [ object setValue: stopID             forKey: @"stopID" ];
+        [ object setValue: newStopDescription forKey: @"stopDescription" ];
+        [ object setValue: newPreferred       forKey: @"preferred"       ];
     }
     else
     {
-        oldPreferred = [ object valueForKey: @"preferred" ];
-    }
+        NSNumber * oldPreferred = [ object valueForKey: @"preferred" ];
 
-    if ( stopDescription != nil ) [ object setValue: stopDescription forKey: @"stopDescription" ];
-    if ( preferred       != nil ) [ object setValue: preferred       forKey: @"preferred"       ];
+        preferredDidChange = ( preferred == nil || [ preferred isEqualToNumber: oldPreferred ] ) ? NO : YES;
+
+        if ( stopDescription != nil ) [ object setValue: stopDescription forKey: @"stopDescription" ];
+        if ( preferred       != nil ) [ object setValue: preferred       forKey: @"preferred"       ];
+    }
 
     NSError * error = nil;
 
@@ -1171,7 +1173,7 @@
     BOOL newShowSectionFlag = self.shouldShowSectionHeader;
     if ( oldShowSectionFlag != newShowSectionFlag ) [ self sendDataHasChangedNotification ];
 
-    if ( preferred.boolValue != oldPreferred.boolValue )
+    if ( preferredDidChange )
     {
         // If there's no section header than (A) is there only one favourite
         // stop, (B) is that stop now preferred and (C) have we detected this
@@ -1220,11 +1222,16 @@
 
             if ( record == nil || error.code == CKErrorUnknownItem ) // (If 'error' is nil, dereference of code will be 'nil' and comparison will fail)
             {
-                CKRecord * record = [ [ CKRecord alloc ] initWithRecordType: ENTITY_AND_RECORD_NAME
-                                                                   recordID: recordID ];
+                NSString * newStopDescription = ( stopDescription == nil ) ? [ stopID copy ]             : stopDescription;
+                NSNumber * newPreferred       = ( preferred       == nil ) ? STOP_IS_NOT_PREFERRED_VALUE : preferred;
+                CKRecord * record             =
+                [
+                    [ CKRecord alloc ] initWithRecordType: ENTITY_AND_RECORD_NAME
+                                                 recordID: recordID
+                ];
 
-                [ record setObject: stopDescription forKey: @"stopDescription" ];
-                [ record setObject: preferred       forKey: @"preferred"       ];
+                [ record setObject: newStopDescription forKey: @"stopDescription" ];
+                [ record setObject: newPreferred       forKey: @"preferred"       ];
 
                 NSLog( @"Add or edit: New record: Create %@", record.recordID.recordName );
                 [ self saveRecord: record inDatabase: database onErrorTitle: errorTitle ];
