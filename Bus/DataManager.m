@@ -1133,16 +1133,23 @@
 
     // First update local records.
 
+NSLog(@"1");
+
     NSUserDefaults         * defaults           = NSUserDefaults.standardUserDefaults;
     BOOL                     oldShowSectionFlag = self.shouldShowSectionHeader;
     BOOL                     preferredDidChange = NO;
     NSManagedObject        * object             = [ DataManager.dataManager findFavouriteStopByID: stopID ];
     NSManagedObjectContext * context            = self.managedObjectContextLocal;
 
+NSLog(@"2 %@ %d %d %@ %@",defaults,oldShowSectionFlag,
+      preferredDidChange,object,context);
+
     if ( object == nil )
     {
         NSString * newStopDescription = ( stopDescription == nil ) ? [ stopID copy ]             : stopDescription;
         NSNumber * newPreferred       = ( preferred       == nil ) ? STOP_IS_NOT_PREFERRED_VALUE : preferred;
+
+NSLog(@"3A %@ %@ %@",newStopDescription,newPreferred,object);
 
         object =
         [
@@ -1150,24 +1157,32 @@
                                          inManagedObjectContext: context
         ];
 
+NSLog(@"3A %@ %@ %@",newStopDescription,newPreferred,object);
+
         [ object setValue: stopID             forKey: @"stopID" ];
         [ object setValue: newStopDescription forKey: @"stopDescription" ];
         [ object setValue: newPreferred       forKey: @"preferred"       ];
+
+NSLog(@"4A");
     }
     else
     {
         NSNumber * oldPreferred = [ object valueForKey: @"preferred" ];
-
+NSLog(@"3B %@, %@", preferred, oldPreferred);
         preferredDidChange = ( preferred == nil || [ preferred isEqualToNumber: oldPreferred ] ) ? NO : YES;
 
         if ( stopDescription != nil ) [ object setValue: stopDescription forKey: @"stopDescription" ];
         if ( preferred       != nil ) [ object setValue: preferred       forKey: @"preferred"       ];
+
+NSLog(@"4B");
     }
 
     NSError * error = nil;
 
+NSLog(@"5 Save");
     if ( ! [ context save: &error ] )
     {
+NSLog(@"6 Error");
         [ self handleError: error
                  withTitle: NSLocalizedString( @"Could not change 'preferred' stop setting", "Error message shown when changing the 'preferred' setting fails" ) ];
 
@@ -1179,6 +1194,7 @@
     // table redraw.
     //
     BOOL newShowSectionFlag = self.shouldShowSectionHeader;
+NSLog(@"6 Send data changed, pref dif change %d %d", oldShowSectionFlag != newShowSectionFlag, preferredDidChange);
     if ( oldShowSectionFlag != newShowSectionFlag ) [ self sendDataHasChangedNotification ];
 
     if ( preferredDidChange )
@@ -1219,6 +1235,8 @@
         @"Could not save changes in iCloud",
         @"Error message shown when trying to save favourite stop changes to iCloud"
     );
+
+NSLog(@"7 Con %@ DB %@ zon %@ rec %@",container,database,zoneID,recordID);
 
     [ self spinnerOn ];
 
