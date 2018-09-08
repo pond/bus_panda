@@ -72,11 +72,13 @@
 {
     if ( useWebScraper == YES )
     {
+        NSLog( @"Fetching bus information for %@ by web scraper", stopID );
         return [ self getAllBusesForStopUsingScraper: stopID
                                    completionHandler: handler ];
     }
     else
     {
+        NSLog( @"Fetching bus information for %@ by API", stopID );
         return [ self getAllBusesForStopUsingAPI: stopID
                                completionHandler: handler ];
     }

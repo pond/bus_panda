@@ -24,6 +24,7 @@
 @property ( strong, nonatomic ) NSURLSessionTask * scrapeTask;
 @property ( strong, nonatomic ) NSMutableArray   * parsedSections;
 @property ( strong, nonatomic ) UIRefreshControl * refreshControl;
+@property ( strong, nonatomic ) NSTimer          * autoRefresh;
 
 - ( void ) showActivityViewer;
 - ( void ) hideActivityViewer;
@@ -94,11 +95,7 @@
 
 - ( void ) setDetailItem: ( id ) newDetailItem
 {
-    if ( _detailItem != newDetailItem )
-    {
-        _detailItem = newDetailItem;
-        [ self configureView ];
-    }
+    _detailItem = newDetailItem;
 }
 
 - ( void ) configureView
@@ -196,8 +193,6 @@
 {
     [ super viewDidLoad ];
 
-    // Pull-to-refresh
-
     self.refreshControl = [ [ UIRefreshControl alloc ] init ];
 
     [ self.refreshControl addTarget: self
@@ -206,9 +201,34 @@
 
     [ self.tableView addSubview: self.refreshControl ];
 
-    // Populate the table
+    self.autoRefresh = [ NSTimer timerWithTimeInterval: 60.0
+                                                target: self
+                                              selector: @selector( doAutoRefresh )
+                                              userInfo: nil
+                                               repeats: YES ];
+
+    [ [ NSRunLoop mainRunLoop ] addTimer: self.autoRefresh
+                                 forMode: NSDefaultRunLoopMode ];
 
     [ self configureView ];
+}
+
+- ( void ) doAutoRefresh
+{
+    if ( self.scrapeTask != nil ) return;
+
+    NSString * stopID = [ self.detailItem valueForKey: @"stopID" ];
+    if ( stopID == nil ) return;
+
+    self.scrapeTask =
+    [
+        BusInfoFetcher getAllBusesForStop: stopID
+              usingWebScraperInsteadOfAPI: YES
+                        completionHandler: ^ ( NSMutableArray * sections )
+        {
+            [ self handleScrapeTaskResults: sections ];
+        }
+    ];
 }
 
 // http://stackoverflow.com/questions/19379510/uitableviewcell-doesnt-get-deselected-when-swiping-back-quickly
@@ -223,6 +243,8 @@
 - ( void ) viewWillDisappear: ( BOOL ) animated
 {
     [ super viewWillDisappear: animated ];
+
+    [ [ NSOperationQueue mainQueue ] addOperationWithBlock: ^ { [ self.autoRefresh invalidate ]; } ];
 
     [ self.apiTask    cancel ];
     [ self.scrapeTask cancel ];
