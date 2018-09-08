@@ -148,22 +148,26 @@
          isScrapeResult: ( BOOL             ) isScrapeResult
 {
     // The web scraper result will be more detailed and usually - but not
-    // always - contain more entries than the API result. In particular the
-    // API never seems to say "cancelled", but the web scraper does.
+    // always - contain more entries than the API result. The scraper is
+    // also used for auto-refresh, which may mean gradually less entries
+    // at the end of a day if the next day doesn't have data (e.g. due to
+    // looking at a weekday-only express listing on a Friday), so we have
+    // to use this in preference to the API.
     //
-    // If we have no data right now anyway, take whatever arrived. If we seem
-    // to be getting more data, then use it. That's usually the web scraper.
-    // But otherwise, it's possible the web scraper is giving us a result that
-    // we should take and, so long as it has more than one item in the results
-    // - if not, it might just be a single error entry because the web scrape
-    // actually failed - then use it.
-    //
-    if (
-           self.parsedSections == nil ||
-           self.parsedSections.count == 0 ||
-           sections.count > self.parsedSections.count ||
-           ( isScrapeResult && sections.count > 1 )
-       )
+    // So - if we have no data right now anyway, take whatever arrived.
+    // Otherwise, assuming no error, use the data in full.
+
+    NSLog( @"Handle results (is scrape - %d)", isScrapeResult );
+
+    NSArray * thisServiceList = ( NSArray * ) sections.lastObject[ @"services" ];
+    BOOL      thisIsAnError   = [ ( NSNumber * ) thisServiceList.firstObject[ @"error" ] boolValue ];
+
+    if ( thisIsAnError )
+    {
+        NSLog( @"Bus information (is scrape - %d) error: %@", isScrapeResult, sections );
+    }
+
+    if ( self.parsedSections.count == 0 || ( isScrapeResult && thisIsAnError == NO ) )
     {
         // The API result might come in anyway as a race condition but try to
         // at least save a bit of CPU / network time by cancelling it if this
