@@ -104,10 +104,18 @@
 //
 - ( void ) visitMetService
 {
-    NSURL        * url     = [ NSURL         URLWithString: @"http://m.metservice.com/towns/wellington" ];
-    NSURLRequest * request = [ NSURLRequest requestWithURL: url ];
+    NSURL * url;
 
-    [ self.webView loadRequest: request ];
+    if ( UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad )
+    {
+        url = [ NSURL URLWithString: @"https://www.metservice.com/towns-cities/wellington" ];
+    }
+    else
+    {
+        url = [ NSURL URLWithString: @"http://m.metservice.com/towns-cities/wellington" ];
+    }
+
+    [ self.webView loadRequest: [ NSURLRequest requestWithURL: url ] ];
 }
 
 // Dark Sky
@@ -244,7 +252,7 @@
         }, \
         \"action\": { \
           \"type\": \"css-display-none\", \
-          \"selector\": \".mob-adspace, .mob-footer, .mobil-logo\" \
+        \"selector\": \".mob-adspace, .mob-footer, .mobil-logo, .advertisement, #header-promos, #google_image_div\" \
         } \
       }, \
       { \
@@ -260,7 +268,7 @@
       { \
         \"trigger\": { \
           \"url-filter\": \".*\", \
-          \"if-domain\": [ \"doubleclick.net\", \"facebook.net\", \"googletagservices.com\", \"google-analytics.com\", \"newrelic.com\" ], \
+          \"if-domain\": [ \"doubleclick.net\", \"facebook.net\", \"googletagservices.com\", \"googlesyndication.com\", \"google-analytics.com\", \"adservice.google.com\", \"adservice.google.co.nz\", \"newrelic.com\", \"pubmatic.com\", \"rubiconproject.com\", \"ampproject.org\", \"adsafeprotected.com\" ], \
           \"resource-type\": [ \"script\" ] \
         }, \
         \"action\": { \
