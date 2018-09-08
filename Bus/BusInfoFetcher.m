@@ -433,8 +433,9 @@
         HTMLElement * list     = [ home firstNodeMatchingSelector: @"div.rt-info-content table" ];
         NSArray     * services = [ list     nodesMatchingSelector: @"tr" ];
 
-        NSMutableArray * parsedSections     = [ [ NSMutableArray alloc ] init ];
-        NSMutableArray * currentServiceList = [ [ NSMutableArray alloc ] init ];
+        NSMutableArray * parsedSections          = [ [ NSMutableArray alloc ] init ];
+        NSMutableArray * currentServiceList      = [ [ NSMutableArray alloc ] init ];
+        NSDate         * previousServiceDateTime = nil;
 
         for ( HTMLElement * service in services )
         {
@@ -461,15 +462,45 @@
 
                 if ( [ sectionTitle length ] )
                 {
-                    currentServiceList = [ [ NSMutableArray alloc ] init ];
+                    // https://stackoverflow.com/questions/16254575/how-do-i-get-an-iso-8601-date-on-ios
 
-                    [
-                        parsedSections addObject:
-                        @{
-                            @"title":    sectionTitle,
-                            @"services": currentServiceList
+                    NSDateFormatter * formatter       = [ [ NSDateFormatter alloc ] init ];
+                    NSLocale        * enUSPOSIXLocale = [ NSLocale localeWithLocaleIdentifier: @"en_US_POSIX" ];
+                    NSDate          * serviceDateTime = nil;
+                    NSString        * thisYear;
+
+                    formatter.locale     = enUSPOSIXLocale;
+                    formatter.dateFormat = @"yyyy";
+                    formatter.timeZone   = [ NSTimeZone timeZoneWithName: @"Pacific/Auckland" ];
+
+                    thisYear = [ formatter stringFromDate: [ NSDate date ] ];
+
+                    formatter.dateFormat = @"E d MMM yyyy";
+                    serviceDateTime      = [ formatter dateFromString: [ NSString stringWithFormat: @"%@ %@", sectionTitle, thisYear ] ];
+
+                    if (
+                         serviceDateTime         == nil ||
+                         previousServiceDateTime == nil ||
+                         NO == [ [ NSCalendar currentCalendar] isDate: serviceDateTime
+                                                      inSameDayAsDate: previousServiceDateTime ] )
+                    {
+                        if ( serviceDateTime != nil )
+                        {
+                            sectionTitle = [ self sectionTitleForDateTime: serviceDateTime ];
                         }
-                    ];
+
+                        currentServiceList = [ [ NSMutableArray alloc ] init ];
+
+                        [
+                            parsedSections addObject:
+                            @{
+                                @"title":    sectionTitle,
+                                @"services": currentServiceList
+                            }
+                        ];
+                    }
+
+                    previousServiceDateTime = serviceDateTime;
                 }
 
                 continue; // Note early exit to next loop iteration

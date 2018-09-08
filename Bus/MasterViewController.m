@@ -544,12 +544,40 @@
 
     if ( [ keyPath isEqualToString: SHORTEN_DISPLAYED_NAMES ] )
     {
-        NSLog( @"KVO shorten-displayed-names changed, updating view" );
-
-        [ self.tableView performSelector: @selector( reloadData )
-                              withObject: nil
-                              afterDelay: 0.5 ];
+        [ self performSelector: @selector( forceRedrawTable ) // (See below)
+                    withObject: nil ];
     }
+}
+
+// From around iOS 11 and later, UITableView -reloadData seems to be optimised
+// to not want to redraw things if the data hasn't changed. This means a change
+// of the "shorten names" setting isn't always reflected at run time by just a
+// simple reload. Instead, we need to take more drastic steps.
+//
+// MUST BE CALLED ON MAIN THREAD ONLY.
+//
+- ( void ) forceRedrawTable
+{
+    NSMutableArray * indexArray = [ NSMutableArray array ];
+    NSInteger        sections   = [ self numberOfSectionsInTableView: self.tableView ];
+
+    for ( NSInteger section = 0; section < sections; section ++ )
+    {
+        NSInteger rows = [ self tableView: self.tableView numberOfRowsInSection: section ];
+
+        for ( NSInteger row = 0; row < rows; row ++ )
+        {
+            NSIndexPath * indexPath = [ NSIndexPath indexPathForRow: row inSection: section ];
+            [ indexArray addObject: indexPath ];
+        }
+    }
+
+    [ self.tableView beginUpdates ];
+
+    [ self.tableView reloadRowsAtIndexPaths: indexArray
+                           withRowAnimation: UITableViewRowAnimationNone ];
+
+    [ self.tableView endUpdates ];
 }
 
 #pragma mark - Refresh control handling
