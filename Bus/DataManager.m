@@ -30,6 +30,10 @@
     //
     @property ( strong ) NSOperationQueue * cloudOperationsQueue;
 
+    // Main awaken operation we'll run on this queue.
+    //
+    @property ( strong ) NSBlockOperation * awakenOperation;
+
     // The above queue has the major awaken operation performed in it, but we
     // also do per-record saves using that queue too. This means that if one
     // save is delayed for some reason (e.g. rate limits) but then the same
@@ -148,27 +152,32 @@
 //
 - ( void ) awakenAllStores
 {
-    NSUserDefaults * defaults = NSUserDefaults.standardUserDefaults;
-
     // If we're already running an 'awaken' job, cancel it. This later one
     // takes priority.
     //
     [ self.cloudOperationsQueue cancelAllOperations ];
 
-    // Need to define the block operation object up here, so that inside the
-    // block we can reference this and check if "we" have been cancelled.
+    // (Re)define the operation block (any old operation now being cancelled)
+    // allowing any old one to be garbage collected.
     //
-    NSBlockOperation * awakenOperation = [ [ NSBlockOperation alloc ] init ];
-    __weak NSBlockOperation * thisOperation = awakenOperation;
+    self.awakenOperation = [ [ NSBlockOperation alloc ] init ];
+
+    // Avoid potential retain cycles.
+    //
+    __weak NSBlockOperation * thisOperation = self.awakenOperation;
 
     // Define the one and only block that we'll pass to an NSBlockOperation
     // instance and then place on the queue at the very end of this method.
     //
     id awakenOperationBlock = ^ ( void )
     {
+        DataManager * dataManager = [ DataManager dataManager ];
+
         [
             [ CKContainer defaultContainer ] accountStatusWithCompletionHandler: ^ ( CKAccountStatus accountStatus, NSError * error )
             {
+                NSUserDefaults * defaults = NSUserDefaults.standardUserDefaults;
+
                 if ( thisOperation.cancelled ) return;
 
                 if ( accountStatus == CKAccountStatusNoAccount )
@@ -180,12 +189,11 @@
                     if ( [ defaults boolForKey: HAVE_SHOWN_ICLOUD_SIGNIN_WARNING ] != YES )
                     {
                         [ defaults setBool: YES forKey: HAVE_SHOWN_ICLOUD_SIGNIN_WARNING ];
-
                         if ( thisOperation.cancelled ) return;
 
-                        [ self showMessage: @"Sign in to iCloud to synchronise favourites between devices.\n\nOtherwise, Bus Panda can still save favourites but only on this device."
-                                 withTitle: @"Not signed in to iCloud"
-                                 andButton: @"Got it!" ];
+                        [ dataManager showMessage: @"Sign in to iCloud to synchronise favourites between devices.\n\nOtherwise, Bus Panda can still save favourites but only on this device."
+                                        withTitle: @"Not signed in to iCloud"
+                                        andButton: @"Got it!" ];
                     }
                 }
                 else if ( accountStatus != CKAccountStatusAvailable )
@@ -195,9 +203,9 @@
                     [ defaults setBool: NO forKey: ICLOUD_IS_AVAILABLE ];
                     if ( thisOperation.cancelled ) return;
 
-                    [ self showMessage: @"iCloud is not available, either due to parental controls or an error. Bus Panda will not be able to synchronise favourite stops with your other devices."
-                             withTitle: @"Cannot use iCloud"
-                             andButton: @"Got it!" ];
+                    [ dataManager showMessage: @"iCloud is not available, either due to parental controls or an error. Bus Panda will not be able to synchronise favourite stops with your other devices."
+                                    withTitle: @"Cannot use iCloud"
+                                    andButton: @"Got it!" ];
                 }
                 else
                 {
@@ -261,7 +269,7 @@
                                     // the new local storage with CloudKit sync.
 
                                     if ( thisOperation.cancelled ) return;
-                                    [ self managedObjectContextRemote ];
+                                    [ dataManager managedObjectContextRemote ];
                                 }
                             };
 
@@ -286,10 +294,10 @@
 
                                 if ( object != nil )
                                 {
-                                    [ self addOrEditFavourite: [ object valueForKey: @"stopID"          ]
-                                           settingDescription: [ object valueForKey: @"stopDescription" ]
-                                             andPreferredFlag: [ object valueForKey: @"preferred"       ]
-                                            includingCloudKit: YES ];
+                                    [ dataManager addOrEditFavourite: [ object valueForKey: @"stopID"          ]
+                                                  settingDescription: [ object valueForKey: @"stopDescription" ]
+                                                    andPreferredFlag: [ object valueForKey: @"preferred"       ]
+                                                   includingCloudKit: YES ];
                                 }
                             }
 
@@ -297,8 +305,8 @@
                             // in the local user default records and therefore
                             // already subject to updates.
                             //
-                            [ self fetchRecentChangesWithCompletionBlock: completionBlock
-                                                ignoringPriorChangeToken: YES ];
+                            [ dataManager fetchRecentChangesWithCompletionBlock: completionBlock
+                                                       ignoringPriorChangeToken: YES ];
 #endif
 
                             // With that underway, we can set up our subscription to
@@ -371,11 +379,11 @@
     // As per comments far above :-) now finally add the big block we just
     // defined as a (cancelleable) operation that'll get run when iOS is ready.
     //
-    awakenOperation.completionBlock = ^ ( void ) { [ self spinnerOff ]; };
+    self.awakenOperation.completionBlock = ^ ( void ) { [ [ DataManager dataManager ] spinnerOff ]; };
     [ self spinnerOn ];
 
-    [ awakenOperation addExecutionBlock: awakenOperationBlock ];
-    [ self.cloudOperationsQueue addOperation: awakenOperation ];
+    [ self.awakenOperation addExecutionBlock: awakenOperationBlock ];
+    [ self.cloudOperationsQueue addOperation: self.awakenOperation ];
 }
 
 #pragma mark - Support utilities
@@ -1171,6 +1179,7 @@
     // table redraw.
     //
     BOOL newShowSectionFlag = self.shouldShowSectionHeader;
+
     if ( oldShowSectionFlag != newShowSectionFlag ) [ self sendDataHasChangedNotification ];
 
     if ( preferredDidChange )

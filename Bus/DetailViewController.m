@@ -24,13 +24,15 @@
 @property ( strong, nonatomic ) NSURLSessionTask * scrapeTask;
 @property ( strong, nonatomic ) NSMutableArray   * parsedSections;
 @property ( strong, nonatomic ) UIRefreshControl * refreshControl;
+@property ( strong, nonatomic ) NSTimer          * autoRefresh;
 
 - ( void ) showActivityViewer;
 - ( void ) hideActivityViewer;
 
 - ( void ) handleApiTaskResults:    ( NSMutableArray * ) sections;
 - ( void ) handleScrapeTaskResults: ( NSMutableArray * ) sections;
-- ( void ) mergeResults:            ( NSMutableArray * ) sections;
+- ( void ) mergeResults:            ( NSMutableArray * ) sections
+           isScrapeResult:          ( BOOL             ) isScrapeResult;
 
 @end
 
@@ -93,11 +95,7 @@
 
 - ( void ) setDetailItem: ( id ) newDetailItem
 {
-    if ( _detailItem != newDetailItem )
-    {
-        _detailItem = newDetailItem;
-        [ self configureView ];
-    }
+    _detailItem = newDetailItem;
 }
 
 - ( void ) configureView
@@ -137,22 +135,51 @@
 - ( void ) handleApiTaskResults: ( NSMutableArray * ) sections
 {
     self.apiTask = nil;
-    [ self mergeResults: sections ];
+    [ self mergeResults: sections isScrapeResult: NO ];
 }
 
 - ( void ) handleScrapeTaskResults: ( NSMutableArray * ) sections
 {
     self.scrapeTask = nil;
-    [ self mergeResults: sections ];
+    [ self mergeResults: sections isScrapeResult: YES ];
 }
 
 - ( void ) mergeResults: ( NSMutableArray * ) sections
+         isScrapeResult: ( BOOL             ) isScrapeResult
 {
-    // If there are no parsed sections stored locally yet, then just take
-    // what we were given. Otherwise, have to merge the results.
+    // The web scraper result will be more detailed and usually - but not
+    // always - contain more entries than the API result. The scraper is
+    // also used for auto-refresh, which may mean gradually less entries
+    // at the end of a day if the next day doesn't have data (e.g. due to
+    // looking at a weekday-only express listing on a Friday), so we have
+    // to use this in preference to the API.
     //
-    if ( self.parsedSections == nil || self.parsedSections.count == 0 )
+    // So - if we have no data right now anyway, take whatever arrived.
+    // Otherwise, assuming no error, use the data in full.
+
+    NSLog( @"Handle results (is scrape - %d)", isScrapeResult );
+
+    NSArray * thisServiceList = ( NSArray * ) sections.lastObject[ @"services" ];
+    BOOL      thisIsAnError   = [ ( NSNumber * ) thisServiceList.firstObject[ @"error" ] boolValue ];
+
+    if ( thisIsAnError )
     {
+        NSLog( @"Bus information (is scrape - %d) error: %@", isScrapeResult, sections );
+    }
+
+    if ( self.parsedSections.count == 0 || ( isScrapeResult && thisIsAnError == NO ) )
+    {
+        // The API result might come in anyway as a race condition but try to
+        // at least save a bit of CPU / network time by cancelling it if this
+        // is the web scrape result.
+        //
+        if ( isScrapeResult )
+        {
+            NSURLSessionTask * task = self.apiTask;
+            self.apiTask = nil;
+            [ task cancel ];
+        }
+   
         self.parsedSections = sections;
 
         // For the refresh control hiding to work properly with smooth
@@ -161,66 +188,6 @@
         //
         [ self.tableView reloadData ];
         [ self hideActivityViewer ];
-
-        // NOTE EARLY EXIT to reduce unnecessary code indentation in a
-        // simple either-or method.
-        //
-        return;
-    }
-
-    // This will all cascade through with "nil" if there are no sections or
-    // services, since we'd be just sending messages to "nil" at each step.
-    //
-    NSDictionary * firstSection  = [ sections firstObject ];
-    NSArray      * firstServices = [ firstSection objectForKey: @"services" ];
-    NSDictionary * firstService  = [ firstServices firstObject ];
-
-    // Since we already have some parsed sections present by this point,
-    // then either that's showing an error already, or it was successful.
-    // Either way, we can ignore the new data if it's just an error case.
-    //
-    if ( [ firstService objectForKey: @"error" ] == nil )
-    {
-        // Enumerate over the existing sections and the new sections.
-        // For any item count greater in the new data, append the new
-        // items. This is a very simple heuristic and risks duplicates
-        // or omissions if the bus count changes / things shift between
-        // sections due to ETA alterations around the midnight threshold,
-        // but since we're only likely to be talking about stuff beyond
-        // the API's 20 item limit then this is unlikely to be an issue
-        // and is less troublesome than complex heuristics attempting to
-        // match services exactly (the web scraper has no access to a
-        // unique service ID, unlike the API).
-
-        [
-            sections enumerateObjectsWithOptions: NSEnumerationConcurrent
-                                      usingBlock: ^ ( NSDictionary * newSection,
-                                                      NSUInteger     index,
-                                                      BOOL         * _Nonnull stop )
-            {
-                if ( index < self.parsedSections.count )
-                {
-                    NSDictionary   * existingSection  = self.parsedSections[ index ];
-                    NSMutableArray * existingServices = existingSection[ @"services" ];
-                    NSArray        *      newServices =      newSection[ @"services" ];
-
-                    if ( newServices.count > existingServices.count )
-                    {
-                        NSUInteger   offset        = existingServices.count;
-                        NSUInteger   count         = newServices.count - offset;
-                        NSArray    * servicesToAdd = [ newServices subarrayWithRange: NSMakeRange( offset, count ) ];
-
-                        [ existingServices addObjectsFromArray: servicesToAdd ];
-                    }
-                }
-                else
-                {
-                    [ self.parsedSections addObject: newSection ];
-                }
-            }
-        ];
-
-        [ self.tableView reloadData ];
     }
 }
 
@@ -230,8 +197,6 @@
 {
     [ super viewDidLoad ];
 
-    // Pull-to-refresh
-
     self.refreshControl = [ [ UIRefreshControl alloc ] init ];
 
     [ self.refreshControl addTarget: self
@@ -240,9 +205,34 @@
 
     [ self.tableView addSubview: self.refreshControl ];
 
-    // Populate the table
+    self.autoRefresh = [ NSTimer timerWithTimeInterval: 60.0
+                                                target: self
+                                              selector: @selector( doAutoRefresh )
+                                              userInfo: nil
+                                               repeats: YES ];
+
+    [ [ NSRunLoop mainRunLoop ] addTimer: self.autoRefresh
+                                 forMode: NSDefaultRunLoopMode ];
 
     [ self configureView ];
+}
+
+- ( void ) doAutoRefresh
+{
+    if ( self.scrapeTask != nil ) return;
+
+    NSString * stopID = [ self.detailItem valueForKey: @"stopID" ];
+    if ( stopID == nil ) return;
+
+    self.scrapeTask =
+    [
+        BusInfoFetcher getAllBusesForStop: stopID
+              usingWebScraperInsteadOfAPI: YES
+                        completionHandler: ^ ( NSMutableArray * sections )
+        {
+            [ self handleScrapeTaskResults: sections ];
+        }
+    ];
 }
 
 // http://stackoverflow.com/questions/19379510/uitableviewcell-doesnt-get-deselected-when-swiping-back-quickly
@@ -257,6 +247,8 @@
 - ( void ) viewWillDisappear: ( BOOL ) animated
 {
     [ super viewWillDisappear: animated ];
+
+    [ [ NSOperationQueue mainQueue ] addOperationWithBlock: ^ { [ self.autoRefresh invalidate ]; } ];
 
     [ self.apiTask    cancel ];
     [ self.scrapeTask cancel ];

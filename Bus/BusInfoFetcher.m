@@ -19,13 +19,14 @@
 
 @interface BusInfoFetcher()
 
-+ ( NSString * ) sectionTitleForDateTime: ( NSDate * ) serviceDateTime;
-
 + ( NSURLSessionTask * ) getAllBusesForStopUsingAPI: ( NSString * ) stopID
                                   completionHandler: ( void ( ^ ) ( NSMutableArray * allBuses ) ) handler;
 
 + ( NSURLSessionTask * ) getAllBusesForStopUsingScraper: ( NSString * ) stopID
                                       completionHandler: ( void ( ^ ) ( NSMutableArray * allBuses ) ) handler;
+
++ ( NSString * ) sectionTitleForDateTime: ( NSDate * ) serviceDateTime;
++ ( NSString * ) safeTrim:                ( id       ) object;
 
 @end
 
@@ -71,11 +72,13 @@
 {
     if ( useWebScraper == YES )
     {
+        NSLog( @"Fetching bus information for %@ by web scraper", stopID );
         return [ self getAllBusesForStopUsingScraper: stopID
                                    completionHandler: handler ];
     }
     else
     {
+        NSLog( @"Fetching bus information for %@ by API", stopID );
         return [ self getAllBusesForStopUsingAPI: stopID
                                completionHandler: handler ];
     }
@@ -132,8 +135,7 @@
 
         if ( error == nil && services != nil )
         {
-            NSCharacterSet * whitespace              = [ NSCharacterSet whitespaceAndNewlineCharacterSet ];
-            NSDate         * previousServiceDateTime = nil;
+            NSDate * previousServiceDateTime = nil;
 
             // Process the JSON results into a higher level array of objects.
             // Example of a service entry in the dictionary, noting the entry
@@ -152,7 +154,7 @@
             //   "AimedArrival":"2018-05-05T19:30:00+12:00",
             //   "AimedDeparture":"2018-05-05T19:30:00+12:00",
             //   "VehicleFeature":"lowFloor",
-            //   "DepartureStatus":"onTime",
+            //   "DepartureStatus":"onTime",  (or e.g. "cancelled")
             //   "ExpectedDeparture":"2018-05-05T19:31:48+12:00",
             //   "DisplayDeparture": "2018-05-05T19:31:48+12:00",
             //   "DisplayDepartureSeconds":351,
@@ -170,12 +172,12 @@
                 // Try really hard to get a date-time for this service as we
                 // need it for the "Today"/"Tomorrow" etc. section headings.
 
-                NSString * time            = [ service[ @"DisplayDeparture" ] stringByTrimmingCharactersInSet: whitespace ];
+                NSString * time            = [ BusInfoFetcher safeTrim: service[ @"DisplayDeparture" ] ];
                 NSDate   * serviceDateTime = nil;
 
-                if ( time.length == 0 ) time = [ service[ @"ExpectedDeparture" ] stringByTrimmingCharactersInSet: whitespace ];
-                if ( time.length == 0 ) time = [ service[ @"AimedDeparture"    ] stringByTrimmingCharactersInSet: whitespace ];
-                if ( time.length == 0 ) time = [ service[ @"AimedArrival"      ] stringByTrimmingCharactersInSet: whitespace ];
+                if ( time.length == 0 ) time = [ BusInfoFetcher safeTrim: service[ @"ExpectedDeparture" ] ];
+                if ( time.length == 0 ) time = [ BusInfoFetcher safeTrim: service[ @"AimedDeparture"    ] ];
+                if ( time.length == 0 ) time = [ BusInfoFetcher safeTrim: service[ @"AimedArrival"      ] ];
 
                 if ( time.length > 0 )
                 {
@@ -234,25 +236,24 @@
                     ];
                 }
 
-                NSNumber * isRealtime    = service[ @"IsRealtime" ];
-                NSString * name          = service[ @"DestinationStopName" ];
-                NSString * number        = service[ @"Service" ][ @"TrimmedCode" ];
-                NSString * timetablePath = service[ @"Service" ][ @"Link" ];
+                NSNumber * isRealtime      = service[ @"IsRealtime" ];
+                NSString * departureStatus = [ BusInfoFetcher safeTrim: service[ @"DepartureStatus"     ] ];
+                NSString * name            = [ BusInfoFetcher safeTrim: service[ @"DestinationStopName" ] ];
+                NSString * number          = [ BusInfoFetcher safeTrim: service[ @"Service" ][ @"TrimmedCode" ] ];
+                NSString * timetablePath   = [ BusInfoFetcher safeTrim: service[ @"Service" ][ @"Link"        ] ];
 
-                name          = [ name          stringByTrimmingCharactersInSet: whitespace ];
-                number        = [ number        stringByTrimmingCharactersInSet: whitespace ];
-                timetablePath = [ timetablePath stringByTrimmingCharactersInSet: whitespace ];
-
-                if ( name.length == 0 )
+                if ( [ departureStatus isEqualToString: @"cancelled" ] )
                 {
-                    name = service[ @"Service" ][ @"Name" ];
-                    name = [ name stringByTrimmingCharactersInSet: whitespace ];
+                    name = @"CANCELLED"; // Match web scraper
+                }
+                else if ( name.length == 0 )
+                {
+                    name = [ BusInfoFetcher safeTrim: service[ @"Service" ][ @"Name" ] ];
                 }
 
                 if ( number.length == 0 )
                 {
-                    number = service[ @"Service" ][ @"Code" ];
-                    number = [ number stringByTrimmingCharactersInSet: whitespace ];
+                    number = [ BusInfoFetcher safeTrim: service[ @"Service" ][ @"Code" ] ];
                 }
 
                 NSDictionary * routeColours = [ RouteColours colours ];
@@ -433,13 +434,12 @@
         HTMLElement * list     = [ home firstNodeMatchingSelector: @"div.rt-info-content table" ];
         NSArray     * services = [ list     nodesMatchingSelector: @"tr" ];
 
-        NSMutableArray * parsedSections     = [ [ NSMutableArray alloc ] init ];
-        NSMutableArray * currentServiceList = [ [ NSMutableArray alloc ] init ];
+        NSMutableArray * parsedSections          = [ [ NSMutableArray alloc ] init ];
+        NSMutableArray * currentServiceList      = [ [ NSMutableArray alloc ] init ];
+        NSDate         * previousServiceDateTime = nil;
 
         for ( HTMLElement * service in services )
         {
-            NSCharacterSet * whitespace = [ NSCharacterSet whitespaceAndNewlineCharacterSet ];
-
             // From October 2015:
             //
             // Added in the ability to define section tables by detecting the
@@ -457,19 +457,49 @@
             if ( [ rowClass isEqualToString: @"rowDivider" ] )
             {
                 HTMLElement * cell         = [ service firstNodeMatchingSelector: @"td" ];
-                NSString    * sectionTitle = [ cell.textContent stringByTrimmingCharactersInSet: whitespace ];
+                NSString    * sectionTitle = [ BusInfoFetcher safeTrim: cell.textContent ];
 
                 if ( [ sectionTitle length ] )
                 {
-                    currentServiceList = [ [ NSMutableArray alloc ] init ];
+                    // https://stackoverflow.com/questions/16254575/how-do-i-get-an-iso-8601-date-on-ios
 
-                    [
-                        parsedSections addObject:
-                        @{
-                            @"title":    sectionTitle,
-                            @"services": currentServiceList
+                    NSDateFormatter * formatter       = [ [ NSDateFormatter alloc ] init ];
+                    NSLocale        * enUSPOSIXLocale = [ NSLocale localeWithLocaleIdentifier: @"en_US_POSIX" ];
+                    NSDate          * serviceDateTime = nil;
+                    NSString        * thisYear;
+
+                    formatter.locale     = enUSPOSIXLocale;
+                    formatter.dateFormat = @"yyyy";
+                    formatter.timeZone   = [ NSTimeZone timeZoneWithName: @"Pacific/Auckland" ];
+
+                    thisYear = [ formatter stringFromDate: [ NSDate date ] ];
+
+                    formatter.dateFormat = @"E d MMM yyyy";
+                    serviceDateTime      = [ formatter dateFromString: [ NSString stringWithFormat: @"%@ %@", sectionTitle, thisYear ] ];
+
+                    if (
+                         serviceDateTime         == nil ||
+                         previousServiceDateTime == nil ||
+                         NO == [ [ NSCalendar currentCalendar] isDate: serviceDateTime
+                                                      inSameDayAsDate: previousServiceDateTime ] )
+                    {
+                        if ( serviceDateTime != nil )
+                        {
+                            sectionTitle = [ self sectionTitleForDateTime: serviceDateTime ];
                         }
-                    ];
+
+                        currentServiceList = [ [ NSMutableArray alloc ] init ];
+
+                        [
+                            parsedSections addObject:
+                            @{
+                                @"title":    sectionTitle,
+                                @"services": currentServiceList
+                            }
+                        ];
+                    }
+
+                    previousServiceDateTime = serviceDateTime;
                 }
 
                 continue; // Note early exit to next loop iteration
@@ -508,7 +538,7 @@
 
             if ( numberLink.textContent )
             {
-                number = [ numberLink.textContent stringByTrimmingCharactersInSet: whitespace ];
+                number = [ BusInfoFetcher safeTrim: numberLink.textContent ];
             }
 
             // From October 2015:
@@ -552,7 +582,7 @@
 
             HTMLElement * infoElt       = [ service firstNodeMatchingSelector: @"a.rt-service-destination" ];
             NSString    * timetablePath = [ infoElt.attributes valueForKey: @"href" ]; // Relative path, not absolute URL
-            NSString    * name          = [ infoElt.textContent stringByTrimmingCharactersInSet: whitespace ];
+            NSString    * name          = [ BusInfoFetcher safeTrim: infoElt.textContent ];
 
             // 2016-04-04 (ADH): A recent MetLink fault on their end was to
             // omit names. This looks really odd. So if there's no name, just
@@ -584,8 +614,8 @@
             // HTMLElement * etaElt  = [ service firstNodeMatchingSelector: @"td.time span.till"   ];
             // HTMLElement * timeElt = [ service firstNodeMatchingSelector: @"td.time span.actual" ];
 
-            NSString * eta  = [  etaElt.textContent stringByTrimmingCharactersInSet: whitespace ];
-            NSString * time = [ timeElt.textContent stringByTrimmingCharactersInSet: whitespace ];
+            NSString * eta  = [ BusInfoFetcher safeTrim:  etaElt.textContent ];
+            NSString * time = [ BusInfoFetcher safeTrim: timeElt.textContent ];
 
             if ( number && name && ( time || eta ) )
             {
@@ -707,6 +737,30 @@
         [ formatter setDateFormat: @"eeee" ];
 
         return [ formatter stringFromDate: serviceDateTime ];
+    }
+}
+
+// If reading something that might return either an NSString or "nil",
+// calling methods such as -stringByTrimmingCharactersInSet: on the
+// object is safe. If however you might get NSNull rather than true
+// "nil", you'd be sending an unrecognised selector, resulting in a
+// crash. The JSON parser can do this; the HTML parser might.
+//
+// Call here to trim white space off a string that might otherwise be
+// "nil" or "NSNull". Always returns the trimmed string or "nil".
+//
++ ( NSString * ) safeTrim: ( id ) object
+{
+    if ( [ object isEqual: [ NSNull null ] ] )
+    {
+        return nil;
+    }
+    else
+    {
+        NSString       * string     = ( NSString * ) object;
+        NSCharacterSet * whitespace = [ NSCharacterSet whitespaceAndNewlineCharacterSet ];
+
+        return [ string stringByTrimmingCharactersInSet: whitespace ];
     }
 }
 
