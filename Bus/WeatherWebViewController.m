@@ -78,6 +78,7 @@
     if      ( [ provider isEqualToString: WEATHER_PROVIDER_DARK_SKY     ] ) [ self visitDarkSky            ];
     else if ( [ provider isEqualToString: WEATHER_PROVIDER_WEATHER_COM  ] ) [ self visitWeatherCom         ];
     else if ( [ provider isEqualToString: WEATHER_PROVIDER_WUNDERGROUND ] ) [ self visitWeatherUnderground ];
+    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WINDFINDER   ] ) [ self visitWindfinder         ];
     else                                                                    [ self visitMetService         ];
 }
 
@@ -89,6 +90,7 @@
     if      ( [ provider isEqualToString: WEATHER_PROVIDER_DARK_SKY     ] ) return [ self rulesForDarkSky            ];
     else if ( [ provider isEqualToString: WEATHER_PROVIDER_WEATHER_COM  ] ) return [ self rulesForWeatherCom         ];
     else if ( [ provider isEqualToString: WEATHER_PROVIDER_WUNDERGROUND ] ) return [ self rulesForWeatherUnderground ];
+    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WINDFINDER   ] ) return [ self rulesForWindfinder         ];
     else                                                                    return [ self rulesForMetService         ];
 }
 
@@ -238,6 +240,25 @@
     ];
 }
 
+// Windfinder:
+// https://m.windfinder.com/forecast/wellington
+//
+- ( void ) visitWindfinder
+{
+    NSURL * url;
+
+    if ( UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad )
+    {
+        url = [ NSURL URLWithString: @"https://www.windfinder.com/forecast/wellington" ];
+    }
+    else
+    {
+        url = [ NSURL URLWithString: @"http://m.windfinder.com/forecast/wellington" ];
+    }
+
+    [ self.webView loadRequest: [ NSURLRequest requestWithURL: url ] ];
+}
+
 #pragma mark - Custom provider content blocking rules
 
 // MetService
@@ -368,6 +389,15 @@
           \"type\": \"block\" \
         } \
       } \
+    ]";
+}
+
+// Windfinder
+//
+- ( NSString * ) rulesForWindfinder
+{
+    return @" \
+    [ \
     ]";
 }
 

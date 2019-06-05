@@ -32,6 +32,7 @@
 #define WEATHER_PROVIDER_DARK_SKY        @"darksky"
 #define WEATHER_PROVIDER_WEATHER_COM     @"weathercom"
 #define WEATHER_PROVIDER_WUNDERGROUND    @"wunderground"
+#define WEATHER_PROVIDER_WINDFINDER      @"windfinder"
 
 #pragma mark - Data management
 

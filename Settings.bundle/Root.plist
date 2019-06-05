@@ -27,11 +27,13 @@
 			<array>
 				<string>FSWeatherMetService</string>
 				<string>FSWeatherDarkSky</string>
+				<string>FSWeatherWindFinder</string>
 			</array>
 			<key>Values</key>
 			<array>
 				<string>metservice</string>
 				<string>darksky</string>
+				<string>windfinder</string>
 			</array>
 			<key>DefaultValue</key>
 			<string>metservice</string>

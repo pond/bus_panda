@@ -12,9 +12,9 @@
 // Clean up nesting in code inside methods that make HTTP requests by assigning
 // the URL competion handler block to a strongly typed variable.
 
-typedef void ( ^ URLRequestCompletionHandler )( NSData        * data,
-                                                NSURLResponse * response,
-                                                NSError       * error);
+typedef void ( ^ URLRequestCompletionHandler )( NSData        * _Nullable data,
+                                                NSURLResponse * _Nullable response,
+                                                NSError       * _Nullable error);
 
 typedef void ( ^ CloudKitQueryCompletionHandler )( NSArray * _Nullable results,
                                                    NSError * _Nullable error );

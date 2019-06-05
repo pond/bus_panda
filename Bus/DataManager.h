@@ -21,13 +21,13 @@
 
 // This class is a singleton. Use this method to retrieve the instance.
 //
-+ ( DataManager * ) dataManager;
++ ( DataManager * _Nonnull ) dataManager;
 
 // To avoid referencing AppDelegate from non-main threads, we have it
 // tell us where the MasterViewController is at startup then use this
 // local copy for reference.
 //
-@property ( strong ) MasterViewController * masterViewController;
+@property ( strong ) MasterViewController * _Nonnull masterViewController;
 
 // Run this at startup, once you have a view controller to use for presenting
 // any alerts that might be needed. Make sure you've set masterViewController
@@ -39,42 +39,42 @@
 // method, passing the second two parameters through. Handles CloudKit
 // notifications only.
 //
-- ( void ) handleNotification: ( NSDictionary  * ) userInfo
-       fetchCompletionHandler: ( void ( ^ ) ( UIBackgroundFetchResult ) ) completionHandler;
+- ( void ) handleNotification: ( NSDictionary  * _Nonnull ) userInfo
+       fetchCompletionHandler: ( void ( ^ _Nonnull ) ( UIBackgroundFetchResult ) ) completionHandler;
 
 // Local Core Data storage (with manual CloudKit sync)
 //
-@property ( readonly, strong, nonatomic ) NSManagedObjectModel         * managedObjectModel;
-@property ( readonly, strong, nonatomic ) NSManagedObjectContext       * managedObjectContextLocal;
-@property ( readonly, strong, nonatomic ) NSPersistentStoreCoordinator * persistentStoreCoordinatorLocal;
+@property ( readonly, strong, nonatomic ) NSManagedObjectModel         * _Nonnull managedObjectModel;
+@property ( readonly, strong, nonatomic ) NSManagedObjectContext       * _Nonnull managedObjectContextLocal;
+@property ( readonly, strong, nonatomic ) NSPersistentStoreCoordinator * _Nonnull persistentStoreCoordinatorLocal;
 
 // Updating records
 
-- ( void ) addOrEditFavourite: ( NSString * ) stopID
-           settingDescription: ( NSString * ) stopDescription
-             andPreferredFlag: ( NSNumber * ) preferred
-            includingCloudKit: ( BOOL       ) includeCloudKit;
+- ( void ) addOrEditFavourite: ( NSString * _Nullable ) stopID
+           settingDescription: ( NSString * _Nullable ) stopDescription
+             andPreferredFlag: ( NSNumber * _Nullable ) preferred
+            includingCloudKit: ( BOOL                 ) includeCloudKit;
 
-- ( void )    deleteFavourite: ( NSString * ) stopID
-            includingCloudKit: ( BOOL       ) includeCloudKit;
+- ( void )    deleteFavourite: ( NSString * _Nullable ) stopID
+            includingCloudKit: ( BOOL                 ) includeCloudKit;
 
 // Fetched results management and query interfaces
 
-@property ( readonly, strong, nonatomic ) NSFetchedResultsController * fetchedResultsControllerLocal;
+@property ( readonly, strong, nonatomic ) NSFetchedResultsController * _Nonnull fetchedResultsControllerLocal;
 
-- ( BOOL              ) shouldShowSectionHeader;
-- ( NSInteger         ) numberOfSections;
-- ( NSManagedObject * ) findFavouriteStopByID: ( NSString * ) stopID;
+- ( BOOL                        ) shouldShowSectionHeader;
+- ( NSInteger                   ) numberOfSections;
+- ( NSManagedObject * _Nullable ) findFavouriteStopByID: ( NSString * _Nonnull ) stopID;
 
 // CloudKit change management
 
-- ( void ) fetchRecentChangesWithCompletionBlock: ( void ( ^ )( NSError * _Nullable error ) ) completionHandler
+- ( void ) fetchRecentChangesWithCompletionBlock: ( void ( ^ _Nonnull )( NSError * _Nullable error ) ) completionHandler
                         ignoringPriorChangeToken: ( BOOL ) forceFetchAll;
 
 // Shared utility methods
 
-- ( void                  ) saveLocalContext;
-- ( NSMutableDictionary * ) getCachedStopLocationDictionary;
-- ( void                  ) clearCachedStops;
+- ( void                           ) saveLocalContext;
+- ( NSMutableDictionary * _Nonnull ) getCachedStopLocationDictionary;
+- ( void                           ) clearCachedStops;
 
 @end
