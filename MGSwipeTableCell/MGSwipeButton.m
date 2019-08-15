@@ -67,11 +67,23 @@
 +(instancetype) buttonWithTitle:(NSString *) title icon:(UIImage*) icon backgroundColor:(UIColor *) color insets:(UIEdgeInsets) insets callback:(MGSwipeButtonCallback) callback
 {
     MGSwipeButton * button = [self buttonWithType:UIButtonTypeCustom];
+
+    UIColor * labelColor;
+
+    if (@available(iOS 13, *))
+    {
+        labelColor = [ UIColor labelColor ];
+    }
+    else
+    {
+        labelColor = [ UIColor blackColor ];
+    }
+
     button.backgroundColor = color;
     button.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
     button.titleLabel.textAlignment = NSTextAlignmentCenter;
     [button setTitle:title forState:UIControlStateNormal];
-    [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    [button setTitleColor:labelColor forState:UIControlStateNormal];
     [button setImage:icon forState:UIControlStateNormal];
     button.callback = callback;
     [button setEdgeInsets:insets];

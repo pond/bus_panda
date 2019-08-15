@@ -330,8 +330,18 @@
         sdc.name.text   = @"";
         sdc.when.text   = @"";
 
-        sdc.number.backgroundColor = [ UIColor whiteColor ];
+        UIColor * backgroundColor;
 
+        if (@available(iOS 13, *))
+        {
+            backgroundColor = [ UIColor systemBackgroundColor ];
+        }
+        else
+        {
+            backgroundColor = [ UIColor whiteColor ];
+        }
+
+        sdc.number.backgroundColor = backgroundColor;
         return;
     }
 
@@ -356,6 +366,18 @@
     int threshold = 105;
 
     [ background getRed: &red green: &green blue: &blue alpha: &alpha ];
+
+    // Dark mode - if black, make it white; that is, use semantic label colour
+    // instead.
+    //
+    if (@available(iOS 13, *))
+    {
+        if (red == 0 && green == 0 && blue == 0)
+        {
+            background = [ UIColor labelColor ];
+            [ background getRed: &red green: &green blue: &blue alpha: &alpha ];
+        }
+    }
 
     int bgDelta = ((red * 0.299) + (green) * 0.587) + (blue * 0.114);
 
