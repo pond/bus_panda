@@ -29,9 +29,8 @@
 #define SHORTEN_DISPLAYED_NAMES          @"shorten_names_preference"
 #define WEATHER_PROVIDER                 @"weather_provider"
 #define WEATHER_PROVIDER_METSERVICE      @"metservice"
+#define WEATHER_PROVIDER_METSERVICE_BETA @"metservicebeta"
 #define WEATHER_PROVIDER_DARK_SKY        @"darksky"
-#define WEATHER_PROVIDER_WEATHER_COM     @"weathercom"
-#define WEATHER_PROVIDER_WUNDERGROUND    @"wunderground"
 #define WEATHER_PROVIDER_WINDFINDER      @"windfinder"
 
 #pragma mark - Data management
