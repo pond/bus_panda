@@ -13,6 +13,7 @@
 #import "BusInfoFetcher.h"
 #import "ServiceDescriptionCell.h"
 #import "TimetableWebViewController.h"
+#import "BackgroundColourCalculator.h"
 
 #import "UsefulTypes.h"
 
@@ -355,35 +356,22 @@
     sdc.number.text = number;
     sdc.name.text   = name;
     sdc.when.text   = when;
-
+    
     UIColor * background = [ RouteColours colourFromHexString: colour ];
 
-    sdc.number.backgroundColor = background;
-
-    // http://stackoverflow.com/questions/19456288/text-color-based-on-background-image
-
-    CGFloat red, green, blue, alpha;
-    int threshold = 105;
-
-    [ background getRed: &red green: &green blue: &blue alpha: &alpha ];
-
-    // Dark mode - if black, make it white; that is, use semantic label colour
-    // instead.
+    // Dark mode - if the background is pure black, invert it to white in dark
+    // mode by using semantic colour 'labelColor'.
     //
     if (@available(iOS 13, *))
     {
-        if (red == 0 && green == 0 && blue == 0)
+        if ( [ colour isEqualToString: @"000000" ] )
         {
             background = [ UIColor labelColor ];
-            [ background getRed: &red green: &green blue: &blue alpha: &alpha ];
         }
     }
 
-    int bgDelta = ((red * 0.299) + (green) * 0.587) + (blue * 0.114);
-
-    UIColor * foreground = (255 - bgDelta < threshold) ? [UIColor blackColor] : [UIColor whiteColor];
-
-    sdc.number.textColor = foreground;
+    sdc.number.backgroundColor = background;
+    sdc.number.textColor       = [ BackgroundColourCalculator foregroundFromBackground: background ];
 }
 
 #pragma mark - Segues

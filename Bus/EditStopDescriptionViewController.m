@@ -75,7 +75,6 @@
 
     self.descriptionToolbar          = [ [UIToolbar alloc ] initWithFrame: frame ];
     self.descriptionToolbar.barStyle = UIBarStyleDefault;
-
     self.descriptionToolbar.items    =
     [
         NSArray arrayWithObjects:
@@ -95,6 +94,11 @@
                                            action: @selector( commitEdit: ) ],
         nil
     ];
+
+    if (@available(iOS 11, *))
+    {
+        self.descriptionToolbar.tintColor = [ UIColor colorNamed: @"busLivery" ];
+    }
 }
 
 // See EnterStopIDViewController for details.

@@ -4,6 +4,7 @@
  */
 
 #import "MGSwipeButton.h"
+#import "BackgroundColourCalculator.h"
 
 @class MGSwipeTableCell;
 
@@ -67,17 +68,7 @@
 +(instancetype) buttonWithTitle:(NSString *) title icon:(UIImage*) icon backgroundColor:(UIColor *) color insets:(UIEdgeInsets) insets callback:(MGSwipeButtonCallback) callback
 {
     MGSwipeButton * button = [self buttonWithType:UIButtonTypeCustom];
-
-    UIColor * labelColor;
-
-    if (@available(iOS 13, *))
-    {
-        labelColor = [ UIColor labelColor ];
-    }
-    else
-    {
-        labelColor = [ UIColor blackColor ];
-    }
+    UIColor * labelColor = [ UIColor whiteColor ]; // Would be this, but white just "looks better" always: [ BackgroundColourCalculator foregroundFromBackground: color ];
 
     button.backgroundColor = color;
     button.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;

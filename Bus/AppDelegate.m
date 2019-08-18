@@ -38,6 +38,11 @@
 
     [ application registerForRemoteNotifications ];
 
+    if (@available(iOS 11, *))
+    {
+        self.window.tintColor = [ UIColor colorNamed: @"busLivery" ];
+    }
+
     // Tab bar setups
 
     self.tabBarController = ( UITabBarController * ) self.window.rootViewController;

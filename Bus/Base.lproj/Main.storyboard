@@ -14,7 +14,6 @@
                     <navigationBar key="navigationBar" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="Pmd-2v-anx">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
-                        <color key="tintColor" systemColor="systemYellowColor" red="1" green="0.80000000000000004" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     </navigationBar>
                     <connections>
                         <segue destination="7bK-jq-Zjz" kind="relationship" relationship="rootViewController" id="tsl-Nk-0bq"/>
@@ -164,8 +163,6 @@
                         <rect key="frame" x="0.0" y="0.0" width="375" height="49"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                        <color key="tintColor" systemColor="systemYellowColor" red="1" green="0.80000000000000004" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                        <color key="selectedImageTintColor" systemColor="systemYellowColor" red="1" green="0.80000000000000004" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     </tabBar>
                     <connections>
                         <segue destination="H1p-Uh-vWS" kind="relationship" relationship="viewControllers" id="3YX-C0-jcx"/>
@@ -183,9 +180,7 @@
         <scene sceneID="Nki-YV-4Qg">
             <objects>
                 <splitViewController storyboardIdentifier="FavouriteStops" useStoryboardIdentifierAsRestorationIdentifier="YES" id="H1p-Uh-vWS" sceneMemberID="viewController">
-                    <tabBarItem key="tabBarItem" title="Stops" image="Stops" id="W3e-wc-yKx">
-                        <color key="badgeColor" name="systemYellowColor" catalog="System" colorSpace="catalog"/>
-                    </tabBarItem>
+                    <tabBarItem key="tabBarItem" title="Stops" image="Stops" id="W3e-wc-yKx"/>
                     <toolbarItems/>
                     <connections>
                         <segue destination="RMx-3f-FxP" kind="relationship" relationship="masterViewController" id="BlO-5A-QYV"/>
@@ -266,7 +261,6 @@
                     <navigationBar key="navigationBar" contentMode="scaleToFill" id="XhY-Jg-GUr">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
-                        <color key="tintColor" systemColor="systemYellowColor" red="1" green="0.80000000000000004" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     </navigationBar>
                     <connections>
                         <segue destination="huJ-j2-YEq" kind="relationship" relationship="rootViewController" id="hZO-dF-g83"/>
@@ -284,7 +278,6 @@
                     <navigationBar key="navigationBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="3Vm-FI-xDQ">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
-                        <color key="tintColor" systemColor="systemYellowColor" red="1" green="0.80000000000000004" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     </navigationBar>
                     <connections>
                         <segue destination="5O6-fd-o56" kind="relationship" relationship="rootViewController" id="J2Y-NY-Wbz"/>
@@ -304,7 +297,6 @@
                     <navigationBar key="navigationBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="Sa2-lc-z5R">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
-                        <color key="tintColor" systemColor="systemYellowColor" red="1" green="0.80000000000000004" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     </navigationBar>
                     <connections>
                         <segue destination="O2F-4y-Vup" kind="relationship" relationship="rootViewController" id="vFe-0r-5TW"/>
@@ -327,9 +319,9 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="1234" clearsOnBeginEditing="YES" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="C4c-f8-Qis">
-                                <rect key="frame" x="116" y="60" width="278" height="30"/>
+                                <rect key="frame" x="116" y="60" width="278" height="34"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="30" id="VLy-Hn-9SZ"/>
+                                    <constraint firstAttribute="height" constant="34" id="VLy-Hn-9SZ"/>
                                 </constraints>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no" keyboardType="numberPad" enablesReturnKeyAutomatically="YES"/>
@@ -338,19 +330,18 @@
                                 </connections>
                             </textField>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Stop ID" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5eD-s4-tYo">
-                                <rect key="frame" x="20" y="60" width="88" height="30"/>
+                                <rect key="frame" x="20" y="60" width="88" height="32"/>
                                 <constraints>
                                     <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="88" id="FY2-Dy-e0e"/>
-                                    <constraint firstAttribute="height" constant="30" id="rRu-vO-nxb"/>
+                                    <constraint firstAttribute="height" constant="32" id="rRu-vO-nxb"/>
                                 </constraints>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Manners East" clearsOnBeginEditing="YES" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="Pze-0N-ywn">
-                                <rect key="frame" x="116" y="98" width="278" height="30"/>
+                                <rect key="frame" x="116" y="102" width="278" height="34"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="30" id="Tz2-KP-ANO"/>
-                                    <constraint firstAttribute="height" constant="30" id="fIo-Lu-1dH"/>
+                                    <constraint firstAttribute="height" constant="34" id="fIo-Lu-1dH"/>
                                 </constraints>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <textInputTraits key="textInputTraits" autocapitalizationType="words" autocorrectionType="no" spellCheckingType="no" returnKeyType="done"/>
@@ -359,10 +350,10 @@
                                 </connections>
                             </textField>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Description" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="koU-kw-cag">
-                                <rect key="frame" x="20" y="98" width="88" height="30"/>
+                                <rect key="frame" x="20" y="102" width="88" height="32"/>
                                 <constraints>
                                     <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="88" id="gSN-hK-y2o"/>
-                                    <constraint firstAttribute="height" constant="30" id="kfl-7N-njm"/>
+                                    <constraint firstAttribute="height" constant="32" id="kfl-7N-njm"/>
                                 </constraints>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <nil key="highlightedColor"/>
@@ -372,17 +363,15 @@
                         <constraints>
                             <constraint firstItem="Pze-0N-ywn" firstAttribute="leading" secondItem="koU-kw-cag" secondAttribute="trailing" constant="8" id="1jT-Za-JcM"/>
                             <constraint firstItem="C4c-f8-Qis" firstAttribute="top" secondItem="fTf-iY-Jt2" secondAttribute="bottom" constant="16" id="2hZ-kO-Ape"/>
-                            <constraint firstItem="5eD-s4-tYo" firstAttribute="baseline" secondItem="C4c-f8-Qis" secondAttribute="baseline" id="50g-Ix-zHQ"/>
                             <constraint firstItem="Pze-0N-ywn" firstAttribute="top" secondItem="C4c-f8-Qis" secondAttribute="bottom" constant="8" id="5NC-yF-cQu"/>
                             <constraint firstItem="5eD-s4-tYo" firstAttribute="top" secondItem="fTf-iY-Jt2" secondAttribute="bottom" constant="16" id="9eJ-uT-ip6"/>
                             <constraint firstItem="C4c-f8-Qis" firstAttribute="leading" secondItem="5eD-s4-tYo" secondAttribute="trailing" constant="8" id="KKr-GH-s1O"/>
                             <constraint firstItem="5eD-s4-tYo" firstAttribute="leading" secondItem="8KJ-qV-2Rz" secondAttribute="leadingMargin" id="Pid-z8-KFh"/>
                             <constraint firstAttribute="trailingMargin" secondItem="C4c-f8-Qis" secondAttribute="trailing" id="PpG-kp-Qvv"/>
                             <constraint firstItem="koU-kw-cag" firstAttribute="leading" secondItem="8KJ-qV-2Rz" secondAttribute="leadingMargin" id="WHY-f1-p8y"/>
-                            <constraint firstItem="koU-kw-cag" firstAttribute="baseline" secondItem="Pze-0N-ywn" secondAttribute="baseline" id="cmh-fT-lIx"/>
                             <constraint firstItem="koU-kw-cag" firstAttribute="width" secondItem="5eD-s4-tYo" secondAttribute="width" id="klj-1c-05c"/>
                             <constraint firstItem="Pze-0N-ywn" firstAttribute="trailing" secondItem="8KJ-qV-2Rz" secondAttribute="trailingMargin" id="oZH-0I-fJt"/>
-                            <constraint firstItem="koU-kw-cag" firstAttribute="top" secondItem="5eD-s4-tYo" secondAttribute="bottom" constant="8" id="vq5-wb-4li"/>
+                            <constraint firstItem="koU-kw-cag" firstAttribute="top" secondItem="5eD-s4-tYo" secondAttribute="bottom" constant="10" id="vq5-wb-4li"/>
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" title="Add by Stop ID" id="RkP-SL-AYu"/>
@@ -402,7 +391,6 @@
                     <navigationBar key="navigationBar" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="DjV-YW-jjY">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
-                        <color key="tintColor" systemColor="systemYellowColor" red="1" green="0.80000000000000004" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     </navigationBar>
                     <connections>
                         <segue destination="JEX-9P-axG" kind="relationship" relationship="rootViewController" id="GKi-kA-LjT"/>
@@ -444,7 +432,6 @@
                                     <barButtonItem style="plain" systemItem="flexibleSpace" id="pI2-zK-JCJ"/>
                                     <barButtonItem style="plain" systemItem="refresh" id="lYs-fl-TdY"/>
                                 </items>
-                                <color key="tintColor" systemColor="systemYellowColor" red="1" green="0.80000000000000004" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </toolbar>
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
@@ -481,15 +468,18 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Description" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="yKq-Od-Nxs">
-                                <rect key="frame" x="20" y="60" width="88" height="30"/>
+                                <rect key="frame" x="20" y="60" width="88" height="32"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="30" id="wRH-H8-nfL"/>
+                                    <constraint firstAttribute="height" constant="32" id="wRH-H8-nfL"/>
                                 </constraints>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Manners East" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="n6j-Xb-kHt">
                                 <rect key="frame" x="116" y="60" width="278" height="34"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="34" id="jmY-P0-yhd"/>
+                                </constraints>
                                 <nil key="textColor"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <textInputTraits key="textInputTraits" autocapitalizationType="words" autocorrectionType="no" spellCheckingType="no" returnKeyType="done"/>
@@ -565,15 +555,18 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Description" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="AAi-4c-sbD">
-                                <rect key="frame" x="20" y="60" width="88" height="30"/>
+                                <rect key="frame" x="20" y="60" width="88" height="32"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="30" id="LbB-86-9X7"/>
+                                    <constraint firstAttribute="height" constant="32" id="LbB-86-9X7"/>
                                 </constraints>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Manners East" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="fVF-rS-OlD">
                                 <rect key="frame" x="116" y="60" width="278" height="34"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="34" id="vso-Hy-zDY"/>
+                                </constraints>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <textInputTraits key="textInputTraits" autocapitalizationType="words" autocorrectionType="no" spellCheckingType="no" returnKeyType="done"/>
                                 <connections>
@@ -669,7 +662,6 @@
                     <navigationBar key="navigationBar" contentMode="scaleToFill" id="Qh7-lS-vAP">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
-                        <color key="tintColor" systemColor="systemYellowColor" red="1" green="0.80000000000000004" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     </navigationBar>
                     <connections>
                         <segue destination="VYa-PP-GCY" kind="relationship" relationship="rootViewController" id="11X-Ib-mma"/>
@@ -725,8 +717,7 @@
         <image name="Weather" width="30" height="30"/>
     </resources>
     <inferredMetricsTieBreakers>
-        <segue reference="Tll-UG-LXB"/>
+        <segue reference="6S0-TO-JiA"/>
         <segue reference="obV-kz-y5b"/>
     </inferredMetricsTieBreakers>
-    <color key="tintColor" systemColor="systemYellowColor" red="1" green="0.80000000000000004" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
 </document>
