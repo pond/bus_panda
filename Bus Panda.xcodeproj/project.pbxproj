@@ -19,6 +19,7 @@
 		23420AAE1C92A34E009F40F9 /* NotificationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23420AAD1C92A34E009F40F9 /* NotificationController.swift */; };
 		23420AB21C92A34E009F40F9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 23420AB11C92A34E009F40F9 /* Assets.xcassets */; };
 		23420AB61C92A34E009F40F9 /* watchkit.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 23420A961C92A34E009F40F9 /* watchkit.app */; };
+		235015972318765F00D88700 /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 235015962318765F00D88700 /* Launch Screen.storyboard */; };
 		235AA1981CA2A272006143B9 /* StopsRowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 235AA1961CA2A055006143B9 /* StopsRowController.swift */; };
 		235FF3C320D78B8C0080FE67 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 235FF3C220D78B8C0080FE67 /* CloudKit.framework */; };
 		235FF3C620E6D8380080FE67 /* DataManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 235FF3C520E6D8380080FE67 /* DataManager.m */; };
@@ -42,7 +43,6 @@
 		23D75E2D1AC1654B0068C808 /* DetailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E2C1AC1654B0068C808 /* DetailViewController.m */; };
 		23D75E301AC1654B0068C808 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 23D75E2E1AC1654B0068C808 /* Main.storyboard */; };
 		23D75E321AC1654B0068C808 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 23D75E311AC1654B0068C808 /* Images.xcassets */; };
-		23D75E351AC1654B0068C808 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 23D75E331AC1654B0068C808 /* LaunchScreen.xib */; };
 		23D75E731AC165A70068C808 /* HTMLComment.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E4D1AC165A70068C808 /* HTMLComment.m */; };
 		23D75E741AC165A70068C808 /* HTMLDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E4F1AC165A70068C808 /* HTMLDocument.m */; };
 		23D75E751AC165A70068C808 /* HTMLDocumentType.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E511AC165A70068C808 /* HTMLDocumentType.m */; };
@@ -140,6 +140,7 @@
 		23420AAD1C92A34E009F40F9 /* NotificationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationController.swift; sourceTree = "<group>"; };
 		23420AB11C92A34E009F40F9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		23420AB31C92A34E009F40F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		235015962318765F00D88700 /* Launch Screen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
 		235AA1961CA2A055006143B9 /* StopsRowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StopsRowController.swift; sourceTree = "<group>"; };
 		235FF3C220D78B8C0080FE67 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
 		235FF3C420E6D8380080FE67 /* DataManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DataManager.h; sourceTree = "<group>"; };
@@ -183,7 +184,6 @@
 		23D75E2C1AC1654B0068C808 /* DetailViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DetailViewController.m; sourceTree = "<group>"; };
 		23D75E2F1AC1654B0068C808 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		23D75E311AC1654B0068C808 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
-		23D75E341AC1654B0068C808 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/LaunchScreen.xib; sourceTree = "<group>"; };
 		23D75E4C1AC165A70068C808 /* HTMLComment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HTMLComment.h; sourceTree = "<group>"; };
 		23D75E4D1AC165A70068C808 /* HTMLComment.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = HTMLComment.m; sourceTree = "<group>"; };
 		23D75E4E1AC165A70068C808 /* HTMLDocument.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HTMLDocument.h; sourceTree = "<group>"; };
@@ -326,7 +326,7 @@
 			isa = PBXGroup;
 			children = (
 				23D75E2E1AC1654B0068C808 /* Main.storyboard */,
-				23D75E331AC1654B0068C808 /* LaunchScreen.xib */,
+				235015962318765F00D88700 /* Launch Screen.storyboard */,
 				23D75E311AC1654B0068C808 /* Images.xcassets */,
 				23DA1D1F2309521D00FB14E7 /* Colours.xcassets */,
 				23AB59A21CB088960057688D /* Settings.bundle */,
@@ -661,10 +661,10 @@
 			files = (
 				23D75E301AC1654B0068C808 /* Main.storyboard in Resources */,
 				23DA1D202309521D00FB14E7 /* Colours.xcassets in Resources */,
-				23D75E351AC1654B0068C808 /* LaunchScreen.xib in Resources */,
 				23D75E321AC1654B0068C808 /* Images.xcassets in Resources */,
 				23AB59A31CB088960057688D /* Settings.bundle in Resources */,
 				23E341761CABACB800EDB581 /* LICENSE in Resources */,
+				235015972318765F00D88700 /* Launch Screen.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -769,14 +769,6 @@
 				23D75E2F1AC1654B0068C808 /* Base */,
 			);
 			name = Main.storyboard;
-			sourceTree = "<group>";
-		};
-		23D75E331AC1654B0068C808 /* LaunchScreen.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				23D75E341AC1654B0068C808 /* Base */,
-			);
-			name = LaunchScreen.xib;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */

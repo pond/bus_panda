@@ -134,6 +134,17 @@
 
     self.descriptionField.inputAccessoryView = self.descriptionToolbar;
     self.descriptionField.text               = [ self.sourceObject valueForKey: @"stopDescription" ];
+
+    // TODO: (2019-08-30) Remove if workaround no longer needed.
+    //
+    // On iOS 13, despite the label colour being set up in the storyboard, this
+    // one view has invisible text in dark mode no matter what I try. In the end
+    // I've given up and just hard-set the colour here.
+    //
+    if (@available(iOS 13, *))
+    {
+        self.descriptionField.textColor = [UIColor labelColor];
+    }
 }
 
 - ( void ) viewDidAppear: ( BOOL ) animated
