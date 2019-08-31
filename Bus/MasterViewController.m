@@ -312,20 +312,11 @@
 {
     if (@available(iOS 13, *))
     {
-        if (self.traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark)
-        {
-            // Slightly lighten the near-invisible section header background colour.
+        // Increase constrast of the section header background colour. The
+        // default is almost invisible.
 
-            UITableViewHeaderFooterView * hfView = ( UITableViewHeaderFooterView * ) view;
-            hfView.backgroundView.backgroundColor = [ UIColor colorWithRed: 0.1 green: 0.1 blue: 0.1 alpha: 1 ];
-        }
-        else
-        {
-            // Slightly darken the near-invisible section header background colour.
-
-            UITableViewHeaderFooterView * hfView = ( UITableViewHeaderFooterView * ) view;
-            hfView.backgroundView.backgroundColor = [ UIColor colorWithRed: 0.9 green: 0.9 blue: 0.9 alpha: 1 ];
-        }
+        UITableViewHeaderFooterView * hfView = ( UITableViewHeaderFooterView * ) view;
+        hfView.backgroundView.backgroundColor = [ UIColor systemGray6Color ];
     }
     else
     {
