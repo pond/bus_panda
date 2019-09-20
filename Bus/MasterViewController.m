@@ -310,10 +310,21 @@
   willDisplayHeaderView: ( UIView      * ) view
              forSection: ( NSInteger     ) section
 {
-    // Slightly darken the near-invisible section header background colour.
+    if (@available(iOS 13, *))
+    {
+        // Increase constrast of the section header background colour. The
+        // default is almost invisible.
 
-    UITableViewHeaderFooterView * hfView = ( UITableViewHeaderFooterView * ) view;
-    hfView.backgroundView.backgroundColor = [ UIColor colorWithRed: 0.9 green: 0.9 blue: 0.9 alpha: 1 ];
+        UITableViewHeaderFooterView * hfView = ( UITableViewHeaderFooterView * ) view;
+        hfView.backgroundView.backgroundColor = [ UIColor systemGray6Color ];
+    }
+    else
+    {
+        // Slightly darken the near-invisible section header background colour.
+
+        UITableViewHeaderFooterView * hfView = ( UITableViewHeaderFooterView * ) view;
+        hfView.backgroundView.backgroundColor = [ UIColor colorWithRed: 0.9 green: 0.9 blue: 0.9 alpha: 1 ];
+    }
 }
 
 - ( UITableViewCell * ) tableView: ( UITableView * ) tableView

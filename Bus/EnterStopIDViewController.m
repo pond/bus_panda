@@ -139,6 +139,12 @@
                                            action: @selector( addStop: ) ],
         nil
     ];
+
+    if (@available(iOS 11, *))
+    {
+        self.numberToolbar.tintColor      = [ UIColor colorNamed: @"busLivery" ];
+        self.descriptionToolbar.tintColor = [ UIColor colorNamed: @"busLivery" ];
+    }
 }
 
 // The numeric keyboard for stop ID and text keyboard for description have

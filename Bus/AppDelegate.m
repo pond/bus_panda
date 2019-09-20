@@ -38,6 +38,11 @@
 
     [ application registerForRemoteNotifications ];
 
+    if (@available(iOS 11, *))
+    {
+        self.window.tintColor = [ UIColor colorNamed: @"busLivery" ];
+    }
+
     // Tab bar setups
 
     self.tabBarController = ( UITabBarController * ) self.window.rootViewController;
@@ -128,17 +133,17 @@
         @"5000": @"Courtenay Aroy",
         @"5516": @"Courtenay Blair",
         @"5514": @"Courtenay Reading",
-        @"7418": @"Express",
         @"5513": @"Manners BK",
         @"5515": @"Manners Body",
-        @"4113": @"Murphy Wellington Girls",
+        @"7418": @"Express",
         @"7018": @"Riddiford At Hall",
-        @"1200": @"Sparse",
+        @"6910": @"Opposite Les Mills",
         @"6000": @"Station A",
         @"6001": @"Station B",
         @"5500": @"Station C",
         @"7120": @"Rintoul At Stoke",
-        @"TALA": @"Talavera - Cable Car Station"
+        @"TALA": @"Talavera - Cable Car",
+        @"7711": @"Willis St - Unity"
     };
 
     for ( NSString * key in cannedStops )

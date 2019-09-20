@@ -75,10 +75,10 @@
 
     NSString * provider = [ NSUserDefaults.standardUserDefaults stringForKey: WEATHER_PROVIDER ];
 
-    if      ( [ provider isEqualToString: WEATHER_PROVIDER_DARK_SKY     ] ) [ self visitDarkSky            ];
-    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WEATHER_COM  ] ) [ self visitWeatherCom         ];
-    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WUNDERGROUND ] ) [ self visitWeatherUnderground ];
-    else                                                                    [ self visitMetService         ];
+    if      ( [ provider isEqualToString: WEATHER_PROVIDER_DARK_SKY        ] ) [ self visitDarkSky        ];
+    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WINDFINDER      ] ) [ self visitWindfinder     ];
+    else if ( [ provider isEqualToString: WEATHER_PROVIDER_METSERVICE_BETA ] ) [ self visitMetServiceBeta ];
+    else                                                                       [ self visitMetService     ];
 }
 
 
@@ -86,10 +86,10 @@
 {
     NSString * provider = [ NSUserDefaults.standardUserDefaults stringForKey: WEATHER_PROVIDER ];
 
-    if      ( [ provider isEqualToString: WEATHER_PROVIDER_DARK_SKY     ] ) return [ self rulesForDarkSky            ];
-    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WEATHER_COM  ] ) return [ self rulesForWeatherCom         ];
-    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WUNDERGROUND ] ) return [ self rulesForWeatherUnderground ];
-    else                                                                    return [ self rulesForMetService         ];
+    if      ( [ provider isEqualToString: WEATHER_PROVIDER_DARK_SKY        ] ) return [ self rulesForDarkSky        ];
+    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WINDFINDER      ] ) return [ self rulesForWindfinder     ];
+    else if ( [ provider isEqualToString: WEATHER_PROVIDER_METSERVICE_BETA ] ) return [ self rulesForMetServiceBeta ];
+    else                                                                       return [ self rulesForMetService     ];
 }
 
 - ( NSString * ) errorTitle
@@ -115,6 +115,15 @@
         url = [ NSURL URLWithString: @"http://m.metservice.com/towns-cities/wellington" ];
     }
 
+    [ self.webView loadRequest: [ NSURLRequest requestWithURL: url ] ];
+}
+
+// MetService Beta:
+// https://beta.metservice.com/towns-cities/locations/wellington
+//
+- ( void ) visitMetServiceBeta
+{
+    NSURL * url = [ NSURL URLWithString: @"https://beta.metservice.com/towns-cities/locations/wellington" ];
     [ self.webView loadRequest: [ NSURLRequest requestWithURL: url ] ];
 }
 
@@ -158,84 +167,23 @@
     ];
 }
 
-// Weather.com
-// https://weather.com/en-NZ/weather/hourbyhour/l/-41.3135,174.776
+// Windfinder:
+// https://m.windfinder.com/forecast/wellington
 //
-- ( void ) visitWeatherCom
+- ( void ) visitWindfinder
 {
-    INTULocationManager *locMgr = [ INTULocationManager sharedInstance ];
+    NSURL * url;
 
-    [
-        locMgr requestLocationWithDesiredAccuracy: INTULocationAccuracyCity
-                                          timeout: 2.5
-                             delayUntilAuthorized: NO
-                                            block:
+    if ( UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad )
+    {
+        url = [ NSURL URLWithString: @"https://www.windfinder.com/forecast/wellington" ];
+    }
+    else
+    {
+        url = [ NSURL URLWithString: @"http://m.windfinder.com/forecast/wellington" ];
+    }
 
-        ^ ( CLLocation           * currentLocation,
-            INTULocationAccuracy   achievedAccuracy,
-            INTULocationStatus     status )
-        {
-            CLLocationCoordinate2D coordinates;
-
-            if ( status == INTULocationStatusSuccess )
-            {
-                coordinates = currentLocation.coordinate;
-            }
-            else // Just give up and assume Wellington Central
-            {
-                coordinates.latitude  = -41.294649;
-                coordinates.longitude = 174.772871;
-            }
-
-            NSString     * url_str = [ NSString   stringWithFormat: @"https://weather.com/en-NZ/weather/hourbyhour/l/%f,%f", coordinates.latitude, coordinates.longitude ];
-            NSURL        * url     = [ NSURL         URLWithString: url_str ];
-            NSURLRequest * request = [ NSURLRequest requestWithURL: url ];
-
-            [ self.webView performSelectorOnMainThread: @selector( loadRequest: )
-                                            withObject: request
-                                         waitUntilDone: NO ];
-        }
-    ];
-}
-
-// Weather Underground
-// https://www.wunderground.com/weather/en/wellington/-41.3135%2C174.776
-//
-- ( void ) visitWeatherUnderground
-{
-    INTULocationManager *locMgr = [ INTULocationManager sharedInstance ];
-
-    [
-        locMgr requestLocationWithDesiredAccuracy: INTULocationAccuracyCity
-                                          timeout: 2.5
-                             delayUntilAuthorized: NO
-                                            block:
-
-        ^ ( CLLocation           * currentLocation,
-            INTULocationAccuracy   achievedAccuracy,
-            INTULocationStatus     status )
-        {
-            CLLocationCoordinate2D coordinates;
-
-            if ( status == INTULocationStatusSuccess )
-            {
-                coordinates = currentLocation.coordinate;
-            }
-            else // Just give up and assume Wellington Central
-            {
-                coordinates.latitude  = -41.294649;
-                coordinates.longitude = 174.772871;
-            }
-
-            NSString     * url_str = [ NSString   stringWithFormat: @"https://www.wunderground.com/weather/en/wellington/%f%%2C%f", coordinates.latitude, coordinates.longitude ];
-            NSURL        * url     = [ NSURL         URLWithString: url_str ];
-            NSURLRequest * request = [ NSURLRequest requestWithURL: url ];
-
-            [ self.webView performSelectorOnMainThread: @selector( loadRequest: )
-                                            withObject: request
-                                         waitUntilDone: NO ];
-        }
-    ];
+    [ self.webView loadRequest: [ NSURLRequest requestWithURL: url ] ];
 }
 
 #pragma mark - Custom provider content blocking rules
@@ -252,7 +200,7 @@
         }, \
         \"action\": { \
           \"type\": \"css-display-none\", \
-        \"selector\": \".mob-adspace, .mob-footer, .mobil-logo, .advertisement, #header-promos, #google_image_div\" \
+        \"selector\": \"[id^=google_ads], .mob-adspace, .mob-footer, .mobil-logo, .advertisement, #header-promos, #google_image_div\" \
         } \
       }, \
       { \
@@ -278,6 +226,44 @@
     ]";
 }
 
+// MetService Beta
+//
+- ( NSString * ) rulesForMetServiceBeta
+{
+    return @" \
+    [ \
+      { \
+        \"trigger\": { \
+          \"url-filter\": \".*\" \
+        }, \
+        \"action\": { \
+          \"type\": \"css-display-none\", \
+        \"selector\": \"[id^=google_ads], .BannerAd, .Header, .BannerAd-wrapper, #google_image_div\" \
+        } \
+      }, \
+      { \
+        \"trigger\": { \
+          \"url-filter\": \"\\/special\\/mobile-add-service\\\\.js\", \
+          \"resource-type\": [ \"script\" ] \
+        }, \
+        \"url-filter-is-case-sensitive\": true, \
+        \"action\": { \
+          \"type\": \"block\" \
+        } \
+      }, \
+      { \
+        \"trigger\": { \
+          \"url-filter\": \".*\", \
+          \"if-domain\": [ \"doubleclick.net\", \"facebook.net\", \"pubmatic.com\", \"appdynamics.com\", \"googletagservices.com\", \"googlesyndication.com\", \"google-analytics.com\", \"adservice.google.com\", \"adservice.google.co.nz\" ], \
+          \"resource-type\": [ \"script\" ] \
+        }, \
+        \"action\": { \
+          \"type\": \"block\" \
+        } \
+      } \
+    ]";
+}
+
 // Dark Sky
 //
 - ( NSString * ) rulesForDarkSky
@@ -290,7 +276,7 @@
         }, \
         \"action\": { \
           \"type\": \"css-display-none\", \
-          \"selector\": \"div#sms, div#map-container, div#timeMachine, div#footer, nav\" \
+          \"selector\": \"[id^=google_ads], div#sms, div#map-container, div#timeMachine, div#footer, nav\" \
         } \
       }, \
       { \
@@ -315,9 +301,9 @@
     ]";
 }
 
-// Weather.com
+// Windfinder
 //
-- ( NSString * ) rulesForWeatherCom
+- ( NSString * ) rulesForWindfinder
 {
     return @" \
     [ \
@@ -327,41 +313,23 @@
         }, \
         \"action\": { \
           \"type\": \"css-display-none\", \
-          \"selector\": \".wx-adWrapper, .ad_module, .adsbygoogle, .region.region-top.hourly\" \
+        \"selector\": \"[id^=google_ads], .ad-horizontal, .ad-sticky-bottom, #google_image_div\" \
         } \
       }, \
       { \
         \"trigger\": { \
-          \"url-filter\": \".*\", \
-          \"if-domain\": [ \"adservice.google.co.nz\", \"adservice.google.com\", \"googletagservices.com\", \"google-analytics.com\", \"amazon-adsystem.com\", \"doubleclick.net\", \"newrelic.com\", \"googlesyndication.com\", \"googlesyndication.com\" ], \
+          \"url-filter\": \"\\/cdn\\\\.windfinder\\\\.com\\/ads\\\\.js\", \
           \"resource-type\": [ \"script\" ] \
         }, \
+        \"url-filter-is-case-sensitive\": true, \
         \"action\": { \
           \"type\": \"block\" \
         } \
-      } \
-    ]";
-}
-
-// Weather Underground
-//
-- ( NSString * ) rulesForWeatherUnderground
-{
-    return @" \
-    [ \
-      { \
-        \"trigger\": { \
-          \"url-filter\": \".*\" \
-        }, \
-        \"action\": { \
-          \"type\": \"css-display-none\", \
-          \"selector\": \".ad-wrap, .ad-mobile, .region-favorites-bar\" \
-        } \
       }, \
       { \
         \"trigger\": { \
           \"url-filter\": \".*\", \
-          \"if-domain\": [ \"doubleclick.net\", \"facebook.net\", \"googletagservices.com\", \"google-analytics.com\", \"newrelic.com\" ], \
+          \"if-domain\": [ \"doubleclick.net\", \"facebook.net\", \"googletagservices.com\", \"googlesyndication.com\", \"google-analytics.com\", \"adservice.google.com\", \"adservice.google.co.nz\", \"newrelic.com\", \"pubmatic.com\", \"rubiconproject.com\", \"ampproject.org\", \"adsafeprotected.com\" ], \
           \"resource-type\": [ \"script\" ] \
         }, \
         \"action\": { \

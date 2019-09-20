@@ -26,11 +26,15 @@
 			<key>Titles</key>
 			<array>
 				<string>FSWeatherMetService</string>
+				<string>FSWeatherMetServiceBeta</string>
+				<string>FSWeatherWindFinder</string>
 				<string>FSWeatherDarkSky</string>
 			</array>
 			<key>Values</key>
 			<array>
 				<string>metservice</string>
+				<string>metservicebeta</string>
+				<string>windfinder</string>
 				<string>darksky</string>
 			</array>
 			<key>DefaultValue</key>

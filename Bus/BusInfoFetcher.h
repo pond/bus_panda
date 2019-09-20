@@ -26,14 +26,14 @@
 // This does what its name suggests. The given handler is always called, even
 // if errors are generated; bus info representations will describe the problem.
 //
-// There are two possible ways to retrieve bus stop information. MetService
-// have a JSON API that responds quickly but does not allow for extended lists
-// of bus information at stops. It returns up to around 20 results. The other
-// way is via a web scraper, that reads a bus stop info web page which does
-// not use MetService's API behind the scenes and has a "more" view which
-// pulls extra stops. This is slower and will break if MetService change their
-// web page structure, but does ultimately provide more information. Select
-// one via the second boolean parameter.
+// There are two possible ways to retrieve bus stop information. MetLink have
+// a JSON API that responds quickly but does not allow for extended lists of
+// bus information at stops. It returns up to around 20 results. The other way
+// is via a web scraper, that reads a bus stop info web page which does not
+// use MetLink's API behind the scenes and has a "more" view which pulls extra
+// stops. This is slower and will break if MetLink change their web page
+// structure, but does ultimately provide more information. Select one via the
+// second boolean parameter.
 //
 // The handler is called with an Array of table sections representing today,
 // tomorrow and so-on via Dictionaries with string keys "title" (section title)
