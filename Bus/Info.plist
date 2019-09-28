@@ -29,6 +29,10 @@
 		<key>NSAllowsArbitraryLoadsInWebContent</key>
 		<true/>
 	</dict>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Bus Panda would like to know your location to help you find nearby bus stops on the map.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Bus Panda would like to know your location to help you find nearby bus stops on the map.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Bus Panda would like to know your location to help you find nearby bus stops on the map.</string>
 	<key>UIBackgroundModes</key>

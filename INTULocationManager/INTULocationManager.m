@@ -462,6 +462,20 @@ static id _sharedInstance;
     if (floor(NSFoundationVersionNumber) > NSFoundationVersionNumber_iOS_7_1 && [CLLocationManager authorizationStatus] == kCLAuthorizationStatusNotDetermined) {
         BOOL hasAlwaysKey = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"NSLocationAlwaysUsageDescription"] != nil;
         BOOL hasWhenInUseKey = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"NSLocationWhenInUseUsageDescription"] != nil;
+
+        // 2019-09-22 (ADH):
+        //
+        // From Spring 2019, Apple insist that if any application - including libraries, and whether the code is used or not - happenms
+        // to include any reference to 'use location always', then the info.plist file must include a message about why it wants this to
+        // happen. Bus Panda *does not* want this, so did not supply the string; but the library code you're reading now does support an
+        // "always use location" mode, so Apple from Spring 2019 insisted on the information string being present.
+        //
+        // Chicken and egg - I have to put in the string, but then the library code below will insist that location-always is enabled,
+        // which is not what I want. Instead, I've had to "hack" (ish) this to only ever do 'location while in use', no matter what the
+        // info.plist file might say.
+        //
+        hasAlwaysKey = false;
+
         if (hasAlwaysKey) {
             [self.locationManager requestAlwaysAuthorization];
         } else if (hasWhenInUseKey) {
