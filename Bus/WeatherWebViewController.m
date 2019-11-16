@@ -75,10 +75,9 @@
 
     NSString * provider = [ NSUserDefaults.standardUserDefaults stringForKey: WEATHER_PROVIDER ];
 
-    if      ( [ provider isEqualToString: WEATHER_PROVIDER_DARK_SKY        ] ) [ self visitDarkSky        ];
-    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WINDFINDER      ] ) [ self visitWindfinder     ];
-    else if ( [ provider isEqualToString: WEATHER_PROVIDER_METSERVICE_BETA ] ) [ self visitMetServiceBeta ];
-    else                                                                       [ self visitMetService     ];
+    if      ( [ provider isEqualToString: WEATHER_PROVIDER_DARK_SKY   ] ) [ self visitDarkSky    ];
+    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WINDFINDER ] ) [ self visitWindfinder ];
+    else                                                                  [ self visitMetService ];
 }
 
 
@@ -86,10 +85,9 @@
 {
     NSString * provider = [ NSUserDefaults.standardUserDefaults stringForKey: WEATHER_PROVIDER ];
 
-    if      ( [ provider isEqualToString: WEATHER_PROVIDER_DARK_SKY        ] ) return [ self rulesForDarkSky        ];
-    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WINDFINDER      ] ) return [ self rulesForWindfinder     ];
-    else if ( [ provider isEqualToString: WEATHER_PROVIDER_METSERVICE_BETA ] ) return [ self rulesForMetServiceBeta ];
-    else                                                                       return [ self rulesForMetService     ];
+    if      ( [ provider isEqualToString: WEATHER_PROVIDER_DARK_SKY   ] ) return [ self rulesForDarkSky    ];
+    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WINDFINDER ] ) return [ self rulesForWindfinder ];
+    else                                                                  return [ self rulesForMetService ];
 }
 
 - ( NSString * ) errorTitle
@@ -115,15 +113,6 @@
         url = [ NSURL URLWithString: @"http://m.metservice.com/towns-cities/wellington" ];
     }
 
-    [ self.webView loadRequest: [ NSURLRequest requestWithURL: url ] ];
-}
-
-// MetService Beta:
-// https://beta.metservice.com/towns-cities/locations/wellington
-//
-- ( void ) visitMetServiceBeta
-{
-    NSURL * url = [ NSURL URLWithString: @"https://beta.metservice.com/towns-cities/locations/wellington" ];
     [ self.webView loadRequest: [ NSURLRequest requestWithURL: url ] ];
 }
 
@@ -200,12 +189,12 @@
         }, \
         \"action\": { \
           \"type\": \"css-display-none\", \
-        \"selector\": \"[id^=google_ads], .mob-adspace, .mob-footer, .mobil-logo, .advertisement, #header-promos, #google_image_div\" \
+          \"selector\": \"[id^=google_ads], [data-slot-name=\\\"first\\\"], [data-module-name=\\\"current-conditions\\\"], [data-module-name=\\\"advert\\\"], #freshwidget-button, #FreshWidget, .BannerAd, .Header, .Footer-section--promo, .BannerAd-wrapper, #google_image_div\" \
         } \
       }, \
       { \
         \"trigger\": { \
-          \"url-filter\": \"\\/special\\/mobile-add-service\\\\.js\", \
+          \"url-filter\": \"freshwidget\\\\.js\", \
           \"resource-type\": [ \"script\" ] \
         }, \
         \"url-filter-is-case-sensitive\": true, \
@@ -215,35 +204,7 @@
       }, \
       { \
         \"trigger\": { \
-          \"url-filter\": \".*\", \
-          \"if-domain\": [ \"doubleclick.net\", \"facebook.net\", \"googletagservices.com\", \"googlesyndication.com\", \"google-analytics.com\", \"adservice.google.com\", \"adservice.google.co.nz\", \"newrelic.com\", \"pubmatic.com\", \"rubiconproject.com\", \"ampproject.org\", \"adsafeprotected.com\" ], \
-          \"resource-type\": [ \"script\" ] \
-        }, \
-        \"action\": { \
-          \"type\": \"block\" \
-        } \
-      } \
-    ]";
-}
-
-// MetService Beta
-//
-- ( NSString * ) rulesForMetServiceBeta
-{
-    return @" \
-    [ \
-      { \
-        \"trigger\": { \
-          \"url-filter\": \".*\" \
-        }, \
-        \"action\": { \
-          \"type\": \"css-display-none\", \
-        \"selector\": \"[id^=google_ads], .BannerAd, .Header, .BannerAd-wrapper, #google_image_div\" \
-        } \
-      }, \
-      { \
-        \"trigger\": { \
-          \"url-filter\": \"\\/special\\/mobile-add-service\\\\.js\", \
+          \"url-filter\": \"adrum-.+\\\\.js\", \
           \"resource-type\": [ \"script\" ] \
         }, \
         \"url-filter-is-case-sensitive\": true, \

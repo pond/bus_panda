@@ -26,6 +26,9 @@
 
 // User-facing preferences.
 //
+// The MetService Beta provider gets reset to just MetService by AppDelegate.m,
+// ever since the beta site went live (around November 2019).
+//
 #define SHORTEN_DISPLAYED_NAMES          @"shorten_names_preference"
 #define WEATHER_PROVIDER                 @"weather_provider"
 #define WEATHER_PROVIDER_METSERVICE      @"metservice"
