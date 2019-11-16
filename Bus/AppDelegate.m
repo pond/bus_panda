@@ -90,13 +90,14 @@
     if ( shouldNotBeNil == nil )
     {
         [ defaults setBool: YES forKey: SHORTEN_DISPLAYED_NAMES ];
-
-        // ...and in future, add any more settings here too.
     }
 
-    shouldNotBeNil = [ defaults objectForKey: WEATHER_PROVIDER ];
+    // If there's no weather provider chosen or if MetService Beta was chosen,
+    // reset to a default of MetService (the beta went live in ~ Nov 2019).
+    //
+    NSString * weatherProvider = [ defaults objectForKey: WEATHER_PROVIDER ];
 
-    if ( shouldNotBeNil == nil )
+    if ( weatherProvider == nil || [ weatherProvider isEqualToString: WEATHER_PROVIDER_METSERVICE_BETA ] )
     {
         [ defaults setValue: WEATHER_PROVIDER_METSERVICE forKey: WEATHER_PROVIDER ];
     }
