@@ -122,7 +122,7 @@
         for ( NSManagedObject * object in results )
         {
             NSString * stopID = [ object valueForKey: @"stopID" ];
-            [ DataManager.dataManager deleteFavourite: stopID includingCloudKit: NO ];
+            if ( stopID != nil ) [ DataManager.dataManager deleteFavourite: stopID includingCloudKit: NO ];
         }
     }
     else
