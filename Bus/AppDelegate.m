@@ -377,7 +377,6 @@
         {
             [
                 BusInfoFetcher getAllBusesForStop: stopID
-                      usingWebScraperInsteadOfAPI: NO
                                 completionHandler: ^ ( NSMutableArray * allBuses )
                 {
                     replyHandler( @{ @"allBuses": allBuses } );
