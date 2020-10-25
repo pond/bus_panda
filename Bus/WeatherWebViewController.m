@@ -189,7 +189,7 @@
         }, \
         \"action\": { \
           \"type\": \"css-display-none\", \
-          \"selector\": \"[id^=google_ads], [data-slot-name=\\\"first\\\"], [data-module-name=\\\"current-conditions\\\"], [data-module-name=\\\"advert\\\"], #freshwidget-button, #FreshWidget, .BannerAd, .Header, .Footer-section--promo, .BannerAd-wrapper, #google_image_div\" \
+          \"selector\": \"[id^=google_ads], [data-slot-name=\\\"first\\\"], [data-module-name=\\\"current-conditions\\\"], [data-module-name=\\\"advert\\\"], #freshwidget-button, #FreshWidget, #ModalOverlay, .BannerAd, .Header, .Footer-section--promo, .BannerAd-wrapper, #google_image_div\" \
         } \
       }, \
       { \
