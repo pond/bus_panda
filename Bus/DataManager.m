@@ -1115,10 +1115,10 @@
 // Modifies the local table view first, then will, if the final parameter is
 // YES, also push changes out to CloudKit; else it won't.
 //
-- ( void ) addOrEditFavourite: ( NSString * ) stopID
-           settingDescription: ( NSString * ) stopDescription
-             andPreferredFlag: ( NSNumber * ) preferred
-            includingCloudKit: ( BOOL       ) includeCloudKit
+- ( void ) addOrEditFavourite: ( NSString * _Nonnull  ) stopID
+           settingDescription: ( NSString * _Nullable ) stopDescription
+             andPreferredFlag: ( NSNumber * _Nullable ) preferred
+            includingCloudKit: ( BOOL                 ) includeCloudKit
 {
 
     NSLog( @"Add or edit: %@ (%@): %@", stopID, preferred, stopDescription );
@@ -1265,8 +1265,8 @@
 // Modifies the local table view first, then will, if the final parameter is
 // YES, also push changes out to CloudKit; else it won't.
 //
-- ( void ) deleteFavourite: ( NSString * ) stopID
-         includingCloudKit: ( BOOL       ) includeCloudKit
+- ( void ) deleteFavourite: ( NSString * _Nonnull ) stopID
+         includingCloudKit: ( BOOL                ) includeCloudKit
 {
     NSLog( @"Remove: %@", stopID);
 
@@ -1487,7 +1487,7 @@
 // Look up a stop in the local Core Data records by stop ID. Returns the
 // NSManagedObject for the found record, or "nil" if not found.
 //
-- ( NSManagedObject * ) findFavouriteStopByID: ( NSString * ) stopID
+- ( NSManagedObject * ) findFavouriteStopByID: ( NSString * _Nonnull ) stopID
 {
     NSError                * error       = nil;
     NSManagedObjectContext * moc         = [ self managedObjectContextLocal ];

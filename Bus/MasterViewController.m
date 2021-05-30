@@ -367,9 +367,9 @@
 {
     DataManager     * dataManager     = DataManager.dataManager;
     NSManagedObject * object          = [ dataManager.fetchedResultsControllerLocal objectAtIndexPath: indexPath ];
-    NSString        * stopID          = [ object valueForKey: @"stopID"          ];
+    NSString        * _Nonnull stopID          = [ object valueForKey: @"stopID"          ];
     NSString        * stopDescription = [ object valueForKey: @"stopDescription" ];
-
+    
     cell.stopID.text          = stopID;
     cell.stopDescription.text = stopDescription;
 

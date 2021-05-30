@@ -50,13 +50,14 @@
 
 // Updating records
 
-- ( void ) addOrEditFavourite: ( NSString * _Nullable ) stopID
+
+- ( void ) addOrEditFavourite: ( NSString * _Nonnull  ) stopID
            settingDescription: ( NSString * _Nullable ) stopDescription
              andPreferredFlag: ( NSNumber * _Nullable ) preferred
             includingCloudKit: ( BOOL                 ) includeCloudKit;
 
-- ( void )    deleteFavourite: ( NSString * _Nullable ) stopID
-            includingCloudKit: ( BOOL                 ) includeCloudKit;
+- ( void )    deleteFavourite: ( NSString * _Nonnull ) stopID
+            includingCloudKit: ( BOOL                ) includeCloudKit;
 
 // Fetched results management and query interfaces
 

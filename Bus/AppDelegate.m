@@ -122,7 +122,7 @@
         for ( NSManagedObject * object in results )
         {
             NSString * stopID = [ object valueForKey: @"stopID" ];
-            [ DataManager.dataManager deleteFavourite: stopID includingCloudKit: NO ];
+            if ( stopID != nil ) [ DataManager.dataManager deleteFavourite: stopID includingCloudKit: NO ];
         }
     }
     else
@@ -377,7 +377,6 @@
         {
             [
                 BusInfoFetcher getAllBusesForStop: stopID
-                      usingWebScraperInsteadOfAPI: NO
                                 completionHandler: ^ ( NSMutableArray * allBuses )
                 {
                     replyHandler( @{ @"allBuses": allBuses } );

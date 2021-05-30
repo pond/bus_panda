@@ -21,8 +21,8 @@
 // Subclasses should call here to add a new stop. Proxies to a presenting MVC
 // via view controller hierarchy introspection.
 //
-- ( void ) addFavourite: ( NSString * ) stopID
-        withDescription: ( NSString * ) stopDescription;
+- ( void ) addFavourite: ( NSString * _Nonnull ) stopID
+        withDescription: ( NSString * _Nonnull ) stopDescription;
 
 // Subclasses should call this method when they want to be closed. It ensures
 // consistent dismissal behaviour across addition views.

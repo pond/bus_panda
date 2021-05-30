@@ -145,7 +145,6 @@
 
     [
         BusInfoFetcher getAllBusesForStop: stopID
-              usingWebScraperInsteadOfAPI: NO
                         completionHandler:
 
         ^ ( NSMutableArray * allBuses )
