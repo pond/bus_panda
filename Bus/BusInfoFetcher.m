@@ -81,7 +81,7 @@
     //
     NSString * stopInfoURL =
     [
-        NSString stringWithFormat: @"https://www.metlink.org.nz/api/v1/StopDepartures/%@",
+        NSString stringWithFormat: @"https://backend.metlink.org.nz/api/v1/stopdepartures/%@",
                                    stopID
     ];
 
@@ -106,7 +106,7 @@
                                                                     options: 0
                                                                       error: nil ];
 
-                services = servicesOverview[ @"Services" ];
+                services = servicesOverview[ @"departures" ];
             }
             @catch ( NSException * exception ) // Assumed JSON processing error
             {
@@ -122,47 +122,86 @@
         {
             NSDate * previousServiceDateTime = nil;
 
-            // Process the JSON results into a higher level array of objects.
-            // Example of a service entry in the dictionary, noting the entry
-            // "Service" inside the service structure:
+            // Process the JSON results into a higher level structure. Example
+            // of a service entry in the dictionary, from the entry
+            // "departures" inside the service structure:
             //
             // {
-            //   "ServiceID":"1",
-            //   "IsRealtime":true,
-            //   "VehicleRef":"2097",
-            //   "Direction":"Inbound",
-            //   "OperatorRef":"NZBS",
-            //   "OriginStopID":"7135",
-            //   "OriginStopName":"IslandBay-ThePde",
-            //   "DestinationStopID":"5016",
-            //   "DestinationStopName":"Wgtn Station",
-            //   "AimedArrival":"2018-05-05T19:30:00+12:00",
-            //   "AimedDeparture":"2018-05-05T19:30:00+12:00",
-            //   "VehicleFeature":"lowFloor",
-            //   "DepartureStatus":"onTime",  (or e.g. "cancelled")
-            //   "ExpectedDeparture":"2018-05-05T19:31:48+12:00",
-            //   "DisplayDeparture": "2018-05-05T19:31:48+12:00",
-            //   "DisplayDepartureSeconds":351,
-            //   "Service":{
-            //     "Code":"1",
-            //     "TrimmedCode":"1",
-            //     "Name":"Island Bay - Wellington",
-            //     "Mode":"Bus",
-            //     "Link":"\/timetables\/bus\/1"
-            //   }
+            //   "stop_id": "5516",
+            //   "service_id": "24",
+            //   "direction": "inbound",
+            //   "operator": "TZM",
+            //   "origin": {
+            //       "stop_id": "3081",
+            //       "name": "Johnsonville-B"
+            //   },
+            //   "destination": {
+            //       "stop_id": "6224",
+            //       "name": "Kilbirnie"
+            //   },
+            //   "delay": "PT7M31S",
+            //   "vehicle_id": "3842",
+            //   "name": "CourtenayPl-C",
+            //   "arrival": {
+            //       "aimed": "2021-05-11T08:02:00+12:00",
+            //       "expected": "2021-05-11T08:09:31+12:00"
+            //   },
+            //   "departure": {
+            //       "aimed": "2021-05-11T08:02:00+12:00",
+            //       "expected": "2021-05-11T08:09:31+12:00"
+            //   },
+            //   "status": "delayed",
+            //   "wheelchair_accessible": true
             // }
-
+            //
             for ( NSDictionary * service in services )
             {
+                BOOL           adjustForCaution = NO;
+                BOOL           isRealTime       = YES;
+                NSDictionary * arrival          = service[ @"arrival"   ];
+                NSDictionary * departure        = service[ @"departure" ];
+                NSDate       * serviceDateTime  = nil;
+                NSString     * time;
+
                 // Try really hard to get a date-time for this service as we
                 // need it for the "Today"/"Tomorrow" etc. section headings.
+                //
+                // * Try the arrival real-time expectation first.
+                // * Try the arrival timetable value next.
+                // * Try the departure real-time expectation as we're getting
+                //   more desparate, but flag that we should show a slightly
+                //   earlier time to the user to avoid the risk of them maybe
+                //   missing the bus because it is *leaving* at this time.
+                // * Finally, try the departure timetable value.
+                //
+                time = [ BusInfoFetcher safeTrim: arrival[ @"expected" ] ];
 
-                NSString * time            = [ BusInfoFetcher safeTrim: service[ @"DisplayDeparture" ] ];
-                NSDate   * serviceDateTime = nil;
+                if ( time.length == 0 )
+                {
+                    time = [ BusInfoFetcher safeTrim: departure[ @"expected" ] ];
 
-                if ( time.length == 0 ) time = [ BusInfoFetcher safeTrim: service[ @"ExpectedDeparture" ] ];
-                if ( time.length == 0 ) time = [ BusInfoFetcher safeTrim: service[ @"AimedDeparture"    ] ];
-                if ( time.length == 0 ) time = [ BusInfoFetcher safeTrim: service[ @"AimedArrival"      ] ];
+                    if ( time.length == 0 )
+                    {
+                        time             = [ BusInfoFetcher safeTrim: arrival[ @"aimed" ] ];
+                        isRealTime       = NO;
+                        adjustForCaution = YES;
+
+                        if ( time.length == 0 )
+                        {
+                            time = [ BusInfoFetcher safeTrim: departure[ @"aimed" ] ];
+                        }
+                    }
+                }
+
+                // The API used to have a flag saying whether or not the value
+                // should be considered realtime, but this got removed. Instead
+                // we guess based on a missing status, since that's what the
+                // MetLink web site also does. There are other times it seems
+                // to show as if not-realtime too, but I can't work out what
+                // the heuristic is.
+                //
+                NSString * status = service[ @"status" ];
+                if ( [ status isEqualToString: @"" ] ) isRealTime = NO;
 
                 if ( time.length > 0 )
                 {
@@ -176,6 +215,11 @@
                     formatter.timeZone   = [ NSTimeZone timeZoneWithName: @"Pacific/Auckland" ];
 
                     serviceDateTime      = [ formatter dateFromString: time ];
+
+                    if ( serviceDateTime != nil && adjustForCaution == YES )
+                    {
+                        serviceDateTime = [ serviceDateTime dateByAddingTimeInterval: -60.0 ];
+                    }
 
                     // If this is the first service we've encountered, we must
                     // add a new section. Is it for today, or tomorrow?
@@ -221,24 +265,14 @@
                     ];
                 }
 
-                NSNumber * isRealtime      = service[ @"IsRealtime" ];
-                NSString * departureStatus = [ BusInfoFetcher safeTrim: service[ @"DepartureStatus"     ] ];
-                NSString * name            = [ BusInfoFetcher safeTrim: service[ @"DestinationStopName" ] ];
-                NSString * number          = [ BusInfoFetcher safeTrim: service[ @"Service" ][ @"TrimmedCode" ] ];
-                NSString * timetablePath   = [ BusInfoFetcher safeTrim: service[ @"Service" ][ @"Link"        ] ];
+                NSString * departureStatus = [ BusInfoFetcher safeTrim: service[ @"status" ] ];
+                NSString * name            = [ BusInfoFetcher safeTrim: service[ @"destination" ][ @"name" ] ];
+                NSString * number          = [ BusInfoFetcher safeTrim: service[ @"service_id" ] ];
+                NSString * timetablePath   = [ @"/timetables/bus/" stringByAppendingString: number ];
 
                 if ( [ departureStatus isEqualToString: @"cancelled" ] )
                 {
                     name = @"CANCELLED";
-                }
-                else if ( name.length == 0 )
-                {
-                    name = [ BusInfoFetcher safeTrim: service[ @"Service" ][ @"Name" ] ];
-                }
-
-                if ( number.length == 0 )
-                {
-                    number = [ BusInfoFetcher safeTrim: service[ @"Service" ][ @"Code" ] ];
                 }
 
                 NSDictionary * routeColours = [ RouteColours colours ];
@@ -258,39 +292,43 @@
                 timetablePath = [ timetablePath stringByReplacingOccurrencesOfString: ( NSString * ) @"\\/"
                                                                           withString: ( NSString * ) @"/" ];
 
-                // If there's no ETA, parse the ISO time instead.
-
-                NSNumber * eta  = service[ @"DisplayDepartureSeconds" ];
+                // Show an expected date-time, or use the real-time expected
+                // arrival instead as an offset from "now" (an older API
+                // version from MetLink was much more useful than this and had
+                // the exact ETA in seconds with an "is realtime" flag; we are
+                // left guessing on a newer update which decimated features).
+                //
                 NSString * when = nil;
 
-                if ( eta == nil || isRealtime.boolValue == NO )
+                if ( serviceDateTime == nil )
                 {
-                    if ( serviceDateTime == nil )
-                    {
-                        when = PLACEHOLDER_WHEN;
-                    }
-                    else
-                    {
-                        NSDateFormatter * formatter       = [ [ NSDateFormatter alloc ] init ];
-                        NSLocale        * enUSPOSIXLocale = [ NSLocale localeWithLocaleIdentifier: @"en_US_POSIX" ];
+                    when = PLACEHOLDER_WHEN;
+                }
+                else if ( isRealTime == NO )
+                {
+                    NSDateFormatter * formatter       = [ [ NSDateFormatter alloc ] init ];
+                    NSLocale        * enUSPOSIXLocale = [ NSLocale localeWithLocaleIdentifier: @"en_US_POSIX" ];
 
-                        formatter.locale     = enUSPOSIXLocale;
-                        formatter.dateFormat = @"h:mma";
-                        formatter.AMSymbol   = @"am";
-                        formatter.PMSymbol   = @"pm";
+                    formatter.locale     = enUSPOSIXLocale;
+                    formatter.dateFormat = @"h:mma";
+                    formatter.AMSymbol   = @"am";
+                    formatter.PMSymbol   = @"pm";
 
-                        when = [ formatter stringFromDate: serviceDateTime ];
-                    }
+                    when = [ formatter stringFromDate: serviceDateTime ];
                 }
                 else
                 {
-                    // By observation - MetLink round down the number of
+                    NSTimeInterval eta = [ serviceDateTime timeIntervalSinceNow ];
+
+                    if ( eta < 0 ) eta = -eta;
+
+                    // By observation - MetLink used toround down the number of
                     // seconds to minutes and less than 2 minutes is shown as
                     // "due". Since it is safer to err on the side of optimism
                     // for ETA (encouraging people to be at the stop definitely
-                    // before their target bus arrives), we found down too.
-
-                    NSUInteger etaMinutes = eta.integerValue / 60;
+                    // before their target bus arrives), we round down too.
+                    //
+                    NSUInteger etaMinutes = floor(eta / 60.0);
 
                     when = etaMinutes < 2 ?
                            @"Due"         :
