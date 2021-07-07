@@ -81,7 +81,7 @@
     //
     NSString * stopInfoURL =
     [
-        NSString stringWithFormat: @"https://backend.metlink.org.nz/api/v1/stopdepartures/%@",
+        NSString stringWithFormat: @"https://backend.metlink.org.nz/api/v1/stops/%@",
                                    stopID
     ];
 
@@ -89,10 +89,11 @@
                                                         NSURLResponse * response,
                                                         NSError       * error )
     {
-        NSDictionary   * servicesOverview   = nil;
-        NSArray        * services           = nil;
-        NSMutableArray * parsedSections     = [ [ NSMutableArray alloc ] init ];
-        NSMutableArray * currentServiceList = [ [ NSMutableArray alloc ] init ];
+        NSDictionary   * servicesOverview             = nil;
+        NSArray        * services                     = nil;
+        NSMutableArray * parsedSections               = [ [ NSMutableArray alloc ] init ];
+        NSMutableArray * currentServiceList           = [ [ NSMutableArray alloc ] init ];
+        NSString       * responseNotUnderstoodMessage = @"The service list retrieved from the Internet was sent in a way that Bus Panda does not understand.";
 
         if ( error == nil && [ response isKindOfClass: [ NSHTTPURLResponse class ] ] == YES )
         {
@@ -110,12 +111,21 @@
             }
             @catch ( NSException * exception ) // Assumed JSON processing error
             {
-                NSDictionary * details = @{
-                    NSLocalizedDescriptionKey: @"The service list retrieved from the Internet was sent in a way that Bus Panda does not understand."
-                };
-
+                NSDictionary * details = @{ NSLocalizedDescriptionKey: responseNotUnderstoodMessage };
                 error = [ NSError errorWithDomain: @"bus_panda_services" code: 200 userInfo: details ];
             }
+        }
+
+        // Top-level response like "{"error":"No departures found"}".
+        //
+        if ( error == nil && services == nil )
+        {
+            NSString * errorMessage = servicesOverview[@"error"];
+
+            if ( errorMessage == nil ) errorMessage = responseNotUnderstoodMessage;
+
+            NSDictionary * details = @{ NSLocalizedDescriptionKey: errorMessage };
+            error = [ NSError errorWithDomain: @"bus_panda_services" code: 200 userInfo: details ];
         }
 
         if ( error == nil && services != nil )
