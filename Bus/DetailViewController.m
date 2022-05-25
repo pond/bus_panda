@@ -133,6 +133,20 @@
     if ( thisIsAnError )
     {
         NSLog( @"Bus information error: %@", sections );
+
+        NSDictionary * details = @{ NSLocalizedDescriptionKey: @"Cannot list services" };
+        NSError      * error   = [ NSError errorWithDomain: @"bus_panda_services" code: 200 userInfo: details ];
+
+        [ self hideActivityViewer ];
+        [
+            ErrorPresenter showModalAlertFor: self
+                                   withError: error
+                                       title: thisServiceList.firstObject[ @"name" ]
+                                  andHandler: ^( UIAlertAction *action )
+            {
+            }
+        ];
+
         return;
     }
 

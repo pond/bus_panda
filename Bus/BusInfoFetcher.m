@@ -12,6 +12,7 @@
 
 #import "BusInfoFetcher.h"
 
+#import "Constants.h"
 #import "UsefulTypes.h"
 #import <Foundation/Foundation.h>
 
@@ -79,9 +80,14 @@
     //
     //   https://github.com/pond/metlink-api-maybe
     //
+//    NSString * stopInfoURL =
+//    [
+//        NSString stringWithFormat: @"https://backend.metlink.org.nz/api/v1/stops/%@",
+//                                   stopID
+//    ];
     NSString * stopInfoURL =
     [
-        NSString stringWithFormat: @"https://backend.metlink.org.nz/api/v1/stopdepartures/%@",
+        NSString stringWithFormat: @"https://api.opendata.metlink.org.nz/v1/stop-predictions?stop_id=%@",
                                    stopID
     ];
 
@@ -94,7 +100,11 @@
         NSMutableArray * parsedSections     = [ [ NSMutableArray alloc ] init ];
         NSMutableArray * currentServiceList = [ [ NSMutableArray alloc ] init ];
 
-        if ( error == nil && [ response isKindOfClass: [ NSHTTPURLResponse class ] ] == YES )
+        if ( error != nil )
+        {
+            NSLog(@"API Call failure - error from URL fetch: %@", error);
+        }
+        else if ( [ response isKindOfClass: [ NSHTTPURLResponse class ] ] == YES )
         {
             // Try to parse what *should* be a JSON5 array, but might be
             // something else (the server doesn't necessarily respond with
@@ -110,15 +120,15 @@
             }
             @catch ( NSException * exception ) // Assumed JSON processing error
             {
-                NSDictionary * details = @{
-                    NSLocalizedDescriptionKey: @"The service list retrieved from the Internet was sent in a way that Bus Panda does not understand."
-                };
-
-                error = [ NSError errorWithDomain: @"bus_panda_services" code: 200 userInfo: details ];
+                NSLog(@"API Call failure - exception while processing JSON response: %@", exception);
             }
         }
+        else
+        {
+            NSLog(@"API Call failure - response format not understood: %@", response );
+        }
 
-        if ( error == nil && services != nil )
+        if ( services != nil )
         {
             NSDate * previousServiceDateTime = nil;
 
@@ -193,16 +203,6 @@
                     }
                 }
 
-                // The API used to have a flag saying whether or not the value
-                // should be considered realtime, but this got removed. Instead
-                // we guess based on a missing status, since that's what the
-                // MetLink web site also does. There are other times it seems
-                // to show as if not-realtime too, but I can't work out what
-                // the heuristic is.
-                //
-                NSString * status = service[ @"status" ];
-                if ( [ status isEqualToString: @"" ] ) isRealTime = NO;
-
                 if ( time.length > 0 )
                 {
                     // https://stackoverflow.com/questions/16254575/how-do-i-get-an-iso-8601-date-on-ios
@@ -265,12 +265,23 @@
                     ];
                 }
 
-                NSString * departureStatus = [ BusInfoFetcher safeTrim: service[ @"status" ] ];
+                NSString * status          = [ BusInfoFetcher safeTrim: service[ @"status" ] ];
                 NSString * name            = [ BusInfoFetcher safeTrim: service[ @"destination" ][ @"name" ] ];
                 NSString * number          = [ BusInfoFetcher safeTrim: service[ @"service_id" ] ];
                 NSString * timetablePath   = [ @"/timetables/bus/" stringByAppendingString: number ];
 
-                if ( [ departureStatus isEqualToString: @"cancelled" ] )
+                // The API used to have a flag saying whether or not the value
+                // should be considered realtime, but this got removed. Instead
+                // we guess based on a missing status, since that's what the
+                // MetLink web site also does. There are other times it seems
+                // to show as if not-realtime too, but I can't work out what
+                // the heuristic is.
+                //
+                if ( status == nil || [ status isEqualToString: @"" ] )
+                {
+                    isRealTime = NO;
+                }
+                else if ( [ status isEqualToString: @"cancelled" ] )
                 {
                     name = @"CANCELLED";
                 }
@@ -392,8 +403,20 @@
         );
     };
 
+//    var sessionConfig = NSURLSessionConfiguration.defaultSessionConfiguration()
+//    var xHTTPAdditionalHeaders: [NSObject : AnyObject] = ["X-test":"taly"]
+//    sessionConfig.HTTPAdditionalHeaders = xHTTPAdditionalHeaders
+//    let session = NSURLSession(configuration: sessionConfig)
+
+    NSURLSessionConfiguration * sessionConfiguration = [ NSURLSessionConfiguration defaultSessionConfiguration ];
+
+    sessionConfiguration.HTTPAdditionalHeaders = @{
+        @"Accept": @"application/json",
+        @"x-api-key": MAGIC
+    };
+
     NSURL            * URL     = [ NSURL URLWithString: stopInfoURL ];
-    NSURLSession     * session = [ NSURLSession sharedSession ];
+    NSURLSession     * session = [ NSURLSession sessionWithConfiguration: sessionConfiguration ];
     NSURLSessionTask * task    = [ session dataTaskWithURL: URL
                                          completionHandler: completionHandler ];
 

@@ -197,7 +197,7 @@
     MKMapPoint minCorner = MKMapPointMake( MKMapRectGetMinX( mRect ), MKMapRectGetMinY( mRect ) );
     MKMapPoint maxCorner = MKMapPointMake( MKMapRectGetMaxX( mRect ), MKMapRectGetMaxY( mRect ) );
 
-    radius = MKMetersBetweenMapPoints( minCorner, maxCorner ) / 2000;
+    radius = MKMetersBetweenMapPoints( minCorner, maxCorner ) / 2;
 
     [ self spinnerOn ];
 

@@ -10,68 +10,33 @@
 
 #import "StopInfoFetcher.h"
 
+#import "Constants.h"
 #import "UsefulTypes.h"
 
 @implementation StopInfoFetcher
 
-// Retrieve the stops for the given centre coordinates using the only currently
-// known interface into the MetLink web site via inspection of the public site
-// JavaScript behaviour. This is just a simple GET request with a query string
-// giving the centre point latitude and longitude and the rough radius of the
-// returned results determined by observation. A top-level JSON (i.e. JSON5)
-// Array is returned with an example entry as follows:
+// Internal (very) simple cache of previously fetched stops. Since the 2021
+// Metlink API is only capable of returning *all* stops, we may as well store
+// them and only make the heavyweight API call once per application run.
 //
-// {
-//     "ID":   "17929",
-//     "Name": "Manners Street at Willis Street",
-//     "Lat":  "-41.2895508",
-//     "Long": "174.7749028",
-//     "Sms":  "5006"
-// }
+static NSMutableArray * previouslyFetchedStops = nil;
+
+// See StopInfoFetch.h for documentation.
 //
-// The public stop ID is therefore given by the "Sms" field.
-//
-+ ( void ) getStopsWithinRadius: ( CLLocationDistance       ) radiusInMetres
-                     ofLocation: ( CLLocationCoordinate2D   ) coordinate
-              completionHandler: ( void ( ^ ) ( NSMutableArray * allStops, NSError * error ) ) handler
++ ( void ) getStopsWithinRadius: ( CLLocationDistance     ) radiusInMetres
+                     ofLocation: ( CLLocationCoordinate2D ) coordinate
+              completionHandler: ( void ( ^ ) ( NSMutableArray * allStops, NSError * error ) ) handler;
 {
-    // MetLink in around 2016 started using what looks like a formal internal
-    // API, which was perhaps going to be made public but never was. We can
-    // see that it fetches 'StopNearby' for its map of stops. This returns a
-    // fixed number of results, without taking a radius parameter. An exact
-    // number can be asked for, but only up to 99 and MetLink's own site does
-    // not do this. Fork of repo with more information:
-    //
-    //   https://github.com/pond/metlink-api-maybe
-    //
-    // As a result if you zoom out of the map and drag it a distance, you'll
-    // only get a small cluster of stops showing at the centre with nothing
-    // between this and the previous map centre. Due to the API limitations,
-    // both Bus Panda's map and MetLink's own website map behave this way.
-    //
-    NSString * centreEnumerationURI =
-    [
-        NSString stringWithFormat: @"https://www.metlink.org.nz/api/v1/StopNearby/%f/%f",
-        coordinate.latitude,
-        coordinate.longitude
-        // radiusInMetres - for future expansion one day maybe?
-    ];
+    NSLog( @"Get stops sorted by proximity to lat. %f, lon. %f", coordinate.latitude, coordinate.longitude );
 
-    NSLog( @"Get stops within radius: %@", centreEnumerationURI );
-
-    // We will make a request to fetch the JSON at 'centreEnumerationURI' from
-    // above, declaring the below block as the code to run upon completion
-    // (success or failure).
-    //
-    // After this chunk of code, at the end of this overall method, is the
-    // place where the request is actually made.
+    // This is an internal completion handler for the API call fetch made at
+    // the very end of this overall method.
     //
     URLRequestCompletionHandler completionHandler = ^ ( NSData        * data,
                                                         NSURLResponse * response,
                                                         NSError       * error )
     {
-        NSArray        * stops       = nil;
-        NSMutableArray * sortedStops = nil;
+        NSArray * stops = nil;
 
         if ( error == nil && [ response isKindOfClass: [ NSHTTPURLResponse class ] ] == YES )
         {
@@ -89,7 +54,6 @@
                 stops = [ NSJSONSerialization JSONObjectWithData: data
                                                          options: 0
                                                            error: nil ];
-
             }
             @catch ( NSException * exception ) // Assumed JSON processing error
             {
@@ -107,16 +71,16 @@
 
             for ( NSDictionary * stop in stops )
             {
-                NSString * stopID = stop[ @"Sms" ];
+                NSString * stopID = stop[ @"stop_id" ];
 
                 if ( stopID == nil ) continue;
 
-                NSString * stopDescription = stop[ @"Name" ];
+                NSString * stopDescription = stop[ @"stop_name" ];
 
                 if ( stopDescription == nil ) stopDescription = @"";
 
-                CLLocationDegrees latitude  = [ ( NSString * ) stop[ @"Lat"  ] doubleValue ];
-                CLLocationDegrees longitude = [ ( NSString * ) stop[ @"Long" ] doubleValue ];
+                CLLocationDegrees latitude  = [ ( NSString * ) stop[ @"stop_lat" ] doubleValue ];
+                CLLocationDegrees longitude = [ ( NSString * ) stop[ @"stop_lon" ] doubleValue ];
 
                 CLLocation * stopLocation =
                 [
@@ -131,60 +95,112 @@
                     @"stopLocation":    stopLocation
                 };
 
-                if ( sortedStops == nil ) sortedStops = [ [ NSMutableArray alloc ] init ];
-
-                [ sortedStops addObject: stopInfo ];
+                if ( previouslyFetchedStops == nil ) previouslyFetchedStops = [ [ NSMutableArray alloc ] init ];
+                [ previouslyFetchedStops addObject: stopInfo ];
             }
 
-            // Sort the array based on distance from the centre coordinate.
-
-            CLLocation * centreLocation =
-            [
-                [ CLLocation alloc ] initWithLatitude: coordinate.latitude
-                                            longitude: coordinate.longitude
-            ];
-
-            [
-                sortedStops sortUsingComparator:
-
-                ^ NSComparisonResult( NSDictionary * stopInfo1, NSDictionary * stopInfo2 )
-                {
-                    CLLocation * location1 = stopInfo1[ @"stopLocation" ];
-                    CLLocation * location2 = stopInfo2[ @"stopLocation" ];
-
-                    CLLocationDistance distance1 = [ centreLocation distanceFromLocation: location1 ];
-                    CLLocationDistance distance2 = [ centreLocation distanceFromLocation: location2 ];
-
-                    if ( distance1 < distance2 )
-                    {
-                        return NSOrderedAscending;
-                    }
-                    else if ( distance1 > distance2 )
-                    {
-                        return NSOrderedDescending;
-                    }
-                    else
-                    {
-                        return NSOrderedSame;
-                    }
-                }
-            ];
+            [ StopInfoFetcher getSortedStopsFromCacheWithinRadius: radiusInMetres
+                                                       ofLocation: coordinate
+                                         andCallCompletionHandler: handler ];
         }
-
-        dispatch_async
-        (
-            dispatch_get_main_queue(),
-            ^ ( void )
-            {
-                handler( sortedStops, error );
-            }
-        );
+        else
+        {
+            dispatch_async
+            (
+                dispatch_get_main_queue(),
+                ^ ( void )
+                {
+                    handler( nil, error );
+                }
+            );
+        }
     };
 
-    NSURL        * URL     = [ NSURL URLWithString: centreEnumerationURI ];
-    NSURLSession * session = [ NSURLSession sharedSession ];
+    if ( previouslyFetchedStops != nil )
+    {
+        [ StopInfoFetcher getSortedStopsFromCacheWithinRadius: radiusInMetres
+                                                   ofLocation: coordinate
+                                     andCallCompletionHandler: handler ];
+    }
+    else
+    {
+        NSURLSessionConfiguration * sessionConfiguration = [ NSURLSessionConfiguration defaultSessionConfiguration ];
 
-    [ [ session dataTaskWithURL: URL completionHandler: completionHandler ] resume ];
+        sessionConfiguration.HTTPAdditionalHeaders = @{
+            @"Accept": @"application/json",
+            @"x-api-key": MAGIC
+        };
+
+        NSURL            * URL     = [ NSURL URLWithString: @"https://api.opendata.metlink.org.nz/v1/gtfs/stops" ];
+        NSURLSession     * session = [ NSURLSession sessionWithConfiguration: sessionConfiguration ];
+        NSURLSessionTask * task    = [ session dataTaskWithURL: URL
+                                             completionHandler: completionHandler ];
+
+        [ task resume ];
+    }
+}
+
+// This is really a private, internal thing used to de-dupe code in the
+// main public 'fetch stops within radius of location' class method.
+//
++ ( void ) getSortedStopsFromCacheWithinRadius: ( CLLocationDistance     ) radiusInMetres
+                                    ofLocation: ( CLLocationCoordinate2D ) coordinate
+                      andCallCompletionHandler: ( void ( ^ ) ( NSMutableArray * allStops, NSError * error ) ) handler;
+{
+
+    // Sort and filter the array based on distance from the centre coordinate.
+
+    NSMutableArray * sortedStops    = [ [ NSMutableArray alloc ] init ];
+    CLLocation     * centreLocation =
+    [
+        [ CLLocation alloc ] initWithLatitude: coordinate.latitude
+                                    longitude: coordinate.longitude
+    ];
+
+    for ( NSDictionary * stopInfo in previouslyFetchedStops )
+    {
+        CLLocation * stopLocation = stopInfo[ @"stopLocation" ];
+
+        if ( [ stopLocation distanceFromLocation: centreLocation ] <= radiusInMetres )
+        {
+            [ sortedStops addObject: stopInfo ];
+        }
+    }
+
+    [
+        sortedStops sortUsingComparator:
+
+        ^ NSComparisonResult( NSDictionary * stopInfo1, NSDictionary * stopInfo2 )
+        {
+            CLLocation * location1 = stopInfo1[ @"stopLocation" ];
+            CLLocation * location2 = stopInfo2[ @"stopLocation" ];
+
+            CLLocationDistance distance1 = [ centreLocation distanceFromLocation: location1 ];
+            CLLocationDistance distance2 = [ centreLocation distanceFromLocation: location2 ];
+
+            if ( distance1 < distance2 )
+            {
+                return NSOrderedAscending;
+            }
+            else if ( distance1 > distance2 )
+            {
+                return NSOrderedDescending;
+            }
+            else
+            {
+                return NSOrderedSame;
+            }
+        }
+    ];
+
+    dispatch_async
+    (
+        dispatch_get_main_queue(),
+        ^ ( void )
+        {
+            handler( sortedStops, nil );
+        }
+    );
 }
 
 @end

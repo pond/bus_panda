@@ -63,4 +63,13 @@
 #define ENTITY_AND_RECORD_NAME           @"BusStop"
 #define DATA_CHANGED_NOTIFICATION_NAME   @"BusPandaDataChanged"
 
+// There seems no reason to keep this especially secure...
+//
+//   https://opendata.metlink.org.nz/
+//
+// ...since it's open. But since it's an open repo on GitHub, this does feel
+// particularly high risk!
+//
+#define MAGIC                            @"iuoMNXQjzC1PjijgMjKkHhYWPb4ZES2UpaYfgsd0"
+
 #endif /* Constants_h */
