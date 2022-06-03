@@ -189,12 +189,22 @@
         }, \
         \"action\": { \
           \"type\": \"css-display-none\", \
-          \"selector\": \"[id^=google_ads], [data-slot-name=\\\"first\\\"], [data-module-name=\\\"current-conditions\\\"], [data-module-name=\\\"advert\\\"], #freshwidget-button, #FreshWidget, #ModalOverlay, .BannerAd, .Header, .Footer-section--promo, .BannerAd-wrapper, #google_image_div\" \
+          \"selector\": \"iframe, [id^=google_ads], [data-slot-name=\\\"first\\\"], [data-module-name=\\\"current-conditions\\\"], [data-module-name=\\\"advert\\\"], #freshwidget-button, #FreshWidget, #ModalOverlay, #ModalComponent, .BannerAd, .Header, .Footer-section--promo, .BannerAd-wrapper, #google_image_div\" \
         } \
       }, \
       { \
         \"trigger\": { \
           \"url-filter\": \"freshwidget\\\\.js\", \
+          \"resource-type\": [ \"script\" ] \
+        }, \
+        \"url-filter-is-case-sensitive\": true, \
+        \"action\": { \
+          \"type\": \"block\" \
+        } \
+      }, \
+      { \
+        \"trigger\": { \
+          \"url-filter\": \"fuse\\\\.js\", \
           \"resource-type\": [ \"script\" ] \
         }, \
         \"url-filter-is-case-sensitive\": true, \
@@ -215,7 +225,7 @@
       { \
         \"trigger\": { \
           \"url-filter\": \".*\", \
-          \"if-domain\": [ \"doubleclick.net\", \"facebook.net\", \"pubmatic.com\", \"appdynamics.com\", \"googletagservices.com\", \"googlesyndication.com\", \"google-analytics.com\", \"adservice.google.com\", \"adservice.google.co.nz\" ], \
+          \"if-domain\": [ \"doubleclick.net\", \"facebook.net\", \"pubmatic.com\", \"appdynamics.com\", \"googletagservices.com\", \"googlesyndication.com\", \"google-analytics.com\", \"adservice.google.com\", \"adservice.google.co.nz\", \"fuseplatform.net\", \"amazon-adsystem.com\", \"imrworldwide.com\", \"criteo.net\", \"gtmss.metservice.com\" ], \
           \"resource-type\": [ \"script\" ] \
         }, \
         \"action\": { \
