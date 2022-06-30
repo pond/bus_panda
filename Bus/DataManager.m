@@ -1150,7 +1150,7 @@
                                          inManagedObjectContext: context
         ];
 
-        [ object setValue: stopID             forKey: @"stopID" ];
+        [ object setValue: stopID             forKey: @"stopID"          ];
         [ object setValue: newStopDescription forKey: @"stopDescription" ];
         [ object setValue: newPreferred       forKey: @"preferred"       ];
     }

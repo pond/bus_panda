@@ -22,6 +22,8 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.travel</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
@@ -29,12 +31,14 @@
 		<key>NSAllowsArbitraryLoadsInWebContent</key>
 		<true/>
 	</dict>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Bus Panda would like to know your location to help you find nearby bus stops on the map.</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Bus Panda would like to know your location to help you find nearby bus stops on the map.</string>
+	<key>NSLocationUsageDescription</key>
+	<string>This is used to find nearby bus stops on the &quot;Nearby&quot; map and local weather conditions for some weather providers.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Bus Panda would like to know your location to help you find nearby bus stops on the map.</string>
+	<string>This is used to find nearby bus stops on the &quot;Nearby&quot; map and local weather conditions for some weather providers.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>This is used to find nearby bus stops on the &quot;Nearby&quot; map and local weather conditions for some weather providers.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This is used to find nearby bus stops on the &quot;Nearby&quot; map and local weather conditions for some weather providers.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>

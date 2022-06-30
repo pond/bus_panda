@@ -42,6 +42,15 @@
     {
         self.window.tintColor = [ UIColor colorNamed: @"busLivery" ];
     }
+    
+    // Fix visual problems that arise in XCode 13 when running on iOS 15, just
+    // because of rebuilding on that XCode version without any other changes -
+    // see "https://stackoverflow.com/a/69135729".
+    //
+    if (@available(iOS 15.0, *)) {
+        [UINavigationBar appearance].scrollEdgeAppearance = [[UINavigationBarAppearance alloc] init];
+        [UITabBar        appearance].scrollEdgeAppearance = [[UITabBarAppearance        alloc] init];
+    }
 
     // Tab bar setups
 
