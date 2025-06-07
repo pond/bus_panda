@@ -75,9 +75,10 @@
 
     NSString * provider = [ NSUserDefaults.standardUserDefaults stringForKey: WEATHER_PROVIDER ];
 
-    if      ( [ provider isEqualToString: WEATHER_PROVIDER_DARK_SKY   ] ) [ self visitDarkSky    ];
-    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WINDFINDER ] ) [ self visitWindfinder ];
-    else                                                                  [ self visitMetService ];
+    if      ( [ provider isEqualToString: WEATHER_PROVIDER_WEATHERWATCH ] ) [ self visitWeatherWatch ];
+    else if ( [ provider isEqualToString: WEATHER_PROVIDER_ACCUWEATHER  ] ) [ self visitAccuWeather  ];
+    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WINDFINDER   ] ) [ self visitWindfinder   ];
+    else                                                                    [ self visitMetService   ];
 }
 
 
@@ -85,9 +86,10 @@
 {
     NSString * provider = [ NSUserDefaults.standardUserDefaults stringForKey: WEATHER_PROVIDER ];
 
-    if      ( [ provider isEqualToString: WEATHER_PROVIDER_DARK_SKY   ] ) return [ self rulesForDarkSky    ];
-    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WINDFINDER ] ) return [ self rulesForWindfinder ];
-    else                                                                  return [ self rulesForMetService ];
+    if      ( [ provider isEqualToString: WEATHER_PROVIDER_WEATHERWATCH ] ) return [ self rulesForWeatherWatch ];
+    else if ( [ provider isEqualToString: WEATHER_PROVIDER_ACCUWEATHER  ] ) return [ self rulesForAccuWeather  ];
+    else if ( [ provider isEqualToString: WEATHER_PROVIDER_WINDFINDER   ] ) return [ self rulesForWindfinder   ];
+    else                                                                    return [ self rulesForMetService   ];
 }
 
 - ( NSString * ) errorTitle
@@ -98,28 +100,46 @@
 #pragma mark - Custom provider fetchers
 
 // MetService:
-// http://m.metservice.com/towns/wellington
+// http://www.metservice.com/towns/wellington
 //
 - ( void ) visitMetService
 {
     NSURL * url;
 
-    if ( UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad )
-    {
+//    if ( UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad )
+//    {
         url = [ NSURL URLWithString: @"https://www.metservice.com/towns-cities/wellington" ];
-    }
-    else
-    {
-        url = [ NSURL URLWithString: @"http://m.metservice.com/towns-cities/wellington" ];
-    }
+//    }
+//    else
+//    {
+//        url = [ NSURL URLWithString: @"http://m.metservice.com/towns-cities/wellington" ];
+//    }
 
     [ self.webView loadRequest: [ NSURLRequest requestWithURL: url ] ];
 }
 
-// Dark Sky
-// https://darksky.net/forecast/-41.3135,174.776/ca12/en
+// Windfinder:
+// https://www.windfinder.com/forecast/wellington
 //
-- ( void ) visitDarkSky
+- ( void ) visitWindfinder
+{
+    NSURL * url = [ NSURL URLWithString: @"https://www.windfinder.com/forecast/wellington" ];
+    [ self.webView loadRequest: [ NSURLRequest requestWithURL: url ] ];
+}
+
+// WeatherWatch:
+// https://weatherwatch.co.nz/forecasts/Wellington
+//
+- ( void ) visitWeatherWatch
+{
+    NSURL * url = [ NSURL URLWithString: @"https://weatherwatch.co.nz/forecasts/Wellington" ];
+    [ self.webView loadRequest: [ NSURLRequest requestWithURL: url ] ];
+}
+
+// AccuWeather:
+// https://www.accuweather.com/web-api/three-day-redirect?lat=-41.294649&lon=174.772871
+//
+- ( void ) visitAccuWeather
 {
     INTULocationManager *locMgr = [ INTULocationManager sharedInstance ];
 
@@ -145,7 +165,7 @@
                 coordinates.longitude = 174.772871;
             }
 
-            NSString     * url_str = [ NSString   stringWithFormat: @"https://darksky.net/forecast/%f,%f/ca12/en", coordinates.latitude, coordinates.longitude ];
+            NSString     * url_str = [ NSString   stringWithFormat: @"https://www.accuweather.com/web-api/three-day-redirect?lat=%f&lon=%f", coordinates.latitude, coordinates.longitude ];
             NSURL        * url     = [ NSURL         URLWithString: url_str ];
             NSURLRequest * request = [ NSURLRequest requestWithURL: url ];
 
@@ -154,25 +174,6 @@
                                          waitUntilDone: NO ];
         }
     ];
-}
-
-// Windfinder:
-// https://m.windfinder.com/forecast/wellington
-//
-- ( void ) visitWindfinder
-{
-    NSURL * url;
-
-    if ( UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad )
-    {
-        url = [ NSURL URLWithString: @"https://www.windfinder.com/forecast/wellington" ];
-    }
-    else
-    {
-        url = [ NSURL URLWithString: @"http://m.windfinder.com/forecast/wellington" ];
-    }
-
-    [ self.webView loadRequest: [ NSURLRequest requestWithURL: url ] ];
 }
 
 #pragma mark - Custom provider content blocking rules
@@ -235,9 +236,16 @@
     ]";
 }
 
-// Dark Sky
+// Windfinder
 //
-- ( NSString * ) rulesForDarkSky
+- ( NSString * ) rulesForWindfinder
+{
+    return [ self rulesForGenericUntrustworthy ];
+}
+
+// Windfinder
+//
+- ( NSString * ) rulesForWeatherWatch
 {
     return @" \
     [ \
@@ -247,14 +255,15 @@
         }, \
         \"action\": { \
           \"type\": \"css-display-none\", \
-          \"selector\": \"[id^=google_ads], div#sms, div#map-container, div#timeMachine, div#footer, nav\" \
+        \"selector\": \"[id^=google_ads], .top-bar-wrapper, .top-banner-ad, .ad-horizontal, .ad-sticky-bottom, #google_image_div\" \
         } \
       }, \
       { \
         \"trigger\": { \
-          \"url-filter\": \".*\", \
-          \"if-domain\": [ \"maps.darksky.net\" ] \
+          \"url-filter\": \"\\/cdn\\\\.windfinder\\\\.com\\/ads\\\\.js\", \
+          \"resource-type\": [ \"script\" ] \
         }, \
+        \"url-filter-is-case-sensitive\": true, \
         \"action\": { \
           \"type\": \"block\" \
         } \
@@ -262,7 +271,7 @@
       { \
         \"trigger\": { \
           \"url-filter\": \".*\", \
-          \"if-domain\": [ \"doubleclick.net\", \"facebook.net\", \"googletagservices.com\", \"google-analytics.com\", \"newrelic.com\" ], \
+          \"if-domain\": [ \"doubleclick.net\", \"facebook.net\", \"googletagservices.com\", \"googlesyndication.com\", \"google-analytics.com\", \"adservice.google.com\", \"adservice.google.co.nz\", \"newrelic.com\", \"pubmatic.com\", \"rubiconproject.com\", \"ampproject.org\", \"adsafeprotected.com\" ], \
           \"resource-type\": [ \"script\" ] \
         }, \
         \"action\": { \
@@ -274,7 +283,7 @@
 
 // Windfinder
 //
-- ( NSString * ) rulesForWindfinder
+- ( NSString * ) rulesForAccuWeather
 {
     return @" \
     [ \
@@ -284,17 +293,35 @@
         }, \
         \"action\": { \
           \"type\": \"css-display-none\", \
-        \"selector\": \"[id^=google_ads], .ad-horizontal, .ad-sticky-bottom, #google_image_div\" \
+        \"selector\": \"popup-banner, #google-center-div, .adsbygoogle, .glacier-ad, .adhesion-header, .has-adhesion, #gameSnacks, [id^=google_ads], .ad-horizontal, .ad-sticky-bottom, #google_image_div\" \
         } \
       }, \
       { \
         \"trigger\": { \
-          \"url-filter\": \"\\/cdn\\\\.windfinder\\\\.com\\/ads\\\\.js\", \
+          \"url-filter\": \".*\", \
+          \"if-domain\": [ \"doubleclick.net\", \"facebook.net\", \"googletagservices.com\", \"googlesyndication.com\", \"google-analytics.com\", \"adservice.google.com\", \"adservice.google.co.nz\", \"newrelic.com\", \"pubmatic.com\", \"rubiconproject.com\", \"ampproject.org\", \"adsafeprotected.com\" ], \
           \"resource-type\": [ \"script\" ] \
         }, \
-        \"url-filter-is-case-sensitive\": true, \
         \"action\": { \
           \"type\": \"block\" \
+        } \
+      } \
+    ]";
+}
+
+// Generic
+//
+- ( NSString * ) rulesForGenericUntrustworthy
+{
+    return @" \
+    [ \
+      { \
+        \"trigger\": { \
+          \"url-filter\": \".*\" \
+        }, \
+        \"action\": { \
+          \"type\": \"css-display-none\", \
+        \"selector\": \"[id^=google_ads], .top-banner-ad, #google-center-div, .ad-horizontal, .ad-sticky-bottom, #google_image_div\" \
         } \
       }, \
       { \

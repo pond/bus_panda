@@ -551,7 +551,7 @@ static HTMLSelectorPredicateGen scanPredicateFromPseudoClass(NSScanner *scanner,
 
 #pragma mark
 
-static NSCharacterSet *identifierCharacters()
+static NSCharacterSet *identifierCharacters(void)
 {
     static NSCharacterSet *frozenSet;
     static dispatch_once_t onceToken;
@@ -563,12 +563,12 @@ static NSCharacterSet *identifierCharacters()
 	return frozenSet;
 }
 
-static NSCharacterSet *tagModifierCharacters()
+static NSCharacterSet *tagModifierCharacters(void)
 {
 	return [NSCharacterSet characterSetWithCharactersInString:@".:#["];
 }
 
-static NSCharacterSet *combinatorCharacters()
+static NSCharacterSet *combinatorCharacters(void)
 {
     static NSCharacterSet *frozenSet;
     static dispatch_once_t onceToken;

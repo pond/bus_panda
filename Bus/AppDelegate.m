@@ -103,12 +103,19 @@
 
     // If there's no weather provider chosen or if MetService Beta was chosen,
     // reset to a default of MetService (the beta went live in ~ Nov 2019).
+    // If using Dark Sky which Apple purchased and discontinued (sigh), move
+    // to AccuWeather, because Dark Sky and AccuWeather both use current
+    // location coordinates rather than hard-coding to Wellington.
     //
     NSString * weatherProvider = [ defaults objectForKey: WEATHER_PROVIDER ];
 
     if ( weatherProvider == nil || [ weatherProvider isEqualToString: WEATHER_PROVIDER_METSERVICE_BETA ] )
     {
         [ defaults setValue: WEATHER_PROVIDER_METSERVICE forKey: WEATHER_PROVIDER ];
+    }
+    else if ( [ weatherProvider isEqualToString: WEATHER_PROVIDER_DARK_SKY ] )
+    {
+        [ defaults setValue: WEATHER_PROVIDER_ACCUWEATHER forKey: WEATHER_PROVIDER ];
     }
 
 #ifdef SCREENSHOT_BUILD
