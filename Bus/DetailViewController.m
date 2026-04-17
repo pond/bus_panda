@@ -374,9 +374,6 @@
 
         TimetableWebViewController * controller = ( TimetableWebViewController * ) [ segue destinationViewController ];
         [ controller setDetailItem: entry ];
-
-        controller.navigationItem.leftBarButtonItem = self.splitViewController.displayModeButtonItem;
-        controller.navigationItem.leftItemsSupplementBackButton = YES;
     }
 }
 
