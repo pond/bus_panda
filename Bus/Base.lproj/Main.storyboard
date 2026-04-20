@@ -37,7 +37,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" translatesAutoresizingMaskIntoConstraints="NO" id="HhO-kR-aQ9">
-                                <rect key="frame" x="0.0" y="0.0" width="414" height="736"/>
+                                <rect key="frame" x="0.0" y="0.0" width="414" height="653"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <prototypes>
                                     <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="ServiceCell" id="aBZ-cX-AUo" customClass="ServiceDescriptionCell">
@@ -131,10 +131,14 @@
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
+                            <constraint firstAttribute="bottom" secondItem="HhO-kR-aQ9" secondAttribute="bottom" id="7F3-H3-DiJ"/>
                             <constraint firstItem="HhO-kR-aQ9" firstAttribute="top" secondItem="svH-Pt-448" secondAttribute="top" id="EcP-VO-No1"/>
                             <constraint firstItem="HhO-kR-aQ9" firstAttribute="leading" secondItem="svH-Pt-448" secondAttribute="leading" id="FQS-2K-KYw"/>
                             <constraint firstItem="GAO-Cl-Wes" firstAttribute="top" secondItem="HhO-kR-aQ9" secondAttribute="bottom" id="FXs-9x-pWL"/>
+                            <constraint firstItem="HhO-kR-aQ9" firstAttribute="leading" secondItem="svH-Pt-448" secondAttribute="leading" id="OmT-I2-G0O"/>
                             <constraint firstAttribute="trailing" secondItem="HhO-kR-aQ9" secondAttribute="trailing" id="Rre-Yy-srB"/>
+                            <constraint firstItem="HhO-kR-aQ9" firstAttribute="top" secondItem="svH-Pt-448" secondAttribute="top" id="WWe-qg-gSm"/>
+                            <constraint firstAttribute="trailing" secondItem="HhO-kR-aQ9" secondAttribute="trailing" id="u9h-uC-muh"/>
                         </constraints>
                     </view>
                     <toolbarItems/>
@@ -146,7 +150,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="FJe-Yq-33r" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1463" y="53"/>
+            <point key="canvasLocation" x="1462.3188405797102" y="52.989130434782609"/>
         </scene>
         <!--Timetable Web View Controller-->
         <scene sceneID="VED-2g-wQC">
@@ -683,7 +687,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <mapView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" mapType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="0ca-ZU-gwK">
-                                <rect key="frame" x="0.0" y="0.0" width="414" height="653"/>
+                                <rect key="frame" x="0.0" y="0.0" width="414" height="736"/>
                                 <connections>
                                     <outlet property="delegate" destination="VYa-PP-GCY" id="lf6-jt-6ak"/>
                                 </connections>
@@ -691,10 +695,14 @@
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="0ca-ZU-gwK" firstAttribute="top" secondItem="tGT-mG-671" secondAttribute="top" id="4Qc-p6-mCR"/>
-                            <constraint firstItem="0ca-ZU-gwK" firstAttribute="bottom" secondItem="v8y-kO-mda" secondAttribute="top" id="ibb-MI-HFp"/>
-                            <constraint firstItem="0ca-ZU-gwK" firstAttribute="leading" secondItem="tGT-mG-671" secondAttribute="leading" id="sQQ-RV-ucp"/>
-                            <constraint firstItem="0ca-ZU-gwK" firstAttribute="trailing" secondItem="tGT-mG-671" secondAttribute="trailing" id="t3W-m9-wnn"/>
+                            <constraint firstItem="0ca-ZU-gwK" firstAttribute="leading" secondItem="tGT-mG-671" secondAttribute="leadingMargin" constant="-20" id="0lk-pH-beb"/>
+                            <constraint firstItem="0ca-ZU-gwK" firstAttribute="top" secondItem="tGT-mG-671" secondAttribute="topMargin" constant="-74" id="Boh-p9-ZxE"/>
+                            <constraint firstAttribute="trailing" secondItem="0ca-ZU-gwK" secondAttribute="trailing" id="CKi-GH-tdD"/>
+                            <constraint firstItem="0ca-ZU-gwK" firstAttribute="centerY" secondItem="tGT-mG-671" secondAttribute="centerY" id="GYG-2V-4po"/>
+                            <constraint firstItem="0ca-ZU-gwK" firstAttribute="centerX" secondItem="tGT-mG-671" secondAttribute="centerX" id="SaM-l5-EfM"/>
+                            <constraint firstItem="0ca-ZU-gwK" firstAttribute="leading" secondItem="tGT-mG-671" secondAttribute="leading" id="d9v-Xb-ua9"/>
+                            <constraint firstItem="0ca-ZU-gwK" firstAttribute="top" secondItem="tGT-mG-671" secondAttribute="top" id="e9t-qc-wb1"/>
+                            <constraint firstAttribute="bottom" secondItem="0ca-ZU-gwK" secondAttribute="bottom" id="fOQ-gG-nST"/>
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" title="Nearby Stops" id="Z6h-3x-Fr2"/>
@@ -704,11 +712,11 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Hhl-jb-2oa" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-975" y="-1541"/>
+            <point key="canvasLocation" x="-975.36231884057975" y="-1541.5760869565217"/>
         </scene>
     </scenes>
     <inferredMetricsTieBreakers>
-        <segue reference="6S0-TO-JiA"/>
+        <segue reference="Tll-UG-LXB"/>
         <segue reference="GKi-kA-LjT"/>
     </inferredMetricsTieBreakers>
     <resources>
@@ -722,7 +730,7 @@
             <color red="0.94901960784313721" green="0.94901960784313721" blue="0.96862745098039216" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="secondaryLabelColor">
-            <color red="0.23529411764705882" green="0.23529411764705882" blue="0.2627450980392157" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.23529411759999999" green="0.23529411759999999" blue="0.26274509800000001" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
