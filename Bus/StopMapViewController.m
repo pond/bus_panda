@@ -509,15 +509,14 @@ calloutAccessoryControlTapped: ( UIControl        * ) control
 
     [ controller setDetailItem: detailItem ];
 
-    UIBarButtonItem * additionButton =
+    UIBarButtonItem * addStopButton =
     [
-       [ UIBarButtonItem alloc ] initWithTitle: @"Add"
-                                         style: UIBarButtonItemStylePlain
-                                        target: self
-                                        action: @selector( addStop: )
+        [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemAdd
+                                                       target: self
+                                                       action: @selector( addStop: )
     ];
 
-    controller.navigationItem.rightBarButtonItem = additionButton;
+    controller.navigationItem.rightBarButtonItem = addStopButton;
 
     [ self.navigationController pushViewController: controller animated: YES ];
 }

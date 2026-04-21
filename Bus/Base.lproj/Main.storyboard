@@ -422,7 +422,7 @@
                         <constraints>
                             <constraint firstAttribute="trailing" secondItem="9Ia-P1-n7f" secondAttribute="trailing" id="9kW-pm-G79"/>
                             <constraint firstItem="9Ia-P1-n7f" firstAttribute="top" secondItem="5cz-BV-hM9" secondAttribute="top" id="9oI-Nn-48C"/>
-                            <constraint firstItem="wgq-sR-OjJ" firstAttribute="top" secondItem="9Ia-P1-n7f" secondAttribute="bottom" id="GNx-eg-hw9"/>
+                            <constraint firstAttribute="bottom" secondItem="9Ia-P1-n7f" secondAttribute="bottom" id="GNx-eg-hw9"/>
                             <constraint firstItem="9Ia-P1-n7f" firstAttribute="leading" secondItem="5cz-BV-hM9" secondAttribute="leading" id="YBk-K6-l6f"/>
                         </constraints>
                     </view>
