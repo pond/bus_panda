@@ -70,7 +70,7 @@
 
     self.splitViewController = ( UISplitViewController * ) self.tabBarController.viewControllers.firstObject;
     self.splitViewController.delegate = self;
-    self.splitViewController.preferredDisplayMode = UISplitViewControllerDisplayModeAllVisible;
+    self.splitViewController.preferredDisplayMode = UISplitViewControllerDisplayModeOneBesideSecondary;
 
     self.detailNavigationController = self.splitViewController.viewControllers.lastObject;
     self.masterNavigationController = self.splitViewController.viewControllers.firstObject;
