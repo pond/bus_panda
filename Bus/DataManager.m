@@ -446,10 +446,18 @@
 
         if ( [ currentiCloudToken isEqual: oldiCloudToken ] == NO )
         {
-            NSData * currentTokenData =
+            NSError * error            = nil;
+            NSData  * currentTokenData =
             [
                 NSKeyedArchiver archivedDataWithRootObject: currentiCloudToken
+                                     requiringSecureCoding: YES
+                                                     error: &error
             ];
+            
+            if ( error )
+            {
+                NSLog( @"WARNING: iCloudIdentityDidChange: Could not archive current iCloud token; continuing anyway: %@", error);
+            }
 
             [ defaults setObject: currentTokenData
                           forKey: ICLOUD_TOKEN_ID_DEFAULTS_KEY ];
@@ -1691,19 +1699,28 @@
 
         if ( archivedToken != nil )
         {
-            token = [ NSKeyedUnarchiver unarchiveObjectWithData: archivedToken ];
+            NSError * error = nil;
+
+            token = [ NSKeyedUnarchiver unarchivedObjectOfClass: [ CKServerChangeToken class ]
+                                                       fromData: archivedToken
+                                                          error: &error];
+            
+            if (error) {
+                NSLog(@"WARNING: fetchRecentChangesWithCompletionBlock:ignoringPriorChangeToken: failed to decode change token: %@", error);
+                return;
+            }
         }
     }
 
     // Fetch changes
 
-    CKFetchRecordZoneChangesOptions * options = [ [ CKFetchRecordZoneChangesOptions alloc ] init ];
-    options.previousServerChangeToken = token;
-
-    NSDictionary                      * optionsMap       = @{ zoneID: options };
+    CKFetchRecordZoneChangesConfiguration * config = [ [ CKFetchRecordZoneChangesConfiguration alloc ] init ];
+    config.previousServerChangeToken = token;
+    
+    NSDictionary<CKRecordZoneID *, CKFetchRecordZoneChangesConfiguration *> *configurations = @{ zoneID: config };
     CKFetchRecordZoneChangesOperation * changesOperation = [
-        [ CKFetchRecordZoneChangesOperation alloc ] initWithRecordZoneIDs: @[ zoneID ]
-                                                    optionsByRecordZoneID: optionsMap
+        [CKFetchRecordZoneChangesOperation alloc] initWithRecordZoneIDs: @[zoneID]
+                                           configurationsByRecordZoneID: configurations
     ];
 
     changesOperation.qualityOfService = forceFetchAll ? NSQualityOfServiceUtility : NSQualityOfServiceBackground;
@@ -1735,8 +1752,21 @@
     )
     {
         if ( serverChangeToken == nil ) return;
+        
+        NSError * error        = nil;
+        NSData  * archivedData = [
+            NSKeyedArchiver archivedDataWithRootObject: serverChangeToken
+                                 requiringSecureCoding: YES
+                                                 error: &error
+        ];
 
-        [ defaults setObject: [ NSKeyedArchiver archivedDataWithRootObject: serverChangeToken ]
+        if ( error )
+        {
+            NSLog(@"ERROR: recordZoneChangeTokensUpdatedBlock failed to archive change token (bailing): %@", error);
+            return; // NOTE EARLY EXIT
+        }
+        
+        [ defaults setObject: archivedData
                       forKey: CLOUDKIT_FETCHED_CHANGES_TOKEN ];
     };
 
@@ -1751,7 +1781,20 @@
     {
         if ( recordZoneError != nil || serverChangeToken == nil ) return;
 
-        [ defaults setObject: [ NSKeyedArchiver archivedDataWithRootObject: serverChangeToken ]
+        NSError * error        = nil;
+        NSData  * archivedData = [
+            NSKeyedArchiver archivedDataWithRootObject: serverChangeToken
+                                 requiringSecureCoding: YES
+                                                 error: &error
+        ];
+
+        if ( error )
+        {
+            NSLog(@"WARNING: recordZoneFetchCompletionBlock failed to archive change token (bailing): %@", error);
+            return; // NOTE EARLY EXIT
+        }
+        
+        [ defaults setObject: archivedData
                       forKey: CLOUDKIT_FETCHED_CHANGES_TOKEN ];
     };
 

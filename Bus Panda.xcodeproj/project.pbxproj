@@ -13,7 +13,7 @@
 		23420A891C8EC7DD009F40F9 /* ErrorPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23420A881C8EC7DD009F40F9 /* ErrorPresenter.swift */; };
 		23420A9A1C92A34E009F40F9 /* Interface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 23420A981C92A34E009F40F9 /* Interface.storyboard */; };
 		23420A9C1C92A34E009F40F9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 23420A9B1C92A34E009F40F9 /* Assets.xcassets */; };
-		23420AA31C92A34E009F40F9 /* watchkit Extension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 23420AA21C92A34E009F40F9 /* watchkit Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		23420AA31C92A34E009F40F9 /* watchkit Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 23420AA21C92A34E009F40F9 /* watchkit Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		23420AAA1C92A34E009F40F9 /* StopsInterfaceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23420AA91C92A34E009F40F9 /* StopsInterfaceController.swift */; };
 		23420AAC1C92A34E009F40F9 /* ExtensionDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23420AAB1C92A34E009F40F9 /* ExtensionDelegate.swift */; };
 		23420AAE1C92A34E009F40F9 /* NotificationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23420AAD1C92A34E009F40F9 /* NotificationController.swift */; };
@@ -94,15 +94,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		23420ABA1C92A34F009F40F9 /* Embed App Extensions */ = {
+		23420ABA1C92A34F009F40F9 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				23420AA31C92A34E009F40F9 /* watchkit Extension.appex in Embed App Extensions */,
+				23420AA31C92A34E009F40F9 /* watchkit Extension.appex in Embed Foundation Extensions */,
 			);
-			name = "Embed App Extensions";
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		23420ABE1C92A34F009F40F9 /* Embed Watch Content */ = {
@@ -524,7 +524,7 @@
 			buildConfigurationList = 23420ABB1C92A34F009F40F9 /* Build configuration list for PBXNativeTarget "watchkit" */;
 			buildPhases = (
 				23420A941C92A34E009F40F9 /* Resources */,
-				23420ABA1C92A34F009F40F9 /* Embed App Extensions */,
+				23420ABA1C92A34F009F40F9 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
@@ -578,8 +578,9 @@
 		23D75E131AC1654B0068C808 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 0720;
-				LastUpgradeCheck = 1330;
+				LastUpgradeCheck = 1640;
 				ORGANIZATIONNAME = "Andrew Hodgkinson";
 				TargetAttributes = {
 					23420A951C92A34E009F40F9 = {
@@ -777,9 +778,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 202206051123;
+				CURRENT_PROJECT_VERSION = 202506071332;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = XT4V976D8Y;
 				GCC_NO_COMMON_BLOCKS = YES;
 				INFOPLIST_FILE = "watchkit Extension/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -787,7 +787,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.8;
+				MARKETING_VERSION = 2.9;
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda.watchkitapp.watchkitextension";
 				PRODUCT_NAME = "${TARGET_NAME}";
 				SDKROOT = watchos;
@@ -804,9 +804,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 202206051123;
+				CURRENT_PROJECT_VERSION = 202506071332;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = XT4V976D8Y;
 				GCC_NO_COMMON_BLOCKS = YES;
 				INFOPLIST_FILE = "watchkit Extension/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -814,7 +813,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.8;
+				MARKETING_VERSION = 2.9;
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda.watchkitapp.watchkitextension";
 				PRODUCT_NAME = "${TARGET_NAME}";
 				SDKROOT = watchos;
@@ -829,18 +828,16 @@
 		23420ABC1C92A34F009F40F9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 202206051123;
+				CURRENT_PROJECT_VERSION = 202506071332;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = XT4V976D8Y;
 				GCC_NO_COMMON_BLOCKS = YES;
 				IBSC_MODULE = watchkit_Extension;
 				INFOPLIST_FILE = watchkit/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 2.8;
+				MARKETING_VERSION = 2.9;
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda.watchkitapp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -856,18 +853,16 @@
 		23420ABD1C92A34F009F40F9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 202206051123;
+				CURRENT_PROJECT_VERSION = 202506071332;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = XT4V976D8Y;
 				GCC_NO_COMMON_BLOCKS = YES;
 				IBSC_MODULE = watchkit_Extension;
 				INFOPLIST_FILE = watchkit/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
-				MARKETING_VERSION = 2.8;
+				MARKETING_VERSION = 2.9;
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda.watchkitapp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -910,8 +905,10 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
+				DEVELOPMENT_TEAM = XT4V976D8Y;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -927,6 +924,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -966,8 +964,10 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
+				DEVELOPMENT_TEAM = XT4V976D8Y;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -976,6 +976,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -995,15 +996,14 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 202206051123;
-				DEVELOPMENT_TEAM = XT4V976D8Y;
+				CURRENT_PROJECT_VERSION = 202506071332;
 				INFOPLIST_FILE = Bus/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.8;
+				MARKETING_VERSION = 2.9;
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
@@ -1026,15 +1026,14 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 202206051123;
-				DEVELOPMENT_TEAM = XT4V976D8Y;
+				CURRENT_PROJECT_VERSION = 202506071332;
 				INFOPLIST_FILE = Bus/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.8;
+				MARKETING_VERSION = 2.9;
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";

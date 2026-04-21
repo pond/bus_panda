@@ -26,15 +26,18 @@
 
 // User-facing preferences.
 //
-// The MetService Beta provider gets reset to just MetService by AppDelegate.m,
-// ever since the beta site went live (around November 2019).
-//
 #define SHORTEN_DISPLAYED_NAMES          @"shorten_names_preference"
 #define WEATHER_PROVIDER                 @"weather_provider"
 #define WEATHER_PROVIDER_METSERVICE      @"metservice"
+#define WEATHER_PROVIDER_WINDFINDER      @"windfinder"
+#define WEATHER_PROVIDER_WEATHERWATCH    @"weatherwatch"
+#define WEATHER_PROVIDER_ACCUWEATHER     @"accuweather"
+
+// Legacy preferences. These get auto-migrated to a close-equivalent
+// value, hard-coded from the above list, at application launch time.
+//
 #define WEATHER_PROVIDER_METSERVICE_BETA @"metservicebeta"
 #define WEATHER_PROVIDER_DARK_SKY        @"darksky"
-#define WEATHER_PROVIDER_WINDFINDER      @"windfinder"
 
 #pragma mark - Data management
 
