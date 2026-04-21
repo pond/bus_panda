@@ -48,95 +48,12 @@
     return YES;
 }
 
-// Define or redefine the keyboard toolbars using frame metrics appropriate
-// for the current device interface idiom and device rotation.
-//
-- ( void ) redefineKeyboardToolbars
-{
-    CGFloat                height      = 44;
-    UIInterfaceOrientation orientation = [ [ UIApplication sharedApplication ] statusBarOrientation ];
-
-    if (
-           UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone &&
-           UIInterfaceOrientationIsLandscape( orientation )
-       )
-       height = 32;
-
-    CGRect frame = CGRectIntegral
-    (
-        CGRectMake
-        (
-            0,
-            self.view.bounds.size.height - height,
-            self.view.bounds.size.width,
-            height
-        )
-    );
-
-    self.descriptionToolbar          = [ [UIToolbar alloc ] initWithFrame: frame ];
-    self.descriptionToolbar.barStyle = UIBarStyleDefault;
-    self.descriptionToolbar.items    =
-    [
-        NSArray arrayWithObjects:
-
-        [ [ UIBarButtonItem alloc ] initWithTitle: @"Cancel"
-                                            style: UIBarButtonItemStylePlain
-                                           target: self
-                                           action: @selector( dismissEditorView: ) ],
-
-        [ [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemFlexibleSpace
-                                                         target: nil
-                                                         action: nil ],
-
-        [ [ UIBarButtonItem alloc ] initWithTitle: @"Save Changes"
-                                            style: UIBarButtonItemStyleDone
-                                           target: self
-                                           action: @selector( commitEdit: ) ],
-        nil
-    ];
-
-    if (@available(iOS 11, *))
-    {
-        self.descriptionToolbar.tintColor = [ UIColor colorNamed: @"busLivery" ];
-    }
-}
-
-// See EnterStopIDViewController for details.
-//
-- ( void ) viewWillTransitionToSize: ( CGSize ) size
-          withTransitionCoordinator: ( id <UIViewControllerTransitionCoordinator> ) coordinator
-{
-    [ super viewWillTransitionToSize: size withTransitionCoordinator: coordinator ];
-
-    if (
-           UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone &&
-           [ self.descriptionField isFirstResponder ]
-       )
-    {
-        [ self.descriptionField resignFirstResponder ];
-
-        [
-            coordinator animateAlongsideTransition: nil
-                                        completion: ^ ( id <UIViewControllerTransitionCoordinatorContext> context )
-            {
-                [ self redefineKeyboardToolbars ];
-                self.descriptionField.inputAccessoryView = self.descriptionToolbar;
-                [ self.descriptionField becomeFirstResponder ];
-            }
-        ];
-    }
-}
-
 - ( void ) viewDidLoad
 {
     [ super viewDidLoad ];
-    [ self redefineKeyboardToolbars ];
 
-    self.descriptionField.inputAccessoryView = self.descriptionToolbar;
-    self.descriptionField.text               = [ self.sourceObject valueForKey: @"stopDescription" ];
+    self.descriptionField.text = [ self.sourceObject valueForKey: @"stopDescription" ];
 
-    // TODO: (2019-08-30) Remove if workaround no longer needed.
-    //
     // On iOS 13, despite the label colour being set up in the storyboard, this
     // one view has invisible text in dark mode no matter what I try. In the end
     // I've given up and just hard-set the colour here.
@@ -145,6 +62,22 @@
     {
         self.descriptionField.textColor = [UIColor labelColor];
     }
+
+    self.cancelButton = [
+        [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemClose
+                                                       target: self
+                                                       action: @selector( dismissEditorView: )
+    ];
+
+    self.saveChangesButton = [
+        [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemSave
+                                                       target: self
+                                                       action: @selector( commitEdit: )
+    ];
+
+    self.navigationItem.leftBarButtonItem  = self.cancelButton;
+    self.navigationItem.rightBarButtonItem = self.saveChangesButton;
+
 }
 
 - ( void ) viewDidAppear: ( BOOL ) animated

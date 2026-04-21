@@ -14,6 +14,7 @@
 @property (   weak, nonatomic ) IBOutlet UITextField     * descriptionField;
 @property (   weak, nonatomic )          NSManagedObject * sourceObject;
 
-@property ( retain, nonatomic )          UIToolbar       * descriptionToolbar;
+@property ( strong, nonatomic )          UIBarButtonItem * cancelButton;
+@property ( strong, nonatomic )          UIBarButtonItem * saveChangesButton;
 
 @end
