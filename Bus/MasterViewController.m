@@ -23,6 +23,11 @@
     //
     @property ( strong, nonatomic ) UIRefreshControl * refreshControl;
 
+    // YES once launch-time automatic selection of the first stop has been
+    // done, or found not to be wanted; see -autoSelectFirstStopIfAppropriate.
+    //
+    @property ( assign, nonatomic ) BOOL autoSelectionConsidered;
+
 @end
 
 @implementation MasterViewController
@@ -50,12 +55,17 @@
     //
     self.clearsSelectionOnViewWillAppear = NO;
 
+    // The "+" button shows a menu of ways to add a stop as soon as it's
+    // tapped (it has a menu but no action of its own).
+    //
     UIBarButtonItem * addButton =
     [
         [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemAdd
-                                                       target: self
-                                                       action: @selector( openAddStopModal: )
+                                                       target: nil
+                                                       action: nil
     ];
+
+    addButton.menu = [ self addStopMenu ];
 
     self.navigationItem.leftBarButtonItem  = self.editButtonItem;
     self.navigationItem.rightBarButtonItem = addButton;
@@ -112,6 +122,66 @@
                                    animated: animated ];
 }
 
+- ( void ) viewDidAppear: ( BOOL ) animated
+{
+    [ super viewDidAppear: animated ];
+    [ self autoSelectFirstStopIfAppropriate ];
+}
+
+// At launch, when the split view is expanded (e.g. iPad; an unfolded iPhone
+// Duo) and so has room to show both the list and a stop's details, select
+// the first stop in the list rather than leaving the detail view empty. The
+// list is ordered with preferred stops first, so that's the first preferred
+// stop if there are any, else the first other stop.
+//
+// Called when the view appears and whenever the list's data changes, since
+// favourites may not have loaded yet when the view first appears. Only acts
+// once: never when the split view is collapsed (iPhone), and never once a
+// stop is already showing, so it doesn't override the user's own choice.
+//
+- ( void ) autoSelectFirstStopIfAppropriate
+{
+    if ( self.autoSelectionConsidered == YES ) return;
+
+    UISplitViewController * split = self.splitViewController;
+
+    if ( split == nil || self.view.window == nil ) return; // Not ready yet
+
+    if ( split.isCollapsed )
+    {
+        self.autoSelectionConsidered = YES;
+        return;
+    }
+
+    UIViewController * secondary = [ split viewControllerForColumn: UISplitViewControllerColumnSecondary ];
+
+    if ( [ secondary isKindOfClass: [ UINavigationController class ] ] )
+    {
+        secondary = ( ( UINavigationController * ) secondary ).viewControllers.firstObject;
+    }
+
+    if ( [ secondary isKindOfClass: [ DetailViewController class ] ] &&
+         [ ( DetailViewController * ) secondary detailItem ] != nil )
+    {
+        self.autoSelectionConsidered = YES;
+        return;
+    }
+
+    // No favourites (yet)? Try again when the data changes.
+    //
+    if ( [ self.tableView numberOfSections ] == 0 || [ self.tableView numberOfRowsInSection: 0 ] == 0 ) return;
+
+    self.autoSelectionConsidered = YES;
+
+    NSIndexPath * first = [ NSIndexPath indexPathForRow: 0 inSection: 0 ];
+
+    [ self.tableView selectRowAtIndexPath: first
+                                 animated: NO
+                           scrollPosition: UITableViewScrollPositionNone ];
+
+    [ self tableView: self.tableView didSelectRowAtIndexPath: first ];
+}
+
 - ( void ) dealloc
 {
     NSUserDefaults * defaults = NSUserDefaults.standardUserDefaults;
@@ -131,35 +201,51 @@
     ];
 }
 
-- ( void ) openAddStopModal: ( id ) sender
+// Return the menu for the "+" button: the ways of adding a stop. UIKit runs
+// the chosen action only once the menu has gone, so presenting a modal from
+// it is reliable (unlike from an action sheet's handler on iPad, where the
+// presentation could collide with the popover's dismissal and be ignored).
+//
+- ( UIMenu * ) addStopMenu
 {
-    UIAlertController * actions =
+    UIAction * stopMapAction =
     [
-        UIAlertController alertControllerWithTitle: nil
-                                           message: nil
-                                    preferredStyle: UIAlertControllerStyleActionSheet
-    ];
-
-    UIAlertAction * stopMapAction =
-    [
-        UIAlertAction actionWithTitle: @"Add Using Map"
-                                style: UIAlertActionStyleDefault
-                              handler: ^ ( UIAlertAction * action )
+        UIAction actionWithTitle: NSLocalizedString( @"Add Using Map", "Menu item for adding a bus stop by choosing it on a map" )
+                           image: nil
+                      identifier: nil
+                         handler: ^ ( __kindof UIAction * action )
         {
             UINavigationController * stopMapNavigationController =
             [
                 self.storyboard instantiateViewControllerWithIdentifier: @"StopMap"
             ];
 
+            // On iPad (regular width and height), the default sheet is far
+            // too small for a map on a large screen. Use a form sheet sized
+            // in proportion to the window instead; the map view keeps it in
+            // proportion if the window changes size. Use the window's traits,
+            // since this list is in a split view column with its own.
+            //
+            UIWindow          * window = self.view.window;
+            UITraitCollection * traits = window.traitCollection;
+
+            if ( traits.horizontalSizeClass == UIUserInterfaceSizeClassRegular &&
+                 traits.verticalSizeClass   == UIUserInterfaceSizeClassRegular )
+            {
+                stopMapNavigationController.modalPresentationStyle = UIModalPresentationFormSheet;
+                stopMapNavigationController.preferredContentSize   = [ StopMapViewController sheetSizeForWindowSize: window.bounds.size ];
+            }
+
             [ self openSpecificModal: stopMapNavigationController ];
         }
     ];
 
-    UIAlertAction * enterStopIDAction =
+    UIAction * enterStopIDAction =
     [
-        UIAlertAction actionWithTitle: @"Add by Stop ID"
-                                style: UIAlertActionStyleDefault
-                              handler: ^ ( UIAlertAction * action )
+        UIAction actionWithTitle: NSLocalizedString( @"Add by Stop ID", "Menu item for adding a bus stop by typing in its ID" )
+                           image: nil
+                      identifier: nil
+                         handler: ^ ( __kindof UIAction * action )
         {
             UINavigationController * enterStopIDNavigationController =
             [
@@ -170,28 +256,7 @@
         }
     ];
 
-    UIAlertAction * cancel =
-    [
-        UIAlertAction actionWithTitle: @"Cancel"
-                                style: UIAlertActionStyleCancel
-                              handler: ^ ( UIAlertAction * action )
-        {
-            [ actions dismissViewControllerAnimated: ( YES ) completion: nil ];
-        }
-    ];
-
-    [ actions addAction: stopMapAction     ];
-    [ actions addAction: enterStopIDAction ];
-    [ actions addAction: cancel            ];
-
-    // On the iPhone (at the time of writing) modal action sheets implicitly
-    // always pop up over the whole screen. On an iPad, you need to tell the
-    // system where to ground the popover - in this case the "+" button that
-    // caused the action method here to be run in the first place.
-    //
-    actions.popoverPresentationController.barButtonItem = sender;
-
-    [ self presentViewController: actions animated: YES completion: nil ];
+    return [ UIMenu menuWithTitle: @"" children: @[ stopMapAction, enterStopIDAction ] ];
 }
 
 // Open the modal editor for the given favourite stop's description.
@@ -564,6 +629,10 @@
                                       withObject: nil
                                    waitUntilDone: NO ];
 
+    [ self performSelectorOnMainThread: @selector( autoSelectFirstStopIfAppropriate )
+                            withObject: nil
+                         waitUntilDone: NO ];
+
     [ self performSelectorOnMainThread: @selector( updateWatch: )
                             withObject: [ WCSession defaultSession ]
                          waitUntilDone: NO ];
@@ -774,6 +843,7 @@
 {
     [ self.tableView endUpdates ];
     [ self updateWatch: nil ];
+    [ self autoSelectFirstStopIfAppropriate ];
 }
 
 // TODO possibly:

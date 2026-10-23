@@ -19,7 +19,17 @@
 // Metlink API is only capable of returning *all* stops, we may as well store
 // them and only make the heavyweight API call once per application run.
 //
-static NSMutableArray * previouslyFetchedStops = nil;
+// All of this state is only ever read or written on the main thread. While
+// the one-and-only fetch is in progress, further requests are queued in
+// 'pendingRequests' and all answered when it completes. Previously, every
+// request made before the first fetch completed started its own fetch, and
+// their completion handlers then appended to a shared mutable array from
+// several threads at once - a crash ("malloc: double free") and duplicate
+// cache entries.
+//
+static NSArray        * previouslyFetchedStops = nil;
+static NSMutableArray * pendingRequests        = nil;
+static BOOL             fetchInProgress        = NO;
 
 // See StopInfoFetch.h for documentation.
 //
@@ -27,16 +37,70 @@ static NSMutableArray * previouslyFetchedStops = nil;
                      ofLocation: ( CLLocationCoordinate2D ) coordinate
               completionHandler: ( void ( ^ ) ( NSMutableArray * allStops, NSError * error ) ) handler;
 {
+    if ( ! NSThread.isMainThread )
+    {
+        dispatch_async
+        (
+            dispatch_get_main_queue(),
+            ^ ( void )
+            {
+                [ StopInfoFetcher getStopsWithinRadius: radiusInMetres
+                                            ofLocation: coordinate
+                                     completionHandler: handler ];
+            }
+        );
+
+        return;
+    }
+
     NSLog( @"Get stops sorted by proximity to lat. %f, lon. %f", coordinate.latitude, coordinate.longitude );
 
-    // This is an internal completion handler for the API call fetch made at
-    // the very end of this overall method.
+    // Answer from the cache if possible.
+
+    if ( previouslyFetchedStops != nil )
+    {
+        [ StopInfoFetcher getSortedStopsFromCacheWithinRadius: radiusInMetres
+                                                   ofLocation: coordinate
+                                     andCallCompletionHandler: handler ];
+        return;
+    }
+
+    // Otherwise queue this request until the fetch completes, starting the
+    // fetch if it isn't already running.
+
+    if ( pendingRequests == nil ) pendingRequests = [ [ NSMutableArray alloc ] init ];
+
+    [
+        pendingRequests addObject: ^ ( NSError * error )
+        {
+            if ( error == nil )
+            {
+                [ StopInfoFetcher getSortedStopsFromCacheWithinRadius: radiusInMetres
+                                                           ofLocation: coordinate
+                                             andCallCompletionHandler: handler ];
+            }
+            else
+            {
+                handler( nil, error );
+            }
+        }
+    ];
+
+    if ( fetchInProgress ) return;
+
+    fetchInProgress = YES;
+
+    // This is the completion handler for the API call fetch made below. It
+    // parses into a private array on whatever thread NSURLSession uses, then
+    // publishes the result and answers all queued requests on the main
+    // thread.
     //
     URLRequestCompletionHandler completionHandler = ^ ( NSData        * data,
                                                         NSURLResponse * response,
                                                         NSError       * error )
     {
-        NSArray * stops = nil;
+        NSArray        * stops        = nil;
+        NSMutableArray * fetchedStops = nil;
 
         if ( error == nil && [ response isKindOfClass: [ NSHTTPURLResponse class ] ] == YES )
         {
@@ -57,6 +121,11 @@ static NSMutableArray * previouslyFetchedStops = nil;
             }
             @catch ( NSException * exception ) // Assumed JSON processing error
             {
+                stops = nil;
+            }
+
+            if ( ! [ stops isKindOfClass: [ NSArray class ] ] )
+            {
                 NSDictionary * details = @{
                     NSLocalizedDescriptionKey: @"Bus stops retrieved from the Internet were sent in a way that Bus Panda does not understand."
                 };
@@ -64,13 +133,25 @@ static NSMutableArray * previouslyFetchedStops = nil;
                 error = [ NSError errorWithDomain: @"bus_panda_stops" code: 200 userInfo: details ];
             }
         }
+        else if ( error == nil )
+        {
+            NSDictionary * details = @{
+                NSLocalizedDescriptionKey: @"Bus stops could not be retrieved from the Internet."
+            };
 
-        if ( error == nil && stops != nil )
+            error = [ NSError errorWithDomain: @"bus_panda_stops" code: 201 userInfo: details ];
+        }
+
+        if ( error == nil )
         {
             // Process the JSON results into a higher level array of objects.
 
+            fetchedStops = [ [ NSMutableArray alloc ] init ];
+
             for ( NSDictionary * stop in stops )
             {
+                if ( ! [ stop isKindOfClass: [ NSDictionary class ] ] ) continue;
+
                 NSString * stopID = stop[ @"stop_id" ];
 
                 if ( stopID == nil ) continue;
@@ -88,56 +169,57 @@ static NSMutableArray * previouslyFetchedStops = nil;
                                                 longitude: longitude
                 ];
 
-                NSDictionary * stopInfo =
-                @{
-                    @"stopID":          stopID,
-                    @"stopDescription": stopDescription,
-                    @"stopLocation":    stopLocation
-                };
-
-                if ( previouslyFetchedStops == nil ) previouslyFetchedStops = [ [ NSMutableArray alloc ] init ];
-                [ previouslyFetchedStops addObject: stopInfo ];
+                [
+                    fetchedStops addObject:
+                    @{
+                        @"stopID":          stopID,
+                        @"stopDescription": stopDescription,
+                        @"stopLocation":    stopLocation
+                    }
+                ];
             }
+        }
 
-            [ StopInfoFetcher getSortedStopsFromCacheWithinRadius: radiusInMetres
-                                                       ofLocation: coordinate
-                                         andCallCompletionHandler: handler ];
-        }
-        else
-        {
-            dispatch_async
-            (
-                dispatch_get_main_queue(),
-                ^ ( void )
+        dispatch_async
+        (
+            dispatch_get_main_queue(),
+            ^ ( void )
+            {
+                if ( error == nil ) previouslyFetchedStops = [ fetchedStops copy ];
+
+                fetchInProgress = NO;
+
+                NSArray * requests = [ pendingRequests copy ];
+                [ pendingRequests removeAllObjects ];
+
+                for ( void ( ^ request )( NSError * ) in requests )
                 {
-                    handler( nil, error );
+                    request( error );
                 }
-            );
-        }
+            }
+        );
     };
 
-    if ( previouslyFetchedStops != nil )
-    {
-        [ StopInfoFetcher getSortedStopsFromCacheWithinRadius: radiusInMetres
-                                                   ofLocation: coordinate
-                                     andCallCompletionHandler: handler ];
-    }
-    else
-    {
-        NSURLSessionConfiguration * sessionConfiguration = [ NSURLSessionConfiguration defaultSessionConfiguration ];
+    NSURLSessionConfiguration * sessionConfiguration = [ NSURLSessionConfiguration defaultSessionConfiguration ];
 
-        sessionConfiguration.HTTPAdditionalHeaders = @{
-            @"Accept": @"application/json",
-            @"x-api-key": MAGIC
-        };
+    sessionConfiguration.HTTPAdditionalHeaders = @{
+        @"Accept": @"application/json",
+        @"x-api-key": MAGIC
+    };
 
-        NSURL            * URL     = [ NSURL URLWithString: @"https://api.opendata.metlink.org.nz/v1/gtfs/stops" ];
-        NSURLSession     * session = [ NSURLSession sessionWithConfiguration: sessionConfiguration ];
-        NSURLSessionTask * task    = [ session dataTaskWithURL: URL
-                                             completionHandler: completionHandler ];
+    NSURL            * URL     = [ NSURL URLWithString: @"https://api.opendata.metlink.org.nz/v1/gtfs/stops" ];
+    NSURLSession     * session = [ NSURLSession sessionWithConfiguration: sessionConfiguration ];
+    NSURLSessionTask * task    = [ session dataTaskWithURL: URL
+                                         completionHandler: completionHandler ];
 
-        [ task resume ];
-    }
+    [ task resume ];
+}
+
+// See StopInfoFetch.h for documentation.
+//
++ ( BOOL ) hasCachedStops
+{
+    return previouslyFetchedStops != nil ? YES : NO;
 }
 
 // This is really a private, internal thing used to de-dupe code in the
