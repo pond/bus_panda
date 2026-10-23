@@ -63,10 +63,7 @@
     // one view has invisible text in dark mode no matter what I try. In the end
     // I've given up and just hard-set the colour here.
     //
-    if (@available(iOS 13, *))
-    {
-        self.descriptionField.textColor = [UIColor labelColor];
-    }
+    self.descriptionField.textColor = UIColor.labelColor;
 }
 
 - ( void ) viewDidAppear: ( BOOL ) animated

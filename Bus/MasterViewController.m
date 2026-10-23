@@ -31,17 +31,6 @@
 
 #pragma mark - View lifecycle
 
-- ( void ) awakeFromNib
-{
-    [ super awakeFromNib ];
-
-    if ( [ [ UIDevice currentDevice ] userInterfaceIdiom ] == UIUserInterfaceIdiomPad )
-    {
-        self.clearsSelectionOnViewWillAppear = NO;
-        self.preferredContentSize            = CGSizeMake( 320.0, 600.0 );
-    }
-}
-
 - ( void ) viewDidLoad
 {
     [ super viewDidLoad ];
@@ -115,13 +104,23 @@
     // property in this instance.
 }
 
-// http://stackoverflow.com/questions/19379510/uitableviewcell-doesnt-get-deselected-when-swiping-back-quickly
+// When collapsed (iPhone), clear the selection on return from a stop's
+// schedule - see:
+//
+//   http://stackoverflow.com/questions/19379510/uitableviewcell-doesnt-get-deselected-when-swiping-back-quickly
+//
+// When expanded (iPad), keep it: the selected row shows which stop's
+// schedule is on screen alongside the list.
 //
 - ( void ) viewWillAppear: ( BOOL ) animated
 {
     [ super viewWillAppear: animated ];
-    [ self.tableView deselectRowAtIndexPath: [ self.tableView indexPathForSelectedRow ]
-                                   animated: animated ];
+
+    if ( self.splitViewController.isCollapsed )
+    {
+        [ self.tableView deselectRowAtIndexPath: [ self.tableView indexPathForSelectedRow ]
+                                       animated: animated ];
+    }
 }
 
 - ( void ) viewDidAppear: ( BOOL ) animated
@@ -339,20 +338,7 @@
     [ self openSpecificModal: editStopDescriptionNavigationController ];
 }
 
-#pragma mark - Segues and selection
-
-// The storyboard's "showDetail" segue from a stop cell is not used with the
-// column-style split view; selection is handled in code instead (see
-// -tableView:didSelectRowAtIndexPath:), which is the documented way to drive
-// a column-style split view, collapsed or expanded.
-//
-- ( BOOL ) shouldPerformSegueWithIdentifier: ( NSString * ) identifier
-                                     sender: ( id         ) sender
-{
-    if ( [ identifier isEqualToString: @"showDetail" ] ) return NO;
-
-    return [ super shouldPerformSegueWithIdentifier: identifier sender: sender ];
-}
+#pragma mark - Selection
 
 // Show the chosen stop in the split view's secondary column. When collapsed,
 // -showColumn: pushes it onto the single navigation stack; when expanded, it

@@ -127,23 +127,9 @@
        [ UIActivityIndicatorView alloc ] initWithFrame: self.view.frame
     ];
 
-    UIColor                      * backgroundColor;
-    UIActivityIndicatorViewStyle   style;
-
-    if (@available(iOS 13, *))
-    {
-        backgroundColor = [ UIColor systemBackgroundColor ];
-        style           = UIActivityIndicatorViewStyleMedium;
-    }
-    else
-    {
-        backgroundColor = [ UIColor whiteColor ];
-        style           = UIActivityIndicatorViewStyleGray;
-    }
-
     self.activityView.opaque                         = YES;
-    self.activityView.backgroundColor                = backgroundColor;
-    self.activityView.activityIndicatorViewStyle     = style;
+    self.activityView.backgroundColor                = UIColor.systemBackgroundColor;
+    self.activityView.activityIndicatorViewStyle     = UIActivityIndicatorViewStyleMedium;
     self.activityView.hidesWhenStopped               = YES;
     self.activityView.autoresizingMask               = UIViewAutoresizingFlexibleWidth |
                                                        UIViewAutoresizingFlexibleHeight;

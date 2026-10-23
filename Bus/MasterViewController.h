@@ -10,8 +10,6 @@
 #import <CloudKit/CloudKit.h>
 #import <CoreData/CoreData.h>
 
-@class DetailViewController;
-
 #define STOP_IS_NOT_PREFERRED_VALUE @0
 #define STOP_IS_PREFERRED_VALUE     @1
 
