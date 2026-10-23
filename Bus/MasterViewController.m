@@ -310,31 +310,32 @@
 - ( CGFloat )    tableView: ( UITableView * ) tableView
   heightForHeaderInSection: ( NSInteger     ) section
 {
-    // Show no section title unless there are at least two sections.
+    // Show no section title unless there are at least two sections. On iOS
+    // 26+ let the system size headers (including for Dynamic Type).
 
     if ( DataManager.dataManager.shouldShowSectionHeader == NO ) return 0;
-    else                                                         return 32;
+
+    if (@available(iOS 26, *))
+    {
+        return UITableViewAutomaticDimension;
+    }
+
+    return 32;
 }
 
 - ( void )    tableView: ( UITableView * ) tableView
   willDisplayHeaderView: ( UIView      * ) view
              forSection: ( NSInteger     ) section
 {
-    if (@available(iOS 13, *))
-    {
-        // Increase constrast of the section header background colour. The
-        // default is almost invisible.
+    // On iOS 26+, leave headers in the system style.
 
-        UITableViewHeaderFooterView * hfView = ( UITableViewHeaderFooterView * ) view;
-        hfView.backgroundView.backgroundColor = [ UIColor systemGray6Color ];
-    }
-    else
-    {
-        // Slightly darken the near-invisible section header background colour.
+    if (@available(iOS 26, *)) return;
 
-        UITableViewHeaderFooterView * hfView = ( UITableViewHeaderFooterView * ) view;
-        hfView.backgroundView.backgroundColor = [ UIColor colorWithRed: 0.9 green: 0.9 blue: 0.9 alpha: 1 ];
-    }
+    // Earlier, increase contrast of the section header background colour.
+    // The default is almost invisible.
+
+    UITableViewHeaderFooterView * hfView = ( UITableViewHeaderFooterView * ) view;
+    hfView.backgroundView.backgroundColor = [ UIColor systemGray6Color ];
 }
 
 - ( UITableViewCell * ) tableView: ( UITableView * ) tableView
