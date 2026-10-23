@@ -173,7 +173,7 @@
         ];
     }
 
-    if ( [ CLLocationManager authorizationStatus ] == kCLAuthorizationStatusAuthorizedWhenInUse )
+    if ( self.locationManager.authorizationStatus == kCLAuthorizationStatusAuthorizedWhenInUse )
     {
         [ self.locationManager startUpdatingLocation ];
     }
@@ -187,7 +187,7 @@
 
     [ self cancelStopLocationUpdate ];
 
-    if ( [ CLLocationManager authorizationStatus ] == kCLAuthorizationStatusAuthorizedWhenInUse )
+    if ( self.locationManager.authorizationStatus == kCLAuthorizationStatusAuthorizedWhenInUse )
     {
         [ self.locationManager stopUpdatingLocation ];
     }
@@ -481,7 +481,7 @@
 {
     CLLocationCoordinate2D zoomLocation;
 
-    if ( [ CLLocationManager authorizationStatus ] == kCLAuthorizationStatusAuthorizedWhenInUse )
+    if ( self.locationManager.authorizationStatus == kCLAuthorizationStatusAuthorizedWhenInUse )
     {
         [ self.mapView setShowsUserLocation: YES ];
 
@@ -628,8 +628,7 @@ calloutAccessoryControlTapped: ( UIControl        * ) control
 // user's location changes. We update the map to either show that location,
 // or reset it to the default 'centre of wellington' coordinates.
 //
-- ( void )     locationManager: ( CLLocationManager     * ) manager
-  didChangeAuthorizationStatus: ( CLAuthorizationStatus   ) status
+- ( void ) locationManagerDidChangeAuthorization: ( CLLocationManager * ) manager
 {
     [ self updateMapWithOrWithoutLocation ];
 }

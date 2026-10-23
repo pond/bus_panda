@@ -1784,9 +1784,19 @@
     changesOperation.fetchAllChanges  = YES;
     changesOperation.recordZoneIDs    = @[ zoneID ];
 
-    changesOperation.recordChangedBlock =
-    ^ ( CKRecord * _Nonnull record )
+    changesOperation.recordWasChangedBlock =
+    ^ (
+        CKRecordID * _Nonnull  recordID,
+        CKRecord   * _Nullable record,
+        NSError    * _Nullable error
+    )
     {
+        if ( error != nil || record == nil )
+        {
+            NSLog( @"CloudKit change: Could not fetch changed record %@: %@", recordID.recordName, error );
+            return;
+        }
+
         [ defaults setBool: YES forKey: HAVE_RECEIVED_CLOUDKIT_DATA ];
         [ self recordDidChange: record ];
     };
