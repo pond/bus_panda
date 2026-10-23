@@ -46,134 +46,54 @@
     [ self dismissAdditionView: nil ];
 }
 
-// Move input focus to the 'description' field.
+// Return YES if the stop ID field contains a complete stop ID.
 //
-// "sender" is ignored.
-//
-- ( IBAction ) moveToDescription: ( id ) sender
+- ( BOOL ) hasCompleteStopID
 {
-    ( void ) sender;
-    [ self.descriptionField becomeFirstResponder ];
+    return self.numberField.text.length == 4 ? YES : NO;
 }
 
+// Called whenever the stop ID field's text changes. Done is only enabled
+// for a complete stop ID; once one has been typed, input moves on to the
+// optional description (the number pad has no "Next" or "Return" key).
+//
+- ( void ) numberFieldDidChange: ( UITextField * ) textField
+{
+    BOOL complete = [ self hasCompleteStopID ];
+
+    self.navigationItem.rightBarButtonItem.enabled = complete;
+
+    if ( complete ) [ self.descriptionField becomeFirstResponder ];
+}
+
+// The stop ID field is set to clear when editing begins (see storyboard),
+// which doesn't count as an editing change, so re-check Done here too.
+//
+- ( void ) textFieldDidBeginEditing: ( UITextField * ) textField
+{
+    if ( textField == self.numberField )
+    {
+        self.navigationItem.rightBarButtonItem.enabled = [ self hasCompleteStopID ];
+    }
+}
+
+// The description keyboard's "Done" key adds the stop, as long as there's a
+// complete stop ID; otherwise it does nothing.
+//
 - ( BOOL ) textFieldShouldReturn: ( UITextField * ) textField
 {
-    if ( textField == self.descriptionField )
+    if ( textField == self.descriptionField && [ self hasCompleteStopID ] )
     {
         [ self addStop: nil ];
         return YES;
     }
-    else
-    {
-        return NO;
-    }
-}
 
-// Define or redefine the keyboard toolbars using metrics appropriate for
-// the current traits (see AddStopAbstractViewController), and attach them.
-//
-- ( void ) redefineKeyboardToolbars
-{
-    self.numberToolbar =
-    [
-        self keyboardToolbarWithItems:
-        @[
-            [ [ UIBarButtonItem alloc ] initWithTitle: @"Cancel"
-                                                style: UIBarButtonItemStylePlain
-                                               target: self
-                                               action: @selector( dismissAdditionView: ) ],
-
-            [ [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemFlexibleSpace
-                                                             target: nil
-                                                             action: nil ],
-
-            [ [ UIBarButtonItem alloc ] initWithTitle: @"Next"
-                                                style: UIBarButtonItemStylePlain
-                                               target: self
-                                               action: @selector( moveToDescription: ) ]
-        ]
-    ];
-
-    UIBarButtonItemStyle addStopIdButtonStyle = UIBarButtonItemStyleDone;
-    if (@available(iOS 26, *)) addStopIdButtonStyle = UIBarButtonItemStyleProminent;
-
-    self.descriptionToolbar =
-    [
-        self keyboardToolbarWithItems:
-        @[
-            [ [ UIBarButtonItem alloc ] initWithTitle: @"Cancel"
-                                                style: UIBarButtonItemStylePlain
-                                               target: self
-                                               action: @selector( dismissAdditionView: ) ],
-
-            [ [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemFlexibleSpace
-                                                             target: nil
-                                                             action: nil ],
-
-            [ [ UIBarButtonItem alloc ] initWithTitle: @"Add Stop ID"
-                                                style: addStopIdButtonStyle
-                                               target: self
-                                               action: @selector( addStop: ) ]
-        ]
-    ];
-
-         self.numberField.inputAccessoryView = self.numberToolbar;
-    self.descriptionField.inputAccessoryView = self.descriptionToolbar;
-}
-
-// The numeric keyboard for stop ID and text keyboard for description have
-// "cancel"/"add" buttons above implemented as a keyboard toolbar. These are
-// sized according to traits (see -redefineKeyboardToolbars). It transpires that different heights are applied
-// in portrait or landscape mode and, on a device with a screen width of the
-// iPhone 5 or 4, as examples, starting in portrait mode and rotating to
-// landscape causes the toolbar to abut the text fields unless resizing is
-// carried out again. We need to do this sizing *after* the rotation has
-// happened, hence the block below. Via:
-//
-//   https://stackoverflow.com/questions/26315046/ios-8-orientation-change-detection
-//
-- ( void ) viewWillTransitionToSize: ( CGSize ) size
-          withTransitionCoordinator: ( id <UIViewControllerTransitionCoordinator> ) coordinator
-{
-    [ super viewWillTransitionToSize: size withTransitionCoordinator: coordinator ];
-
-    BOOL      numberWasFirstResponder = [      self.numberField isFirstResponder ];
-    BOOL descriptionWasFirstResponder = [ self.descriptionField isFirstResponder ];
-
-    // I've tried a lot of approaches and I just cannot get an on-screen
-    // keyboard to respond to any kind of changes in the input accessory
-    // view unless we just resign then reassign the first responder, making
-    // the keyboard close and reopen. That's ugly on rotation but we try to
-    // minimise the impact by only doing it on iPhone where the bar metrics
-    // must change and only doing it if first responder is actually
-    // assigned. It's still a better end result than doing nothing.
-    //
-    if (
-           self.traitCollection.userInterfaceIdiom == UIUserInterfaceIdiomPhone &&
-           ( numberWasFirstResponder || descriptionWasFirstResponder )
-       )
-    {
-        if (      numberWasFirstResponder ) [      self.numberField resignFirstResponder ];
-        if ( descriptionWasFirstResponder ) [ self.descriptionField resignFirstResponder ];
-
-        [
-            coordinator animateAlongsideTransition: nil
-                                        completion: ^ ( id <UIViewControllerTransitionCoordinatorContext> context )
-            {
-                [ self redefineKeyboardToolbars ];
-
-                if (      numberWasFirstResponder ) [      self.numberField becomeFirstResponder ];
-                if ( descriptionWasFirstResponder ) [ self.descriptionField becomeFirstResponder ];
-            }
-        ];
-    }
+    return NO;
 }
 
 // From the UITextFieldDelegate protocol and called because the numerical
 // entry field has been given the Enter Stop ID object as its delegate in the
-// storyboard. The description field has no delegate at the time of writing.
-// but just in case it does end up wired to here one day, the method makes
-// sure it is dealing with the right field.
+// storyboard. The description field is allowed any changes.
 //
 // The sole aim is to limit the numeric stop ID entry to 4 digits. Via:
 //
@@ -195,13 +115,17 @@
     return newLength <= 4 ? YES : NO;
 }
 
-// Traits (which the keyboard toolbars' metrics depend upon) are reliable
-// from here, but not yet in -viewDidLoad.
-//
-- ( void ) viewIsAppearing: ( BOOL ) animated
+- ( void ) viewDidLoad
 {
-    [ super viewIsAppearing: animated ];
-    [ self redefineKeyboardToolbars ];
+    [ super viewDidLoad ];
+
+    UIBarButtonItem * done = [ self installCancelAction: @selector( dismissAdditionView: )
+                                          andDoneAction: @selector( addStop: ) ];
+    done.enabled = NO;
+
+    [ self.numberField addTarget: self
+                          action: @selector( numberFieldDidChange: )
+                forControlEvents: UIControlEventEditingChanged ];
 }
 
 - ( void ) viewDidAppear: ( BOOL ) animated

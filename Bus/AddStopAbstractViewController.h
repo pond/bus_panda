@@ -29,11 +29,13 @@
 //
 - ( void ) dismissAdditionView;
 
-// Return a new toolbar suitable for use as a text field's input accessory
-// view, containing the given items. Its height suits this view controller's
-// current traits, so call from -viewIsAppearing: or later and again after a
-// size transition.
+// For modal forms: put a system Cancel button on the left of the navigation
+// bar and a system Done button on the right, calling the given selectors on
+// 'self'. On iOS 26+ these are the standard Liquid Glass close (X) and
+// prominent confirm (checkmark) buttons. Returns the Done button, so that
+// callers can enable or disable it.
 //
-- ( UIToolbar * _Nonnull ) keyboardToolbarWithItems: ( NSArray < UIBarButtonItem * > * _Nonnull ) items;
+- ( UIBarButtonItem * _Nonnull ) installCancelAction: ( SEL _Nonnull ) cancelAction
+                                       andDoneAction: ( SEL _Nonnull ) doneAction;
 
 @end

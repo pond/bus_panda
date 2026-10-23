@@ -48,65 +48,12 @@
     return YES;
 }
 
-// Define or redefine the keyboard toolbar using metrics appropriate for the
-// current traits (see AddStopAbstractViewController), and attach it.
-//
-- ( void ) redefineKeyboardToolbars
-{
-    UIBarButtonItemStyle saveChangesButtonStyle = UIBarButtonItemStyleDone;
-    if (@available(iOS 26, *)) saveChangesButtonStyle = UIBarButtonItemStyleProminent;
-
-    self.descriptionToolbar =
-    [
-        self keyboardToolbarWithItems:
-        @[
-            [ [ UIBarButtonItem alloc ] initWithTitle: @"Cancel"
-                                                style: UIBarButtonItemStylePlain
-                                               target: self
-                                               action: @selector( dismissEditorView: ) ],
-
-            [ [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemFlexibleSpace
-                                                             target: nil
-                                                             action: nil ],
-
-            [ [ UIBarButtonItem alloc ] initWithTitle: @"Save Changes"
-                                                style: saveChangesButtonStyle
-                                               target: self
-                                               action: @selector( commitEdit: ) ]
-        ]
-    ];
-
-    self.descriptionField.inputAccessoryView = self.descriptionToolbar;
-}
-
-// See EnterStopIDViewController for details.
-//
-- ( void ) viewWillTransitionToSize: ( CGSize ) size
-          withTransitionCoordinator: ( id <UIViewControllerTransitionCoordinator> ) coordinator
-{
-    [ super viewWillTransitionToSize: size withTransitionCoordinator: coordinator ];
-
-    if (
-           self.traitCollection.userInterfaceIdiom == UIUserInterfaceIdiomPhone &&
-           [ self.descriptionField isFirstResponder ]
-       )
-    {
-        [ self.descriptionField resignFirstResponder ];
-
-        [
-            coordinator animateAlongsideTransition: nil
-                                        completion: ^ ( id <UIViewControllerTransitionCoordinatorContext> context )
-            {
-                [ self redefineKeyboardToolbars ];
-                [ self.descriptionField becomeFirstResponder ];
-            }
-        ];
-    }
-}
-
 - ( void ) viewDidLoad
 {
     [ super viewDidLoad ];
+
+    [ self installCancelAction: @selector( dismissEditorView: )
+                 andDoneAction: @selector( commitEdit: ) ];
 
     self.descriptionField.text = [ self.sourceObject valueForKey: @"stopDescription" ];
 
@@ -120,15 +67,6 @@
     {
         self.descriptionField.textColor = [UIColor labelColor];
     }
-}
-
-// Traits (which the keyboard toolbar's metrics depend upon) are reliable
-// from here, but not yet in -viewDidLoad.
-//
-- ( void ) viewIsAppearing: ( BOOL ) animated
-{
-    [ super viewIsAppearing: animated ];
-    [ self redefineKeyboardToolbars ];
 }
 
 - ( void ) viewDidAppear: ( BOOL ) animated

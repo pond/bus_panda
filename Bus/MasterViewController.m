@@ -194,55 +194,19 @@
     [ self presentViewController: actions animated: YES completion: nil ];
 }
 
-- ( void ) openMoreOptionsModalFrom: ( id ) sender
-                          forObject: ( NSManagedObject * ) object
+// Open the modal editor for the given favourite stop's description.
+//
+- ( void ) openDescriptionEditorForObject: ( NSManagedObject * ) object
 {
-    UIAlertController * actions =
+    UINavigationController * editStopDescriptionNavigationController =
     [
-        UIAlertController alertControllerWithTitle: nil
-                                           message: nil
-                                    preferredStyle: UIAlertControllerStyleActionSheet
+        self.storyboard instantiateViewControllerWithIdentifier: @"EditStopDescription"
     ];
 
-    UIAlertAction * editAction =
-    [
-        UIAlertAction actionWithTitle: @"Edit Description"
-                                style: UIAlertActionStyleDefault
-                              handler: ^ ( UIAlertAction * action )
-        {
-            UINavigationController * editStopDescriptionNavigationController =
-            [
-                self.storyboard instantiateViewControllerWithIdentifier: @"EditStopDescription"
-            ];
+    EditStopDescriptionViewController * editStopDescriptionController = editStopDescriptionNavigationController.childViewControllers.firstObject;
+    editStopDescriptionController.sourceObject = object;
 
-            EditStopDescriptionViewController * editStopDescriptionController = editStopDescriptionNavigationController.childViewControllers.firstObject;
-            editStopDescriptionController.sourceObject = object;
-
-            [ self openSpecificModal: editStopDescriptionNavigationController ];
-        }
-    ];
-
-    UIAlertAction * cancel =
-    [
-        UIAlertAction actionWithTitle: @"Cancel"
-                                style: UIAlertActionStyleCancel
-                              handler: ^ ( UIAlertAction * action )
-        {
-            [ actions dismissViewControllerAnimated: ( YES ) completion: nil ];
-        }
-    ];
-
-    [ actions addAction: editAction ];
-    [ actions addAction: cancel     ];
-
-    // On the iPhone (at the time of writing) modal action sheets implicitly
-    // always pop up over the whole screen. On an iPad, you need to tell the
-    // system where to ground the popover - in this case the "+" button that
-    // caused the action method here to be run in the first place.
-    //
-    actions.popoverPresentationController.barButtonItem = sender;
-
-    [ self presentViewController: actions animated: YES completion: nil ];
+    [ self openSpecificModal: editStopDescriptionNavigationController ];
 }
 
 #pragma mark - Segues and selection
@@ -264,16 +228,24 @@
 // -showColumn: pushes it onto the single navigation stack; when expanded, it
 // replaces whatever was shown before.
 //
+// The detail view is given its own new navigation controller. Passing a bare
+// view controller instead works on iOS 26+, but on earlier versions (at least
+// iOS 18) UIKit pushes it onto the column's *existing* navigation controller
+// - the storyboard's placeholder "Services" view, then every previously
+// chosen stop - corrupting the collapsed navigation stack on iPhone. A new
+// navigation controller replaces the column's contents outright everywhere.
+//
 - ( void )      tableView: ( UITableView * ) tableView
   didSelectRowAtIndexPath: ( NSIndexPath * ) indexPath
 {
-    NSManagedObject      * object     = [ DataManager.dataManager.fetchedResultsControllerLocal objectAtIndexPath: indexPath ];
-    DetailViewController * controller = [ self.storyboard instantiateViewControllerWithIdentifier: @"ListOfServices" ];
-    UISplitViewController * split     = self.splitViewController;
+    NSManagedObject        * object     = [ DataManager.dataManager.fetchedResultsControllerLocal objectAtIndexPath: indexPath ];
+    DetailViewController   * controller = [ self.storyboard instantiateViewControllerWithIdentifier: @"ListOfServices" ];
+    UINavigationController * navigation = [ [ UINavigationController alloc ] initWithRootViewController: controller ];
+    UISplitViewController  * split      = self.splitViewController;
 
     [ controller setDetailItem: object ];
 
-    [ split setViewController: controller forColumn: UISplitViewControllerColumnSecondary ];
+    [ split setViewController: navigation forColumn: UISplitViewControllerColumnSecondary ];
     [ split showColumn: UISplitViewControllerColumnSecondary ];
 }
 
@@ -383,75 +355,182 @@
     
     cell.stopID.text          = stopID;
     cell.stopDescription.text = stopDescription;
+}
 
-    // MGSwipeTableCell extensions - see:
-    //
-    // https://github.com/MortimerGoro/MGSwipeTableCell
+// Titles and symbols for the per-stop actions, shared by the swipe actions
+// and the context menu so they stay consistent.
 
-    MGSwipeButton * delete =
+#define DELETE_TITLE  NSLocalizedString( @"Delete",           "Title of action for a bus stop, which deletes that stop" )
+#define PREFER_TITLE  NSLocalizedString( @"Prefer",           "Title of action for a bus stop, which flags that stop as 'preferred'" )
+#define DEMOTE_TITLE  NSLocalizedString( @"Demote",           "Title of action for a bus stop, which flags that stop as normal / not 'preferred'" )
+#define EDIT_TITLE    NSLocalizedString( @"Edit Description", "Title of action for a bus stop, which edits that stop's description" )
+
+#define DELETE_SYMBOL @"trash.fill"
+#define PREFER_SYMBOL @"pin.fill"
+#define DEMOTE_SYMBOL @"pin.slash.fill"
+#define EDIT_SYMBOL   @"pencil"
+
+// Return an SF Symbol image carrying an accessibility label, for icon-only
+// swipe actions (which then still make sense to VoiceOver).
+//
+- ( UIImage * ) symbolNamed: ( NSString * ) name
+         accessibilityLabel: ( NSString * ) label
+{
+    UIImage * image = [ UIImage systemImageNamed: name ];
+    image.accessibilityLabel = label;
+    return image;
+}
+
+// Swipe-left actions for a stop, icon only: Delete (red), Prefer/Demote
+// (green) and Edit (blue). Delete is nearest the trailing edge. Full swipe
+// does nothing, so a long swipe can't delete a stop by accident.
+//
+// Less common actions, now and in future, belong in the context menu (see
+// -tableView:contextMenuConfigurationForRowAtIndexPath:point:) rather than
+// in more swipe buttons.
+//
+- ( UISwipeActionsConfiguration * )            tableView: ( UITableView * ) tableView
+  trailingSwipeActionsConfigurationForRowAtIndexPath: ( NSIndexPath * ) indexPath
+{
+    DataManager     * dataManager = DataManager.dataManager;
+    NSManagedObject * object      = [ dataManager.fetchedResultsControllerLocal objectAtIndexPath: indexPath ];
+    NSString        * stopID      = [ object valueForKey: @"stopID" ];
+    BOOL              isPreferred = [ [ object valueForKey: @"preferred" ] isEqual: STOP_IS_PREFERRED_VALUE ];
+
+    if ( stopID == nil ) return nil;
+
+    UIContextualAction * delete =
     [
-        MGSwipeButton buttonWithTitle: NSLocalizedString( @"Delete", "Title of button in a table row for a bus stop, which deletes that stop" )
-                      backgroundColor: [ UIColor redColor ]
-                             callback:  ^ BOOL ( MGSwipeTableCell * sender )
+        UIContextualAction contextualActionWithStyle: UIContextualActionStyleDestructive
+                                               title: nil
+                                             handler: ^ ( UIContextualAction * action, UIView * sourceView, void ( ^ completionHandler )( BOOL ) )
         {
             [ dataManager deleteFavourite: stopID
                         includingCloudKit: YES ];
 
-            return YES; // Yes => do slide the table row back to normal position
+            completionHandler( YES );
         }
     ];
 
-    MGSwipeButton * more =
-    [
-        MGSwipeButton buttonWithTitle: NSLocalizedString( @"More...", "Title of button in a table row for a bus stop, which shows extra options" )
-                      backgroundColor: [ UIColor grayColor ]
-                             callback: ^ BOOL ( MGSwipeTableCell * sender )
-        {
-            [ self openMoreOptionsModalFrom: self.navigationItem.rightBarButtonItem
-                                  forObject: object ];
+    delete.image           = [ self symbolNamed: DELETE_SYMBOL accessibilityLabel: DELETE_TITLE ];
+    delete.backgroundColor = UIColor.systemRedColor;
 
-            return YES; // Yes => do slide the table row back to normal position
-        }
-    ];
-
-    MGSwipeButton * prefer =
+    UIContextualAction * preference =
     [
-        MGSwipeButton buttonWithTitle: NSLocalizedString( @"Prefer", "Title of button in a table row for a bus stop, which flags that stop as 'preferred'" )
-                      backgroundColor: [ UIColor colorWithRed: 0 green: 0.8 blue: 0 alpha: 1 ]
-                             callback: ^ BOOL ( MGSwipeTableCell * sender )
+        UIContextualAction contextualActionWithStyle: UIContextualActionStyleNormal
+                                               title: nil
+                                             handler: ^ ( UIContextualAction * action, UIView * sourceView, void ( ^ completionHandler )( BOOL ) )
         {
             [ dataManager addOrEditFavourite: stopID
                           settingDescription: nil
-                            andPreferredFlag: STOP_IS_PREFERRED_VALUE
+                            andPreferredFlag: isPreferred ? STOP_IS_NOT_PREFERRED_VALUE : STOP_IS_PREFERRED_VALUE
                            includingCloudKit: YES ];
 
-            return YES; // Yes => do slide the table row back to normal position
+            completionHandler( YES );
         }
     ];
 
-    MGSwipeButton * unprefer =
+    preference.image           = isPreferred
+                               ? [ self symbolNamed: DEMOTE_SYMBOL accessibilityLabel: DEMOTE_TITLE ]
+                               : [ self symbolNamed: PREFER_SYMBOL accessibilityLabel: PREFER_TITLE ];
+    preference.backgroundColor = UIColor.systemGreenColor;
+
+    UIContextualAction * edit =
     [
-        MGSwipeButton buttonWithTitle: NSLocalizedString( @"Demote", "Title of button in a table row for a bus stop, which flags that stop as normal / not 'preferred'" )
-                      backgroundColor: [ UIColor blueColor ]
-                             callback: ^ BOOL ( MGSwipeTableCell * sender )
+        UIContextualAction contextualActionWithStyle: UIContextualActionStyleNormal
+                                               title: nil
+                                             handler: ^ ( UIContextualAction * action, UIView * sourceView, void ( ^ completionHandler )( BOOL ) )
         {
-            [ dataManager addOrEditFavourite: stopID
-                          settingDescription: nil
-                            andPreferredFlag: STOP_IS_NOT_PREFERRED_VALUE
-                           includingCloudKit: YES ];
-
-            return YES; // Yes => do slide the table row back to normal position
+            completionHandler( YES );
+            [ self openDescriptionEditorForObject: object ];
         }
     ];
 
-    if ( [ [ object valueForKey: @"preferred" ] isEqual: STOP_IS_PREFERRED_VALUE ] )
-    {
-        cell.rightButtons = @[ delete, unprefer, more ];
-    }
-    else
-    {
-        cell.rightButtons = @[ delete, prefer, more ];
-    }
+    edit.image           = [ self symbolNamed: EDIT_SYMBOL accessibilityLabel: EDIT_TITLE ];
+    edit.backgroundColor = UIColor.systemBlueColor;
+
+    UISwipeActionsConfiguration * configuration =
+    [
+        UISwipeActionsConfiguration configurationWithActions: @[ delete, preference, edit ]
+    ];
+
+    configuration.performsFirstActionWithFullSwipe = NO;
+
+    return configuration;
+}
+
+// Long-press context menu for a stop. This is the place for every per-stop
+// action, including any future ones that don't merit a swipe button. The
+// destructive Delete is kept apart, at the end, as the HIG recommends.
+//
+- ( UIContextMenuConfiguration * ) tableView: ( UITableView * ) tableView
+   contextMenuConfigurationForRowAtIndexPath: ( NSIndexPath * ) indexPath
+                                       point: ( CGPoint       ) point
+{
+    DataManager     * dataManager = DataManager.dataManager;
+    NSManagedObject * object      = [ dataManager.fetchedResultsControllerLocal objectAtIndexPath: indexPath ];
+    NSString        * stopID      = [ object valueForKey: @"stopID" ];
+    BOOL              isPreferred = [ [ object valueForKey: @"preferred" ] isEqual: STOP_IS_PREFERRED_VALUE ];
+
+    if ( stopID == nil ) return nil;
+
+    return
+    [
+        UIContextMenuConfiguration configurationWithIdentifier: nil
+                                               previewProvider: nil
+                                                actionProvider: ^ UIMenu * ( NSArray < UIMenuElement * > * suggestedActions )
+        {
+            UIAction * edit =
+            [
+                UIAction actionWithTitle: EDIT_TITLE
+                                   image: [ UIImage systemImageNamed: EDIT_SYMBOL ]
+                              identifier: nil
+                                 handler: ^ ( __kindof UIAction * action )
+                {
+                    [ self openDescriptionEditorForObject: object ];
+                }
+            ];
+
+            UIAction * preference =
+            [
+                UIAction actionWithTitle: isPreferred ? DEMOTE_TITLE : PREFER_TITLE
+                                   image: [ UIImage systemImageNamed: isPreferred ? DEMOTE_SYMBOL : PREFER_SYMBOL ]
+                              identifier: nil
+                                 handler: ^ ( __kindof UIAction * action )
+                {
+                    [ dataManager addOrEditFavourite: stopID
+                                  settingDescription: nil
+                                    andPreferredFlag: isPreferred ? STOP_IS_NOT_PREFERRED_VALUE : STOP_IS_PREFERRED_VALUE
+                                   includingCloudKit: YES ];
+                }
+            ];
+
+            UIAction * delete =
+            [
+                UIAction actionWithTitle: DELETE_TITLE
+                                   image: [ UIImage systemImageNamed: DELETE_SYMBOL ]
+                              identifier: nil
+                                 handler: ^ ( __kindof UIAction * action )
+                {
+                    [ dataManager deleteFavourite: stopID
+                                includingCloudKit: YES ];
+                }
+            ];
+
+            delete.attributes = UIMenuElementAttributesDestructive;
+
+            UIMenu * destructive =
+            [
+                UIMenu menuWithTitle: @""
+                               image: nil
+                          identifier: nil
+                             options: UIMenuOptionsDisplayInline
+                            children: @[ delete ]
+            ];
+
+            return [ UIMenu menuWithTitle: @"" children: @[ edit, preference, destructive ] ];
+        }
+    ];
 }
 
 #pragma mark - Observers (NSNotificationCentre and KVO)

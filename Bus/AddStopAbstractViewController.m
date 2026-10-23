@@ -40,43 +40,32 @@
 
 // See header for details.
 //
-// The toolbar isn't in a window yet, so it can't work out its own height
-// from traits (e.g. shorter on iPhone in landscape, taller Liquid Glass
-// metrics on iOS 26+). On iOS 17+, give it this view controller's traits
-// and let it size itself; earlier, use the classic fixed bar heights.
-//
-- ( UIToolbar * _Nonnull ) keyboardToolbarWithItems: ( NSArray < UIBarButtonItem * > * _Nonnull ) items
+- ( UIBarButtonItem * _Nonnull ) installCancelAction: ( SEL _Nonnull ) cancelAction
+                                       andDoneAction: ( SEL _Nonnull ) doneAction
 {
-    UITraitCollection * traits  = self.traitCollection;
-    UIToolbar         * toolbar = [ [ UIToolbar alloc ] initWithFrame: CGRectMake( 0, 0, self.view.bounds.size.width, 44 ) ];
+    UIBarButtonItem * cancel =
+    [
+        [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemCancel
+                                                       target: self
+                                                       action: cancelAction
+    ];
 
-    toolbar.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-    toolbar.items            = items;
-    toolbar.tintColor        = [ UIColor colorNamed: @"busLivery" ];
+    UIBarButtonItem * done =
+    [
+        [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemDone
+                                                       target: self
+                                                       action: doneAction
+    ];
 
-    if (@available(iOS 17, *))
+    if (@available(iOS 26, *))
     {
-        toolbar.traitOverrides.verticalSizeClass   = traits.verticalSizeClass;
-        toolbar.traitOverrides.horizontalSizeClass = traits.horizontalSizeClass;
-        toolbar.traitOverrides.userInterfaceIdiom  = traits.userInterfaceIdiom;
-
-        [ toolbar updateTraitsIfNeeded ];
-        [ toolbar sizeToFit ];
-    }
-    else
-    {
-        CGRect frame = toolbar.frame;
-
-        frame.size.height =
-        (
-            traits.userInterfaceIdiom == UIUserInterfaceIdiomPhone &&
-            traits.verticalSizeClass  == UIUserInterfaceSizeClassCompact
-        ) ? 32 : 44;
-
-        toolbar.frame = frame;
+        done.style = UIBarButtonItemStyleProminent;
     }
 
-    return toolbar;
+    self.navigationItem.leftBarButtonItem  = cancel;
+    self.navigationItem.rightBarButtonItem = done;
+
+    return done;
 }
 
 @end

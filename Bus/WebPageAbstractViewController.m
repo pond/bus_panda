@@ -11,6 +11,10 @@
 
 @interface WebPageAbstractViewController ()
 
+// YES once the view has appeared at least once; see -viewDidAppear:.
+//
+@property ( assign, nonatomic ) BOOL hasAppeared;
+
 - ( void ) reportError: ( NSError * ) error;
 
 @end
@@ -61,26 +65,31 @@
 
 #pragma mark - Error reports
 
-// Report an error from a web view navigation attempt; ignores spurious
-// NSURLErrorDomain code -999 errors that iOS seems to just generate now
-// and again, since pages appear to load fine regardless of this.
+// Report an error from a web view navigation attempt. Ignores errors that
+// only mean a navigation was superseded by a newer one, which then loads
+// normally:
+//
+// - NSURLErrorDomain -999, NSURLErrorCancelled
+// - WebKitErrorDomain 102, "Frame load interrupted" (policy change)
 //
 - ( void ) reportError: ( NSError * ) error
 {
-    if ( error && ( ! [ error.domain isEqualToString: NSURLErrorDomain ] || error.code != -999 ) )
-    {
-        [ self spinnerOff ];
+    if ( error == nil ) return;
 
-        [
-            ErrorPresenter showModalAlertFor: self
-                                   withError: error
-                                       title: [ self errorTitle ]
-                                  andHandler: ^( UIAlertAction *action )
-            {
-                [ self.navigationController popViewControllerAnimated: YES ];
-            }
-        ];
-    }
+    if ( [ error.domain isEqualToString: NSURLErrorDomain    ] && error.code == NSURLErrorCancelled ) return;
+    if ( [ error.domain isEqualToString: @"WebKitErrorDomain" ] && error.code == 102                ) return;
+
+    [ self spinnerOff ];
+
+    [
+        ErrorPresenter showModalAlertFor: self
+                               withError: error
+                                   title: [ self errorTitle ]
+                              andHandler: ^( UIAlertAction *action )
+        {
+            [ self.navigationController popViewControllerAnimated: YES ];
+        }
+    ];
 }
 
 #pragma mark - View lifecycle
@@ -149,11 +158,18 @@
     [ self reloadContentBlockingRulesAndGoHome ];
 }
 
+// The first load is started from -viewDidLoad, once content blocking rules
+// are ready. Starting it here too used to race with that, giving spurious
+// "Frame load interrupted" errors. Only later appearances reload, so that
+// e.g. returning to the Weather tab still refreshes the forecast.
+//
 - ( void ) viewDidAppear: ( BOOL ) animated
 {
     [ super viewDidAppear: animated ];
 
-    [ self goHome ];
+    if ( self.hasAppeared ) [ self goHome ];
+
+    self.hasAppeared = YES;
 }
 
 - ( void ) viewWillDisappear: ( BOOL ) animated
@@ -196,30 +212,41 @@
 
 #pragma mark - Custom methods
 
+// (Re)compile this view's content blocking rules, replace any previously
+// installed rules with them, then load the home page. If compilation fails,
+// the page is still loaded, just without content blocking.
+//
 - ( void ) reloadContentBlockingRulesAndGoHome
 {
-    if ( @available( iOS 11, * ) )
-    {
-        [
-            WKContentRuleListStore.defaultStore
-                compileContentRuleListForIdentifier: @"ContentBlockingRules"
-                             encodedContentRuleList: [ self contentBlockingRules ]
-                                  completionHandler: ^ ( WKContentRuleList * ruleList, NSError * error )
-            {
-                [ super viewDidLoad ];
-
-                if ( error == nil )
+    [
+        WKContentRuleListStore.defaultStore
+            compileContentRuleListForIdentifier: @"ContentBlockingRules"
+                         encodedContentRuleList: [ self contentBlockingRules ]
+                              completionHandler: ^ ( WKContentRuleList * ruleList, NSError * error )
+        {
+            dispatch_async
+            (
+                dispatch_get_main_queue(),
+                ^ ( void )
                 {
-                    [ self.webView.configuration.userContentController addContentRuleList: ruleList ];
+                    WKUserContentController * controller = self.webView.configuration.userContentController;
+
+                    [ controller removeAllContentRuleLists ];
+
+                    if ( error == nil && ruleList != nil )
+                    {
+                        [ controller addContentRuleList: ruleList ];
+                    }
+                    else
+                    {
+                        NSLog( @"Content blocking rules failed to compile: %@", error );
+                    }
+
                     [ self goHome ];
                 }
-            }
-        ];
-    }
-    else
-    {
-        [ self goHome ];
-    }
+            );
+        }
+    ];
 }
 
 @end
