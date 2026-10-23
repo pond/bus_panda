@@ -173,6 +173,7 @@
 		23AC9451209C625900B670FC /* WebPageAbstractViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WebPageAbstractViewController.m; sourceTree = "<group>"; };
 		23C7D5CE308AF26300381EAD /* SceneDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SceneDelegate.h; sourceTree = "<group>"; };
 		23C7D5CF308AF26300381EAD /* SceneDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SceneDelegate.m; sourceTree = "<group>"; };
+		23C7D5D1308B002D00381EAD /* Wellington.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Wellington.gpx; sourceTree = "<group>"; };
 		23C937961ACDF51E00EF1441 /* TimetableWebViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TimetableWebViewController.h; sourceTree = "<group>"; };
 		23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TimetableWebViewController.m; sourceTree = "<group>"; };
 		23D75E1B1AC1654B0068C808 /* Bus Panda.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Bus Panda.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -401,6 +402,7 @@
 		23D75E121AC1654B0068C808 = {
 			isa = PBXGroup;
 			children = (
+				23C7D5D1308B002D00381EAD /* Wellington.gpx */,
 				23D75E4A1AC165920068C808 /* Third Party */,
 				23E341611CA690EC00EDB581 /* Shared */,
 				23D75E1D1AC1654B0068C808 /* Bus Panda */,
