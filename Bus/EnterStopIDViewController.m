@@ -120,6 +120,9 @@
         nil
     ];
 
+    UIBarButtonItemStyle addStopIdButtonStyle = UIBarButtonItemStyleDone;
+    if (@available(iOS 26, *)) addStopIdButtonStyle = UIBarButtonItemStyleProminent;
+
     self.descriptionToolbar.items =
     [
         NSArray arrayWithObjects:
@@ -134,7 +137,7 @@
                                                          action: nil ],
 
         [ [ UIBarButtonItem alloc ] initWithTitle: @"Add Stop ID"
-                                            style: UIBarButtonItemStyleDone
+                                            style: addStopIdButtonStyle
                                            target: self
                                            action: @selector( addStop: ) ],
         nil

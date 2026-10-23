@@ -66,14 +66,37 @@
 
     [ self.locationManager requestWhenInUseAuthorization ];
 
+    // Use the navigation controller's own toolbar rather than a hand-placed
+    // one, so it gets the correct per-OS appearance - including Liquid Glass
+    // on iOS 26+ - and the map can run underneath it.
+    //
+    self.toolbarItems =
+    @[
+        [ [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemCancel
+                                                         target: self
+                                                         action: @selector( toolbarCancelPressed: ) ],
+
+        [ [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemFlexibleSpace
+                                                         target: nil
+                                                         action: nil ],
+
+        [ [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemRefresh
+                                                         target: self
+                                                         action: @selector( toolbarReloadPressed: ) ]
+    ];
+
     [ self updateMapWithOrWithoutLocation ];
     [ self scheduleStopLocationUpdate     ];
 }
 
-// The detail view used for showing schedules when previewing a stop for
-// addition includes a toolbar that's normally hidden, though we use it
-// when pushed onto the stack in this context for an 'Add stop' button.
-// When the map is visible, though, the stack's toolbar should be hidden.
+// The navigation controller's toolbar carries this view's Cancel and Refresh
+// buttons (see -viewDidLoad). These only make sense for "Add Using Map", when
+// this view's navigation controller is presented modally; the "Nearby" tab
+// uses another instance from a different storyboard scene with no toolbar.
+//
+// Show it while the map is visible; it's hidden again in -viewWillDisappear:
+// so that it doesn't linger, empty, under the stop detail view pushed from a
+// map pin.
 //
 // This is also a good time to ask Location Services to start updates.
 //
@@ -81,7 +104,8 @@
 {
     [ super viewWillAppear: animated ];
 
-    [ self.navigationController setToolbarHidden: YES animated: NO ];
+    BOOL isModal = ( self.navigationController.presentingViewController != nil );
+    [ self.navigationController setToolbarHidden: ! isModal animated: animated ];
 
     if ( [ CLLocationManager authorizationStatus ] == kCLAuthorizationStatusAuthorizedWhenInUse )
     {
@@ -97,6 +121,8 @@
 - ( void ) viewWillDisappear: ( BOOL ) animated
 {
     [ super viewWillDisappear: animated ];
+
+    [ self.navigationController setToolbarHidden: YES animated: animated ];
 
     [ self cancelStopLocationUpdate ];
     [ self spinnerOff               ];

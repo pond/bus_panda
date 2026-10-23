@@ -23,6 +23,11 @@
     //
     @property ( strong ) DataManager * dataManager;
 
+    // Set once the first scene has connected and one-off startup work that
+    // depends on the view hierarchy has been done.
+    //
+    @property ( assign ) BOOL hasPerformedFirstSceneSetup;
+
 @end
 
 @implementation AppDelegate
@@ -38,53 +43,27 @@
 
     [ application registerForRemoteNotifications ];
 
-    if (@available(iOS 11, *))
-    {
-        self.window.tintColor = [ UIColor colorNamed: @"busLivery" ];
-    }
-    
-    // Fix visual problems that arise in XCode 13 when running on iOS 15, just
-    // because of rebuilding on that XCode version without any other changes -
-    // see "https://stackoverflow.com/a/69135729".
-    //
-    if (@available(iOS 15.0, *)) {
-        [UINavigationBar appearance].scrollEdgeAppearance = [[UINavigationBarAppearance alloc] init];
-        [UITabBar        appearance].scrollEdgeAppearance = [[UITabBarAppearance        alloc] init];
-    }
-
-    // Tab bar setups
-
-    self.tabBarController = ( UITabBarController * ) self.window.rootViewController;
-    self.tabBarController.delegate = self;
-
-    // TODO: Implement "follow" and/or "settings".
-    //
-    NSMutableArray * viewControllers = [ ( NSMutableArray * ) self.tabBarController.viewControllers mutableCopy ];
-
-    [ viewControllers removeObjectAtIndex: 4 ]; // Settings
-    [ viewControllers removeObjectAtIndex: 2 ]; // Follow
-
-    [ self.tabBarController setViewControllers: viewControllers ];
-
-    // Boilerplate master/detail view setup
-
-    self.splitViewController = ( UISplitViewController * ) self.tabBarController.viewControllers.firstObject;
-    self.splitViewController.delegate = self;
-    self.splitViewController.preferredDisplayMode = UISplitViewControllerDisplayModeAllVisible;
-
-    self.detailNavigationController = self.splitViewController.viewControllers.lastObject;
-    self.detailNavigationController.topViewController.navigationItem.leftBarButtonItem = self.splitViewController.displayModeButtonItem;
-
-    self.masterNavigationController = self.splitViewController.viewControllers.firstObject;
-    self.masterViewController = ( MasterViewController * ) self.masterNavigationController.topViewController;
-
-    // Wake up local Core Data and iCloud. This also registers for remote
-    // notifications (for CloudKit changes), but the AppDelegate object has
-    // to handle them - see -didReceiveRemoteNotification:... later.
+    // Keep the data manager singleton alive. It is wired up to the view
+    // hierarchy and woken up later, once a scene has connected - see
+    // -configureForWindow:.
     //
     _dataManager = DataManager.dataManager;
-    [ _dataManager setMasterViewController: self.masterViewController ];
-    [ _dataManager awakenAllStores ];
+
+    // Bar appearance. On iOS 26+ leave bars alone so they get Liquid Glass
+    // and the scroll edge effect. Earlier, fix visual problems that arise in
+    // XCode 13 when running on iOS 15 just because of rebuilding on that
+    // XCode version without any other changes - see
+    // "https://stackoverflow.com/a/69135729".
+    //
+    if (@available(iOS 26, *))
+    {
+        // Nothing to do
+    }
+    else if (@available(iOS 15, *))
+    {
+        [ UINavigationBar appearance ].scrollEdgeAppearance = [ [ UINavigationBarAppearance alloc ] init ];
+        [ UITabBar        appearance ].scrollEdgeAppearance = [ [ UITabBarAppearance        alloc ] init ];
+    }
 
     // On a clean install, some iOS versions may not read the Settings bundle
     // into the NSUserDefaults unless the user has by happenstance manually
@@ -117,6 +96,61 @@
     {
         [ defaults setValue: WEATHER_PROVIDER_ACCUWEATHER forKey: WEATHER_PROVIDER ];
     }
+
+    return YES;
+}
+
+# pragma mark - Scene support
+
+// Called by SceneDelegate when its window scene connects, with the window
+// UIKit has already built from Main.storyboard. Records the useful parts of
+// the view hierarchy and, the first time only, wakes up the data stores and
+// WatchKit session (both of which need the MasterViewController).
+//
+// A scene can be disconnected by the system while the process lives on, then
+// reconnected with a brand new window and controllers; so the hierarchy
+// wiring runs every time, but the one-off startup work does not.
+//
+- ( void ) configureForWindow: ( UIWindow * ) window
+{
+    window.tintColor = [ UIColor colorNamed: @"busLivery" ];
+
+    // Tab bar setups
+
+    self.tabBarController = ( UITabBarController * ) window.rootViewController;
+    self.tabBarController.delegate = self;
+
+    // TODO: Implement "follow" and/or "settings".
+    //
+    NSMutableArray * viewControllers = [ self.tabBarController.viewControllers mutableCopy ];
+
+    [ viewControllers removeObjectAtIndex: 4 ]; // Settings
+    [ viewControllers removeObjectAtIndex: 2 ]; // Follow
+
+    [ self.tabBarController setViewControllers: viewControllers ];
+
+    // Boilerplate master/detail view setup
+
+    self.splitViewController = ( UISplitViewController * ) self.tabBarController.viewControllers.firstObject;
+    self.splitViewController.delegate = self;
+    self.splitViewController.preferredDisplayMode = UISplitViewControllerDisplayModeOneBesideSecondary;
+
+    self.detailNavigationController = self.splitViewController.viewControllers.lastObject;
+    self.detailNavigationController.topViewController.navigationItem.leftBarButtonItem = self.splitViewController.displayModeButtonItem;
+
+    self.masterNavigationController = self.splitViewController.viewControllers.firstObject;
+    self.masterViewController = ( MasterViewController * ) self.masterNavigationController.topViewController;
+
+    [ _dataManager setMasterViewController: self.masterViewController ];
+
+    if ( self.hasPerformedFirstSceneSetup ) return;
+    self.hasPerformedFirstSceneSetup = YES;
+
+    // Wake up local Core Data and iCloud. This also registers for remote
+    // notifications (for CloudKit changes), but the AppDelegate object has
+    // to handle them - see -didReceiveRemoteNotification:... later.
+    //
+    [ _dataManager awakenAllStores ];
 
 #ifdef SCREENSHOT_BUILD
 
@@ -191,8 +225,6 @@
 
         [ self pushListOfStopsToWatch: session ];
     }
-
-    return YES;
 }
 
 # pragma mark - Termination

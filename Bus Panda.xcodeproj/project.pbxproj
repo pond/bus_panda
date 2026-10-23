@@ -35,6 +35,7 @@
 		23AC944C209B0A6400B670FC /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23AC944B209B0A6400B670FC /* WebKit.framework */; };
 		23AC944F209B146200B670FC /* WeatherWebViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23AC944E209B146200B670FC /* WeatherWebViewController.m */; };
 		23AC9452209C625A00B670FC /* WebPageAbstractViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23AC9451209C625900B670FC /* WebPageAbstractViewController.m */; };
+		23C7D5D0308AF26300381EAD /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 23C7D5CF308AF26300381EAD /* SceneDelegate.m */; };
 		23C937981ACDF51E00EF1441 /* TimetableWebViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */; };
 		23D75E211AC1654B0068C808 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E201AC1654B0068C808 /* main.m */; };
 		23D75E241AC1654B0068C808 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 23D75E231AC1654B0068C808 /* AppDelegate.m */; };
@@ -170,6 +171,8 @@
 		23AC944E209B146200B670FC /* WeatherWebViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WeatherWebViewController.m; sourceTree = "<group>"; };
 		23AC9450209C625900B670FC /* WebPageAbstractViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WebPageAbstractViewController.h; sourceTree = "<group>"; };
 		23AC9451209C625900B670FC /* WebPageAbstractViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WebPageAbstractViewController.m; sourceTree = "<group>"; };
+		23C7D5CE308AF26300381EAD /* SceneDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SceneDelegate.h; sourceTree = "<group>"; };
+		23C7D5CF308AF26300381EAD /* SceneDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SceneDelegate.m; sourceTree = "<group>"; };
 		23C937961ACDF51E00EF1441 /* TimetableWebViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TimetableWebViewController.h; sourceTree = "<group>"; };
 		23C937971ACDF51E00EF1441 /* TimetableWebViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TimetableWebViewController.m; sourceTree = "<group>"; };
 		23D75E1B1AC1654B0068C808 /* Bus Panda.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Bus Panda.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -339,6 +342,8 @@
 		23AB59A41CB08AFD0057688D /* Code */ = {
 			isa = PBXGroup;
 			children = (
+				23C7D5CE308AF26300381EAD /* SceneDelegate.h */,
+				23C7D5CF308AF26300381EAD /* SceneDelegate.m */,
 				23065F6A20E82F3F00658D07 /* Constants.h */,
 				23E1026C1C1D2A7100BEF3C6 /* UsefulTypes.h */,
 				23D75E221AC1654B0068C808 /* AppDelegate.h */,
@@ -695,6 +700,7 @@
 				236FC34C1CAFC98900207C15 /* EditStopDescriptionViewController.m in Sources */,
 				23E341691CA79F1A00EDB581 /* BusInfoFetcher.m in Sources */,
 				23D75E811AC165A70068C808 /* HTMLTokenizer.m in Sources */,
+				23C7D5D0308AF26300381EAD /* SceneDelegate.m in Sources */,
 				23063AF71AC7A4C800C063DC /* EnterStopIDViewController.m in Sources */,
 				23D75E741AC165A70068C808 /* HTMLDocument.m in Sources */,
 				23D75E7F1AC165A70068C808 /* HTMLString.m in Sources */,
@@ -796,7 +802,7 @@
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 3.2;
+				WATCHOS_DEPLOYMENT_TARGET = 9.0;
 			};
 			name = Debug;
 		};
@@ -821,7 +827,7 @@
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 3.2;
+				WATCHOS_DEPLOYMENT_TARGET = 9.0;
 			};
 			name = Release;
 		};
@@ -846,7 +852,7 @@
 				SWIFT_SWIFT3_OBJC_INFERENCE = On;
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 3.2;
+				WATCHOS_DEPLOYMENT_TARGET = 9.0;
 			};
 			name = Debug;
 		};
@@ -870,7 +876,7 @@
 				SWIFT_SWIFT3_OBJC_INFERENCE = On;
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 3.2;
+				WATCHOS_DEPLOYMENT_TARGET = 9.0;
 			};
 			name = Release;
 		};
@@ -924,7 +930,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = "iOS 15.0";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -976,7 +982,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = "iOS 15.0";
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -998,7 +1004,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 202506071332;
 				INFOPLIST_FILE = Bus/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1028,7 +1034,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 202506071332;
 				INFOPLIST_FILE = Bus/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

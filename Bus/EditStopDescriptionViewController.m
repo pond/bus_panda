@@ -73,6 +73,9 @@
         )
     );
 
+    UIBarButtonItemStyle saveChangesButtonStyle = UIBarButtonItemStyleDone;
+    if (@available(iOS 26, *)) saveChangesButtonStyle = UIBarButtonItemStyleProminent;
+
     self.descriptionToolbar          = [ [UIToolbar alloc ] initWithFrame: frame ];
     self.descriptionToolbar.barStyle = UIBarStyleDefault;
     self.descriptionToolbar.items    =

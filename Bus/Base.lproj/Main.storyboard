@@ -419,31 +419,13 @@
                                     <outlet property="delegate" destination="huJ-j2-YEq" id="ik4-Eh-v8H"/>
                                 </connections>
                             </mapView>
-                            <toolbar opaque="NO" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="6uA-Qw-uFd">
-                                <rect key="frame" x="0.0" y="692" width="414" height="44"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="44" id="mDM-hi-DUI"/>
-                                </constraints>
-                                <items>
-                                    <barButtonItem style="plain" systemItem="cancel" id="NUZ-u2-9ml">
-                                        <connections>
-                                            <action selector="toolbarCancelPressed:" destination="huJ-j2-YEq" id="mnj-cM-IyT"/>
-                                        </connections>
-                                    </barButtonItem>
-                                    <barButtonItem style="plain" systemItem="flexibleSpace" id="pI2-zK-JCJ"/>
-                                    <barButtonItem style="plain" systemItem="refresh" id="lYs-fl-TdY"/>
-                                </items>
-                            </toolbar>
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="6uA-Qw-uFd" firstAttribute="trailing" secondItem="5cz-BV-hM9" secondAttribute="trailing" id="0uo-NK-Tec"/>
                             <constraint firstItem="9Ia-P1-n7f" firstAttribute="leading" secondItem="5cz-BV-hM9" secondAttribute="leading" id="3HM-q2-vqp"/>
                             <constraint firstItem="9Ia-P1-n7f" firstAttribute="trailing" secondItem="5cz-BV-hM9" secondAttribute="trailing" id="IyE-Qd-uTI"/>
-                            <constraint firstItem="9Ia-P1-n7f" firstAttribute="bottom" secondItem="wgq-sR-OjJ" secondAttribute="top" id="QY5-MA-HGV"/>
-                            <constraint firstItem="6uA-Qw-uFd" firstAttribute="leading" secondItem="5cz-BV-hM9" secondAttribute="leading" id="UuC-kD-2xC"/>
+                            <constraint firstItem="9Ia-P1-n7f" firstAttribute="bottom" secondItem="5cz-BV-hM9" secondAttribute="bottom" id="QY5-MA-HGV"/>
                             <constraint firstItem="9Ia-P1-n7f" firstAttribute="top" secondItem="5cz-BV-hM9" secondAttribute="top" id="YzO-Bj-sXN"/>
-                            <constraint firstItem="6uA-Qw-uFd" firstAttribute="bottom" secondItem="wgq-sR-OjJ" secondAttribute="top" id="oll-NE-yCV"/>
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" title="Add Using Map" id="aVB-No-Jds"/>
@@ -692,7 +674,7 @@
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
                             <constraint firstItem="0ca-ZU-gwK" firstAttribute="top" secondItem="tGT-mG-671" secondAttribute="top" id="4Qc-p6-mCR"/>
-                            <constraint firstItem="0ca-ZU-gwK" firstAttribute="bottom" secondItem="v8y-kO-mda" secondAttribute="top" id="ibb-MI-HFp"/>
+                            <constraint firstItem="0ca-ZU-gwK" firstAttribute="bottom" secondItem="tGT-mG-671" secondAttribute="bottom" id="ibb-MI-HFp"/>
                             <constraint firstItem="0ca-ZU-gwK" firstAttribute="leading" secondItem="tGT-mG-671" secondAttribute="leading" id="sQQ-RV-ucp"/>
                             <constraint firstItem="0ca-ZU-gwK" firstAttribute="trailing" secondItem="tGT-mG-671" secondAttribute="trailing" id="t3W-m9-wnn"/>
                         </constraints>
