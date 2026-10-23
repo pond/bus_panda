@@ -150,14 +150,115 @@
         return;
     }
 
-    self.parsedSections = sections;
+    // A successful fetch with nothing scheduled comes back as a single
+    // placeholder entry flagged "empty". Show an empty table with a message
+    // in place of a list, rather than a placeholder row that would look
+    // tappable (and lead to a timetable view with nothing in it).
+    //
+    BOOL thisIsEmpty = [ ( NSNumber * ) thisServiceList.firstObject[ @"empty" ] boolValue ];
+
+    self.parsedSections = thisIsEmpty ? [ NSMutableArray array ] : sections;
 
     // For the refresh control hiding to work properly with smooth
     // animation, the table data MUST be reloaded *before* we hide
     // the activity viewer.
     //
     [ self.tableView reloadData ];
+    [ self showEmptyMessage: thisIsEmpty ];
     [ self hideActivityViewer ];
+}
+
+// Show or hide a "no services scheduled" message in place of the list. Uses
+// the table's background view, so pull-to-refresh still works.
+//
+// On iOS 17+ this is the system's standard empty-state view; earlier, a
+// hand-built equivalent. Either way: an icon, a prominent title that uses
+// Dynamic Type and wraps as needed, and a quieter hint underneath, kept
+// within readable margins so long text never runs to the screen edges.
+//
+- ( void ) showEmptyMessage: ( BOOL ) show
+{
+    if ( show == NO )
+    {
+        self.tableView.backgroundView = nil;
+        return;
+    }
+
+    if ( self.tableView.backgroundView != nil ) return; // Already showing
+
+    NSString * hint  = @"Pull down to refresh.";
+    UIImage  * image = [ UIImage systemImageNamed: @"bus" ];
+
+    if (@available(iOS 17, *))
+    {
+        UIContentUnavailableConfiguration * config = [ UIContentUnavailableConfiguration emptyConfiguration ];
+
+        config.image         = image;
+        config.text          = NO_SERVICES_SCHEDULED_MESSAGE;
+        config.secondaryText = hint;
+
+        self.tableView.backgroundView = [ [ UIContentUnavailableView alloc ] initWithConfiguration: config ];
+        return;
+    }
+
+    // Pre-iOS 17 fallback.
+
+    UIImageView * imageView = [ [ UIImageView alloc ] initWithImage: image ];
+
+    imageView.preferredSymbolConfiguration = [ UIImageSymbolConfiguration configurationWithTextStyle: UIFontTextStyleLargeTitle ];
+    imageView.tintColor                    = UIColor.secondaryLabelColor;
+    imageView.contentMode                  = UIViewContentModeScaleAspectFit;
+
+    UIFontDescriptor * titleDescriptor =
+    [
+        [ UIFontDescriptor preferredFontDescriptorWithTextStyle: UIFontTextStyleTitle2 ]
+        fontDescriptorWithSymbolicTraits: UIFontDescriptorTraitBold
+    ];
+
+    UILabel * title = [ [ UILabel alloc ] init ];
+
+    title.text                              = NO_SERVICES_SCHEDULED_MESSAGE;
+    title.font                              = [ UIFont fontWithDescriptor: titleDescriptor size: 0 ];
+    title.adjustsFontForContentSizeCategory = YES;
+    title.textColor                         = UIColor.labelColor;
+    title.textAlignment                     = NSTextAlignmentCenter;
+    title.numberOfLines                     = 0;
+
+    UILabel * subtitle = [ [ UILabel alloc ] init ];
+
+    subtitle.text                              = hint;
+    subtitle.font                              = [ UIFont preferredFontForTextStyle: UIFontTextStyleBody ];
+    subtitle.adjustsFontForContentSizeCategory = YES;
+    subtitle.textColor                         = UIColor.secondaryLabelColor;
+    subtitle.textAlignment                     = NSTextAlignmentCenter;
+    subtitle.numberOfLines                     = 0;
+
+    UIStackView * stack = [ [ UIStackView alloc ] initWithArrangedSubviews: @[ imageView, title, subtitle ] ];
+
+    stack.axis                                      = UILayoutConstraintAxisVertical;
+    stack.alignment                                 = UIStackViewAlignmentCenter;
+    stack.spacing                                   = 8;
+    stack.translatesAutoresizingMaskIntoConstraints = NO;
+
+    [ stack setCustomSpacing: 16 afterView: imageView ];
+
+    UIView * container = [ [ UIView alloc ] init ];
+    [ container addSubview: stack ];
+
+    UILayoutGuide * readable = container.readableContentGuide;
+
+    [
+        NSLayoutConstraint activateConstraints:
+        @[
+            [ stack.leadingAnchor  constraintEqualToAnchor: readable.leadingAnchor  constant:  16 ],
+            [ stack.trailingAnchor constraintEqualToAnchor: readable.trailingAnchor constant: -16 ],
+            [ stack.centerYAnchor  constraintEqualToAnchor: container.safeAreaLayoutGuide.centerYAnchor ],
+            [ title.widthAnchor    constraintLessThanOrEqualToAnchor: stack.widthAnchor ],
+            [ subtitle.widthAnchor constraintLessThanOrEqualToAnchor: stack.widthAnchor ]
+        ]
+    ];
+
+    self.tableView.backgroundView = container;
 }
 
 #pragma mark - View lifecycle
@@ -186,6 +287,37 @@
     [ self configureView ];
 }
 
+// The split view's display mode button ("show/hide the list") only means
+// anything when the split view is expanded, e.g. on iPad. When collapsed
+// (iPhone; a narrow iPad window; possibly a folded iPhone Duo) it has no
+// content, but on iOS 26+ an empty item still draws an empty Liquid Glass
+// capsule next to the Back button. So only show it when expanded, and
+// re-evaluate whenever the split view might collapse or expand.
+//
+- ( void ) updateDisplayModeButton
+{
+    UISplitViewController * split = self.splitViewController;
+
+    self.navigationItem.leftItemsSupplementBackButton = YES;
+    self.navigationItem.leftBarButtonItem             = ( split != nil && split.isCollapsed == NO )
+                                                      ? split.displayModeButtonItem
+                                                      : nil;
+}
+
+- ( void ) viewWillTransitionToSize: ( CGSize ) size
+          withTransitionCoordinator: ( id <UIViewControllerTransitionCoordinator> ) coordinator
+{
+    [ super viewWillTransitionToSize: size withTransitionCoordinator: coordinator ];
+
+    [
+        coordinator animateAlongsideTransition: nil
+                                    completion: ^ ( id <UIViewControllerTransitionCoordinatorContext> context )
+        {
+            [ self updateDisplayModeButton ];
+        }
+    ];
+}
+
 - ( void ) doAutoRefresh
 {
     NSString * stopID = [ self.detailItem valueForKey: @"stopID" ];
@@ -206,6 +338,7 @@
 - ( void ) viewWillAppear: ( BOOL ) animated
 {
     [ super viewWillAppear: animated ];
+    [ self updateDisplayModeButton ];
     [ self.tableView deselectRowAtIndexPath: [ self.tableView indexPathForSelectedRow ]
                                    animated: animated ];
 }
@@ -375,8 +508,6 @@
         TimetableWebViewController * controller = ( TimetableWebViewController * ) [ segue destinationViewController ];
         [ controller setDetailItem: entry ];
 
-        controller.navigationItem.leftBarButtonItem = self.splitViewController.displayModeButtonItem;
-        controller.navigationItem.leftItemsSupplementBackButton = YES;
     }
 }
 

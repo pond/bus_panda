@@ -69,90 +69,61 @@
     }
 }
 
-// Define or redefine the keyboard toolbars using frame metrics appropriate
-// for the current device interface idiom and device rotation.
+// Define or redefine the keyboard toolbars using metrics appropriate for
+// the current traits (see AddStopAbstractViewController), and attach them.
 //
 - ( void ) redefineKeyboardToolbars
 {
-    CGFloat                height      = 44;
-    UIInterfaceOrientation orientation = [ [ UIApplication sharedApplication ] statusBarOrientation ];
-
-    if (
-           UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone &&
-           UIInterfaceOrientationIsLandscape( orientation )
-       )
-       height = 32;
-
-    CGRect frame = CGRectIntegral
-    (
-        CGRectMake
-        (
-            0,
-            self.view.bounds.size.height - height,
-            self.view.bounds.size.width,
-            height
-        )
-    );
-
-         self.numberToolbar = [ [UIToolbar alloc ] initWithFrame: frame ];
-    self.descriptionToolbar = [ [UIToolbar alloc ] initWithFrame: frame ];
-
-         self.numberToolbar.barStyle = UIBarStyleDefault;
-    self.descriptionToolbar.barStyle = UIBarStyleDefault;
-
-    self.numberToolbar.items =
+    self.numberToolbar =
     [
-        NSArray arrayWithObjects:
+        self keyboardToolbarWithItems:
+        @[
+            [ [ UIBarButtonItem alloc ] initWithTitle: @"Cancel"
+                                                style: UIBarButtonItemStylePlain
+                                               target: self
+                                               action: @selector( dismissAdditionView: ) ],
 
-        [ [ UIBarButtonItem alloc ] initWithTitle: @"Cancel"
-                                            style: UIBarButtonItemStylePlain
-                                           target: self
-                                           action: @selector( dismissAdditionView: ) ],
+            [ [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemFlexibleSpace
+                                                             target: nil
+                                                             action: nil ],
 
-        [ [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemFlexibleSpace
-                                                         target: nil
-                                                         action: nil ],
-
-        [ [ UIBarButtonItem alloc ] initWithTitle: @"Next"
-                                            style: UIBarButtonItemStylePlain
-                                           target: self
-                                           action: @selector( moveToDescription: ) ],
-        nil
+            [ [ UIBarButtonItem alloc ] initWithTitle: @"Next"
+                                                style: UIBarButtonItemStylePlain
+                                               target: self
+                                               action: @selector( moveToDescription: ) ]
+        ]
     ];
 
     UIBarButtonItemStyle addStopIdButtonStyle = UIBarButtonItemStyleDone;
     if (@available(iOS 26, *)) addStopIdButtonStyle = UIBarButtonItemStyleProminent;
 
-    self.descriptionToolbar.items =
+    self.descriptionToolbar =
     [
-        NSArray arrayWithObjects:
+        self keyboardToolbarWithItems:
+        @[
+            [ [ UIBarButtonItem alloc ] initWithTitle: @"Cancel"
+                                                style: UIBarButtonItemStylePlain
+                                               target: self
+                                               action: @selector( dismissAdditionView: ) ],
 
-        [ [ UIBarButtonItem alloc ] initWithTitle: @"Cancel"
-                                            style: UIBarButtonItemStylePlain
-                                           target: self
-                                           action: @selector( dismissAdditionView: ) ],
+            [ [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemFlexibleSpace
+                                                             target: nil
+                                                             action: nil ],
 
-        [ [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemFlexibleSpace
-                                                         target: nil
-                                                         action: nil ],
-
-        [ [ UIBarButtonItem alloc ] initWithTitle: @"Add Stop ID"
-                                            style: addStopIdButtonStyle
-                                           target: self
-                                           action: @selector( addStop: ) ],
-        nil
+            [ [ UIBarButtonItem alloc ] initWithTitle: @"Add Stop ID"
+                                                style: addStopIdButtonStyle
+                                               target: self
+                                               action: @selector( addStop: ) ]
+        ]
     ];
 
-    if (@available(iOS 11, *))
-    {
-        self.numberToolbar.tintColor      = [ UIColor colorNamed: @"busLivery" ];
-        self.descriptionToolbar.tintColor = [ UIColor colorNamed: @"busLivery" ];
-    }
+         self.numberField.inputAccessoryView = self.numberToolbar;
+    self.descriptionField.inputAccessoryView = self.descriptionToolbar;
 }
 
 // The numeric keyboard for stop ID and text keyboard for description have
 // "cancel"/"add" buttons above implemented as a keyboard toolbar. These are
-// resized via "sizeToFit". It transpires that different heights are applied
+// sized according to traits (see -redefineKeyboardToolbars). It transpires that different heights are applied
 // in portrait or landscape mode and, on a device with a screen width of the
 // iPhone 5 or 4, as examples, starting in portrait mode and rotating to
 // landscape causes the toolbar to abut the text fields unless resizing is
@@ -178,7 +149,7 @@
     // assigned. It's still a better end result than doing nothing.
     //
     if (
-           UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone &&
+           self.traitCollection.userInterfaceIdiom == UIUserInterfaceIdiomPhone &&
            ( numberWasFirstResponder || descriptionWasFirstResponder )
        )
     {
@@ -190,9 +161,6 @@
                                         completion: ^ ( id <UIViewControllerTransitionCoordinatorContext> context )
             {
                 [ self redefineKeyboardToolbars ];
-
-                     self.numberField.inputAccessoryView = self.numberToolbar;
-                self.descriptionField.inputAccessoryView = self.descriptionToolbar;
 
                 if (      numberWasFirstResponder ) [      self.numberField becomeFirstResponder ];
                 if ( descriptionWasFirstResponder ) [ self.descriptionField becomeFirstResponder ];
@@ -227,13 +195,13 @@
     return newLength <= 4 ? YES : NO;
 }
 
-- ( void ) viewDidLoad
+// Traits (which the keyboard toolbars' metrics depend upon) are reliable
+// from here, but not yet in -viewDidLoad.
+//
+- ( void ) viewIsAppearing: ( BOOL ) animated
 {
-    [ super viewDidLoad ];
+    [ super viewIsAppearing: animated ];
     [ self redefineKeyboardToolbars ];
-
-         self.numberField.inputAccessoryView = self.numberToolbar;
-    self.descriptionField.inputAccessoryView = self.descriptionToolbar;
 }
 
 - ( void ) viewDidAppear: ( BOOL ) animated

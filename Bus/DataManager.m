@@ -1128,6 +1128,27 @@
              andPreferredFlag: ( NSNumber * _Nullable ) preferred
             includingCloudKit: ( BOOL                 ) includeCloudKit
 {
+    // The local managed object context is main-queue only, and saving it
+    // drives table view updates via the fetched results controller, so this
+    // must run on the main thread. Callers include CloudKit operation
+    // callbacks and NSOperation blocks on background queues; hop over.
+    //
+    if ( ! NSThread.isMainThread )
+    {
+        dispatch_async
+        (
+            dispatch_get_main_queue(),
+            ^ ( void )
+            {
+                [ self addOrEditFavourite: stopID
+                       settingDescription: stopDescription
+                         andPreferredFlag: preferred
+                        includingCloudKit: includeCloudKit ];
+            }
+        );
+
+        return;
+    }
 
     NSLog( @"Add or edit: %@ (%@): %@", stopID, preferred, stopDescription );
 
@@ -1276,6 +1297,22 @@
 - ( void ) deleteFavourite: ( NSString * _Nonnull ) stopID
          includingCloudKit: ( BOOL                ) includeCloudKit
 {
+    // See -addOrEditFavourite:... for why.
+    //
+    if ( ! NSThread.isMainThread )
+    {
+        dispatch_async
+        (
+            dispatch_get_main_queue(),
+            ^ ( void )
+            {
+                [ self deleteFavourite: stopID includingCloudKit: includeCloudKit ];
+            }
+        );
+
+        return;
+    }
+
     NSLog( @"Remove: %@", stopID);
 
     if ( stopID == nil ) return; // Indicates nasty bug, but try not to just crash...

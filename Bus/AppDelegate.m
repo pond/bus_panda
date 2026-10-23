@@ -136,7 +136,6 @@
     self.splitViewController.preferredDisplayMode = UISplitViewControllerDisplayModeOneBesideSecondary;
 
     self.detailNavigationController = self.splitViewController.viewControllers.lastObject;
-    self.detailNavigationController.topViewController.navigationItem.leftBarButtonItem = self.splitViewController.displayModeButtonItem;
 
     self.masterNavigationController = self.splitViewController.viewControllers.firstObject;
     self.masterViewController = ( MasterViewController * ) self.masterNavigationController.topViewController;

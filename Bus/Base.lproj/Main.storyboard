@@ -37,7 +37,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" translatesAutoresizingMaskIntoConstraints="NO" id="HhO-kR-aQ9">
-                                <rect key="frame" x="0.0" y="0.0" width="414" height="687"/>
+                                <rect key="frame" x="0.0" y="0.0" width="414" height="736"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <prototypes>
                                     <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="ServiceCell" id="aBZ-cX-AUo" customClass="ServiceDescriptionCell">
@@ -133,7 +133,7 @@
                         <constraints>
                             <constraint firstItem="HhO-kR-aQ9" firstAttribute="top" secondItem="svH-Pt-448" secondAttribute="top" id="EcP-VO-No1"/>
                             <constraint firstItem="HhO-kR-aQ9" firstAttribute="leading" secondItem="svH-Pt-448" secondAttribute="leading" id="FQS-2K-KYw"/>
-                            <constraint firstItem="GAO-Cl-Wes" firstAttribute="top" secondItem="HhO-kR-aQ9" secondAttribute="bottom" id="FXs-9x-pWL"/>
+                            <constraint firstAttribute="bottom" secondItem="HhO-kR-aQ9" secondAttribute="bottom" id="FXs-9x-pWL"/>
                             <constraint firstAttribute="trailing" secondItem="HhO-kR-aQ9" secondAttribute="trailing" id="Rre-Yy-srB"/>
                         </constraints>
                     </view>

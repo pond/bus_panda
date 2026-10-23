@@ -48,60 +48,35 @@
     return YES;
 }
 
-// Define or redefine the keyboard toolbars using frame metrics appropriate
-// for the current device interface idiom and device rotation.
+// Define or redefine the keyboard toolbar using metrics appropriate for the
+// current traits (see AddStopAbstractViewController), and attach it.
 //
 - ( void ) redefineKeyboardToolbars
 {
-    CGFloat                height      = 44;
-    UIInterfaceOrientation orientation = [ [ UIApplication sharedApplication ] statusBarOrientation ];
-
-    if (
-           UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone &&
-           UIInterfaceOrientationIsLandscape( orientation )
-       )
-       height = 32;
-
-    CGRect frame = CGRectIntegral
-    (
-        CGRectMake
-        (
-            0,
-            self.view.bounds.size.height - height,
-            self.view.bounds.size.width,
-            height
-        )
-    );
-
     UIBarButtonItemStyle saveChangesButtonStyle = UIBarButtonItemStyleDone;
     if (@available(iOS 26, *)) saveChangesButtonStyle = UIBarButtonItemStyleProminent;
 
-    self.descriptionToolbar          = [ [UIToolbar alloc ] initWithFrame: frame ];
-    self.descriptionToolbar.barStyle = UIBarStyleDefault;
-    self.descriptionToolbar.items    =
+    self.descriptionToolbar =
     [
-        NSArray arrayWithObjects:
+        self keyboardToolbarWithItems:
+        @[
+            [ [ UIBarButtonItem alloc ] initWithTitle: @"Cancel"
+                                                style: UIBarButtonItemStylePlain
+                                               target: self
+                                               action: @selector( dismissEditorView: ) ],
 
-        [ [ UIBarButtonItem alloc ] initWithTitle: @"Cancel"
-                                            style: UIBarButtonItemStylePlain
-                                           target: self
-                                           action: @selector( dismissEditorView: ) ],
+            [ [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemFlexibleSpace
+                                                             target: nil
+                                                             action: nil ],
 
-        [ [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemFlexibleSpace
-                                                         target: nil
-                                                         action: nil ],
-
-        [ [ UIBarButtonItem alloc ] initWithTitle: @"Save Changes"
-                                            style: UIBarButtonItemStyleDone
-                                           target: self
-                                           action: @selector( commitEdit: ) ],
-        nil
+            [ [ UIBarButtonItem alloc ] initWithTitle: @"Save Changes"
+                                                style: saveChangesButtonStyle
+                                               target: self
+                                               action: @selector( commitEdit: ) ]
+        ]
     ];
 
-    if (@available(iOS 11, *))
-    {
-        self.descriptionToolbar.tintColor = [ UIColor colorNamed: @"busLivery" ];
-    }
+    self.descriptionField.inputAccessoryView = self.descriptionToolbar;
 }
 
 // See EnterStopIDViewController for details.
@@ -112,7 +87,7 @@
     [ super viewWillTransitionToSize: size withTransitionCoordinator: coordinator ];
 
     if (
-           UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone &&
+           self.traitCollection.userInterfaceIdiom == UIUserInterfaceIdiomPhone &&
            [ self.descriptionField isFirstResponder ]
        )
     {
@@ -123,7 +98,6 @@
                                         completion: ^ ( id <UIViewControllerTransitionCoordinatorContext> context )
             {
                 [ self redefineKeyboardToolbars ];
-                self.descriptionField.inputAccessoryView = self.descriptionToolbar;
                 [ self.descriptionField becomeFirstResponder ];
             }
         ];
@@ -133,10 +107,8 @@
 - ( void ) viewDidLoad
 {
     [ super viewDidLoad ];
-    [ self redefineKeyboardToolbars ];
 
-    self.descriptionField.inputAccessoryView = self.descriptionToolbar;
-    self.descriptionField.text               = [ self.sourceObject valueForKey: @"stopDescription" ];
+    self.descriptionField.text = [ self.sourceObject valueForKey: @"stopDescription" ];
 
     // TODO: (2019-08-30) Remove if workaround no longer needed.
     //
@@ -148,6 +120,15 @@
     {
         self.descriptionField.textColor = [UIColor labelColor];
     }
+}
+
+// Traits (which the keyboard toolbar's metrics depend upon) are reliable
+// from here, but not yet in -viewDidLoad.
+//
+- ( void ) viewIsAppearing: ( BOOL ) animated
+{
+    [ super viewIsAppearing: animated ];
+    [ self redefineKeyboardToolbars ];
 }
 
 - ( void ) viewDidAppear: ( BOOL ) animated

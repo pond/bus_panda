@@ -29,4 +29,11 @@
 //
 - ( void ) dismissAdditionView;
 
+// Return a new toolbar suitable for use as a text field's input accessory
+// view, containing the given items. Its height suits this view controller's
+// current traits, so call from -viewIsAppearing: or later and again after a
+// size transition.
+//
+- ( UIToolbar * _Nonnull ) keyboardToolbarWithItems: ( NSArray < UIBarButtonItem * > * _Nonnull ) items;
+
 @end
