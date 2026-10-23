@@ -10,6 +10,7 @@
 
 #import "AppDelegate.h"
 #import "DetailViewController.h"
+#import "DataManager.h"
 #import "BusInfoFetcher.h"
 #import "ServiceDescriptionCell.h"
 #import "TimetableWebViewController.h"
@@ -95,7 +96,13 @@
 
 - ( void ) configureView
 {
-    if ( ! self.detailItem ) return;
+    if ( ! [ self hasStop ] )
+    {
+        [ self showPlaceholder ];
+        return;
+    }
+
+    self.tableView.backgroundView = nil;
 
     NSString * stopID          = [ self.detailItem valueForKey: @"stopID"          ];
     NSString * stopDescription = [ self.detailItem valueForKey: @"stopDescription" ];
@@ -168,11 +175,6 @@
 // Show or hide a "no services scheduled" message in place of the list. Uses
 // the table's background view, so pull-to-refresh still works.
 //
-// On iOS 17+ this is the system's standard empty-state view; earlier, a
-// hand-built equivalent. Either way: an icon, a prominent title that uses
-// Dynamic Type and wraps as needed, and a quieter hint underneath, kept
-// within readable margins so long text never runs to the screen edges.
-//
 - ( void ) showEmptyMessage: ( BOOL ) show
 {
     if ( show == NO )
@@ -183,19 +185,102 @@
 
     if ( self.tableView.backgroundView != nil ) return; // Already showing
 
-    NSString * hint  = @"Pull down to refresh.";
-    UIImage  * image = [ UIImage systemImageNamed: @"bus" ];
+    self.tableView.backgroundView =
+    [
+        DetailViewController emptyStateViewWithSymbol: @"bus"
+                                                 title: NO_SERVICES_SCHEDULED_MESSAGE
+                                                  hint: @"Pull down to refresh."
+    ];
+}
+
+// See header for details.
+//
+- ( BOOL ) hasStop
+{
+    id item = self.detailItem;
+
+    if ( item == nil ) return NO;
+
+    if ( [ item isKindOfClass: [ NSManagedObject class ] ] )
+    {
+        NSManagedObject * object = ( NSManagedObject * ) item;
+        return ( object.isDeleted || object.managedObjectContext == nil ) ? NO : YES;
+    }
+
+    return YES;
+}
+
+// See header for details.
+//
+- ( void ) showPlaceholder
+{
+    if ( ! self.isViewLoaded ) return; // Done in -viewDidLoad instead
+
+    self.title          = nil;
+    self.parsedSections = nil;
+
+    [ self.apiTask cancel ];
+    self.apiTask = nil;
+
+    [ self.tableView reloadData ];
+    [ self hideActivityViewer   ];
+
+    BOOL haveFavourites = DataManager.dataManager.fetchedResultsControllerLocal.fetchedObjects.count > 0;
+
+    self.tableView.backgroundView =
+    haveFavourites
+    ? [ DetailViewController emptyStateViewWithSymbol: @"bus"
+                                                title: NSLocalizedString( @"No Stop Selected", "Title shown when no favourite stop is chosen" )
+                                                 hint: NSLocalizedString( @"Choose one of your favourite stops.", "Hint shown when no favourite stop is chosen" ) ]
+    : [ DetailViewController noFavouritesView ];
+}
+
+// See header for details.
+//
++ ( UIView * ) noFavouritesView
+{
+    NSString * title = NSLocalizedString( @"No Favourites Yet", "Title shown when no favourite stops have been added" );
+
+    if ( DataManager.dataManager.checkingICloud )
+    {
+        return
+        [
+            DetailViewController emptyStateViewWithSymbol: @"icloud"
+                                                     title: title
+                                                      hint: NSLocalizedString( @"Checking iCloud for favourites from your other devices", "Hint shown when no favourite stops are present yet, while checking iCloud" )
+        ];
+    }
+
+    return
+    [
+        DetailViewController emptyStateViewWithSymbol: @"star"
+                                                 title: title
+                                                  hint: NSLocalizedString( @"Tap + to add a stop using the map or its stop ID.", "Hint shown when no favourite stops have been added" )
+    ];
+}
+
+// See header for details.
+//
+// On iOS 17+ this is the system's standard empty-state view; earlier, a
+// hand-built equivalent. Either way: an icon, a prominent title that uses
+// Dynamic Type and wraps as needed, and a quieter hint underneath, kept
+// within readable margins so long text never runs to the screen edges.
+//
++ ( UIView * ) emptyStateViewWithSymbol: ( NSString * ) symbolName
+                                  title: ( NSString * ) titleText
+                                   hint: ( NSString * ) hint
+{
+    UIImage * image = [ UIImage systemImageNamed: symbolName ];
 
     if (@available(iOS 17, *))
     {
         UIContentUnavailableConfiguration * config = [ UIContentUnavailableConfiguration emptyConfiguration ];
 
         config.image         = image;
-        config.text          = NO_SERVICES_SCHEDULED_MESSAGE;
+        config.text          = titleText;
         config.secondaryText = hint;
 
-        self.tableView.backgroundView = [ [ UIContentUnavailableView alloc ] initWithConfiguration: config ];
-        return;
+        return [ [ UIContentUnavailableView alloc ] initWithConfiguration: config ];
     }
 
     // Pre-iOS 17 fallback.
@@ -214,7 +299,7 @@
 
     UILabel * title = [ [ UILabel alloc ] init ];
 
-    title.text                              = NO_SERVICES_SCHEDULED_MESSAGE;
+    title.text                              = titleText;
     title.font                              = [ UIFont fontWithDescriptor: titleDescriptor size: 0 ];
     title.adjustsFontForContentSizeCategory = YES;
     title.textColor                         = UIColor.labelColor;
@@ -255,7 +340,7 @@
         ]
     ];
 
-    self.tableView.backgroundView = container;
+    return container;
 }
 
 #pragma mark - View lifecycle
@@ -286,6 +371,8 @@
 
 - ( void ) doAutoRefresh
 {
+    if ( ! [ self hasStop ] ) return;
+
     NSString * stopID = [ self.detailItem valueForKey: @"stopID" ];
     if ( stopID == nil ) return;
 

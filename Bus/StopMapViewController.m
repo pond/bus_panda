@@ -101,9 +101,15 @@
                        floor( windowSize.height * MAP_SHEET_FRACTION_OF_WINDOW ) );
 }
 
-// Keep the "Add Using Map" sheet in proportion to its window when that
-// changes size - e.g. on rotation, or when resizing an iPad window. Only
-// applies when presented as a form sheet; see MasterViewController.
+// Keep the "Add Using Map" sheet in proportion to the window it was
+// presented over when that changes size - e.g. on rotation, or when resizing
+// an iPad window. Only applies when presented as a form sheet; see
+// MasterViewController.
+//
+// The size comes from the *presenting* view controller's window. Using this
+// view's own window would be wrong on Mac Catalyst, where a sheet is a
+// separate window: each resize would shrink it to a fraction of itself,
+// causing another resize, until AppKit gave up and terminated the app.
 //
 - ( void ) viewWillTransitionToSize: ( CGSize ) size
           withTransitionCoordinator: ( id <UIViewControllerTransitionCoordinator> ) coordinator
@@ -112,7 +118,8 @@
 
     UINavigationController * navigationController = self.navigationController;
 
-    if ( navigationController.presentingViewController == nil ||
+    if ( NSProcessInfo.processInfo.isMacCatalystApp                                    ||
+         navigationController.presentingViewController == nil                          ||
          navigationController.modalPresentationStyle   != UIModalPresentationFormSheet )
     {
         return;
@@ -122,11 +129,13 @@
         coordinator animateAlongsideTransition: nil
                                     completion: ^ ( id <UIViewControllerTransitionCoordinatorContext> context )
         {
-            CGSize windowSize = self.view.window.bounds.size;
+            CGSize windowSize = navigationController.presentingViewController.view.window.bounds.size;
+            CGSize sheetSize  = [ StopMapViewController sheetSizeForWindowSize: windowSize ];
 
-            if ( windowSize.width > 0 && windowSize.height > 0 )
+            if ( windowSize.width > 0 && windowSize.height > 0 &&
+                 CGSizeEqualToSize( sheetSize, navigationController.preferredContentSize ) == NO )
             {
-                navigationController.preferredContentSize = [ StopMapViewController sheetSizeForWindowSize: windowSize ];
+                navigationController.preferredContentSize = sheetSize;
             }
         }
     ];

@@ -23,11 +23,6 @@
     //
     @property ( strong, nonatomic ) UIRefreshControl * refreshControl;
 
-    // YES once launch-time automatic selection of the first stop has been
-    // done, or found not to be wanted; see -autoSelectFirstStopIfAppropriate.
-    //
-    @property ( assign, nonatomic ) BOOL autoSelectionConsidered;
-
 @end
 
 @implementation MasterViewController
@@ -78,6 +73,13 @@
                                                     name: DATA_CHANGED_NOTIFICATION_NAME
                                                   object: nil ];
 
+    // Update "no favourites" messages when checking iCloud starts or stops.
+    //
+    [ [ NSNotificationCenter defaultCenter ] addObserver: self
+                                                selector: @selector( iCloudCheckDidChange: )
+                                                    name: ICLOUD_CHECK_CHANGED_NOTIFICATION_NAME
+                                                  object: nil ];
+
     // Add an observer triggered whenever the Core Data list of favourite
     // stops changes; this is used to update the Watch.
     //
@@ -125,31 +127,85 @@
 - ( void ) viewDidAppear: ( BOOL ) animated
 {
     [ super viewDidAppear: animated ];
-    [ self autoSelectFirstStopIfAppropriate ];
+    [ self updateForCurrentFavourites ];
 }
 
-// At launch, when the split view is expanded (e.g. iPad; an unfolded iPhone
-// Duo) and so has room to show both the list and a stop's details, select
-// the first stop in the list rather than leaving the detail view empty. The
-// list is ordered with preferred stops first, so that's the first preferred
-// stop if there are any, else the first other stop.
+// The split view may collapse or expand (rotation, window resizing, an
+// iPhone Duo folding), which changes what should be shown where.
 //
-// Called when the view appears and whenever the list's data changes, since
-// favourites may not have loaded yet when the view first appears. Only acts
-// once: never when the split view is collapsed (iPhone), and never once a
-// stop is already showing, so it doesn't override the user's own choice.
-//
-- ( void ) autoSelectFirstStopIfAppropriate
+- ( void ) viewWillTransitionToSize: ( CGSize ) size
+          withTransitionCoordinator: ( id <UIViewControllerTransitionCoordinator> ) coordinator
 {
-    if ( self.autoSelectionConsidered == YES ) return;
+    [ super viewWillTransitionToSize: size withTransitionCoordinator: coordinator ];
 
+    [
+        coordinator animateAlongsideTransition: nil
+                                    completion: ^ ( id <UIViewControllerTransitionCoordinatorContext> context )
+        {
+            [ self updateForCurrentFavourites ];
+        }
+    ];
+}
+
+// Keep what's on screen consistent with the current favourites. Called when
+// the view appears, whenever the list's data changes (including deletions,
+// local or via iCloud) and after size changes.
+//
+// When the split view is expanded (e.g. iPad; an unfolded iPhone Duo), there
+// is always something sensible in the detail column:
+//
+// - If it is showing a stop that still exists, leave it alone - that's the
+//   user's choice.
+// - Otherwise, if there are any favourites, show the first. The list puts
+//   preferred stops first, so that's the first preferred stop if there are
+//   any, else the first other stop. This covers launch, and deletion of the
+//   stop being shown.
+// - Otherwise show a "no favourites yet" message there.
+//
+// When collapsed (iPhone), if a stop that has been deleted is showing, go
+// back to the list; and the list itself shows "no favourites yet" when
+// empty.
+//
+// Notification handler; see -viewDidLoad.
+//
+- ( void ) iCloudCheckDidChange: ( NSNotification * ) notification
+{
+    [ self updateForCurrentFavourites ];
+}
+
+- ( void ) updateForCurrentFavourites
+{
     UISplitViewController * split = self.splitViewController;
 
     if ( split == nil || self.view.window == nil ) return; // Not ready yet
 
+    NSUInteger favouriteCount = DataManager.dataManager.fetchedResultsControllerLocal.fetchedObjects.count;
+
+    // Empty-list message, only when collapsed; when expanded, the detail
+    // column shows it instead.
+
+    if ( favouriteCount == 0 && split.isCollapsed )
+    {
+        self.tableView.backgroundView = [ DetailViewController noFavouritesView ];
+    }
+    else
+    {
+        self.tableView.backgroundView = nil;
+    }
+
     if ( split.isCollapsed )
     {
-        self.autoSelectionConsidered = YES;
+        for ( UIViewController * controller in self.navigationController.viewControllers )
+        {
+            if ( [ controller isKindOfClass: [ DetailViewController class ] ] &&
+                 [ ( DetailViewController * ) controller hasStop ] == NO &&
+                 [ ( DetailViewController * ) controller detailItem ] != nil )
+            {
+                [ self.navigationController popToRootViewControllerAnimated: YES ];
+                break;
+            }
+        }
+
         return;
     }
 
@@ -160,26 +216,33 @@
         secondary = ( ( UINavigationController * ) secondary ).viewControllers.firstObject;
     }
 
-    if ( [ secondary isKindOfClass: [ DetailViewController class ] ] &&
-         [ ( DetailViewController * ) secondary detailItem ] != nil )
+    DetailViewController * detail = [ secondary isKindOfClass: [ DetailViewController class ] ]
+                                  ? ( DetailViewController * ) secondary
+                                  : nil;
+
+    if ( [ detail hasStop ] ) return;
+
+    if ( favouriteCount > 0 )
     {
-        self.autoSelectionConsidered = YES;
-        return;
+        NSIndexPath * first = [ NSIndexPath indexPathForRow: 0 inSection: 0 ];
+
+        [ self.tableView selectRowAtIndexPath: first
+                                     animated: NO
+                               scrollPosition: UITableViewScrollPositionNone ];
+
+        [ self tableView: self.tableView didSelectRowAtIndexPath: first ];
     }
+    else if ( detail != nil && detail.detailItem == nil )
+    {
+        [ detail showPlaceholder ]; // Already a placeholder; update its message
+    }
+    else
+    {
+        DetailViewController * placeholder = [ self.storyboard instantiateViewControllerWithIdentifier: @"ListOfServices" ];
 
-    // No favourites (yet)? Try again when the data changes.
-    //
-    if ( [ self.tableView numberOfSections ] == 0 || [ self.tableView numberOfRowsInSection: 0 ] == 0 ) return;
-
-    self.autoSelectionConsidered = YES;
-
-    NSIndexPath * first = [ NSIndexPath indexPathForRow: 0 inSection: 0 ];
-
-    [ self.tableView selectRowAtIndexPath: first
-                                 animated: NO
-                           scrollPosition: UITableViewScrollPositionNone ];
-
-    [ self tableView: self.tableView didSelectRowAtIndexPath: first ];
+        [ split setViewController: [ [ UINavigationController alloc ] initWithRootViewController: placeholder ]
+                        forColumn: UISplitViewControllerColumnSecondary ];
+    }
 }
 
 - ( void ) dealloc
@@ -224,12 +287,14 @@
             // too small for a map on a large screen. Use a form sheet sized
             // in proportion to the window instead; the map view keeps it in
             // proportion if the window changes size. Use the window's traits,
-            // since this list is in a split view column with its own.
+            // since this list is in a split view column with its own. Not on
+            // a Mac, where sheets are separate windows that macOS sizes.
             //
             UIWindow          * window = self.view.window;
             UITraitCollection * traits = window.traitCollection;
 
-            if ( traits.horizontalSizeClass == UIUserInterfaceSizeClassRegular &&
+            if ( NSProcessInfo.processInfo.isMacCatalystApp == NO              &&
+                 traits.horizontalSizeClass == UIUserInterfaceSizeClassRegular &&
                  traits.verticalSizeClass   == UIUserInterfaceSizeClassRegular )
             {
                 stopMapNavigationController.modalPresentationStyle = UIModalPresentationFormSheet;
@@ -684,7 +749,7 @@
                                       withObject: nil
                                    waitUntilDone: NO ];
 
-    [ self performSelectorOnMainThread: @selector( autoSelectFirstStopIfAppropriate )
+    [ self performSelectorOnMainThread: @selector( updateForCurrentFavourites )
                             withObject: nil
                          waitUntilDone: NO ];
 
@@ -917,7 +982,7 @@
 {
     [ self.tableView endUpdates ];
     [ self updateWatch: nil ];
-    [ self autoSelectFirstStopIfAppropriate ];
+    [ self updateForCurrentFavourites ];
 }
 
 // TODO possibly:

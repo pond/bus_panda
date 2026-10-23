@@ -34,6 +34,10 @@
     //
     @property ( strong ) NSBlockOperation * awakenOperation;
 
+    // See header; privately writable, via -setCheckingICloudFromAnyThread:.
+    //
+    @property ( readwrite, nonatomic ) BOOL checkingICloud;
+
     // The above queue has the major awaken operation performed in it, but we
     // also do per-record saves using that queue too. This means that if one
     // save is delayed for some reason (e.g. rate limits) but then the same
@@ -119,12 +123,36 @@
 // Called internally by the iCloud availability change notification handliner
 // as well as by the app delegate at startup.
 //
+// Set "checkingICloud" (see header) from any thread; the change is made,
+// and announced if it really is a change, on the main thread.
+//
+- ( void ) setCheckingICloudFromAnyThread: ( BOOL ) checking
+{
+    void ( ^ update )( void ) = ^ ( void )
+    {
+        if ( self.checkingICloud == checking ) return;
+
+        self.checkingICloud = checking;
+
+        [ [ NSNotificationCenter defaultCenter ] postNotificationName: ICLOUD_CHECK_CHANGED_NOTIFICATION_NAME
+                                                               object: self ];
+    };
+
+    if ( NSThread.isMainThread ) update();
+    else                         dispatch_async( dispatch_get_main_queue(), update );
+}
+
 - ( void ) awakenAllStores
 {
     // If we're already running an 'awaken' job, cancel it. This later one
     // takes priority.
     //
     [ self.cloudOperationsQueue cancelAllOperations ];
+
+    // Until we know otherwise, assume favourites might be on their way from
+    // iCloud.
+    //
+    [ self setCheckingICloudFromAnyThread: YES ];
 
     // (Re)define the operation block (any old operation now being cancelled)
     // allowing any old one to be garbage collected.
@@ -154,6 +182,7 @@
                     NSLog( @"-- !! Not signed in to iCloud" );
 
                     [ defaults setBool: NO forKey: ICLOUD_IS_AVAILABLE ];
+                    [ dataManager setCheckingICloudFromAnyThread: NO ];
 
                     if ( [ defaults boolForKey: HAVE_SHOWN_ICLOUD_SIGNIN_WARNING ] != YES )
                     {
@@ -170,6 +199,7 @@
                     NSLog( @"-- !! Unusual iCloud account status %ld", ( long ) accountStatus );
 
                     [ defaults setBool: NO forKey: ICLOUD_IS_AVAILABLE ];
+                    [ dataManager setCheckingICloudFromAnyThread: NO ];
                     if ( thisOperation.cancelled ) return;
 
                     [ dataManager showMessage: @"iCloud is not available, either due to parental controls or an error. Bus Panda will not be able to synchronise favourite stops with your other devices."
@@ -199,9 +229,10 @@
                         NSError                   * _Nullable operationError
                     )
                     {
-                        if ( error != nil )
+                        if ( operationError != nil )
                         {
-                            NSLog( @"Awaken: FATAL: Could not create zone: %@", error );
+                            NSLog( @"Awaken: FATAL: Could not create zone: %@", operationError );
+                            [ dataManager setCheckingICloudFromAnyThread: NO ];
                         }
                         else
                         {
@@ -214,6 +245,10 @@
                             id completionBlock = ^ ( NSError * _Nullable error )
                             {
                                 if ( thisOperation.cancelled ) return;
+
+                                // The initial fetch from iCloud is over.
+                                //
+                                [ dataManager setCheckingICloudFromAnyThread: NO ];
 
                                 // If no error & we had something from CloudKit, we're done as
                                 // if anything is in there at all, it's considered data master.
@@ -255,6 +290,7 @@
 
 #ifdef SCREENSHOT_BUILD
                             NSLog( @"Awaken: (Skipping - this is a screenshot build)" );
+                            [ dataManager setCheckingICloudFromAnyThread: NO ];
 #else
 
                             // This is a CloudKit callback on a background

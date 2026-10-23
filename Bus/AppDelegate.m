@@ -285,8 +285,8 @@
 #pragma mark - Split view
 
 // When the split view collapses to a single stack, show the list of stops
-// rather than the empty placeholder detail view if no stop has been chosen;
-// otherwise keep showing the chosen stop.
+// rather than the placeholder detail view if no stop has been chosen, or if
+// the chosen stop has since been deleted; otherwise keep showing the stop.
 //
 - ( UISplitViewControllerColumn ) splitViewController: ( UISplitViewController     * ) splitViewController
             topColumnForCollapsingToProposedTopColumn: ( UISplitViewControllerColumn ) proposedTopColumn
@@ -299,7 +299,7 @@
     }
 
     if ( [ secondary isKindOfClass: [ DetailViewController class ] ] &&
-         [ ( DetailViewController * ) secondary detailItem ] == nil )
+         [ ( DetailViewController * ) secondary hasStop ] == NO )
     {
         return UISplitViewControllerColumnPrimary;
     }
