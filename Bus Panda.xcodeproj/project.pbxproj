@@ -60,6 +60,7 @@
 		23E341631CA6915100EDB581 /* RouteColours.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E341621CA6915100EDB581 /* RouteColours.swift */; };
 		23E341691CA79F1A00EDB581 /* BusInfoFetcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E341681CA79F1A00EDB581 /* BusInfoFetcher.m */; };
 		23E3417B1CABD2E900EDB581 /* StopInfoFetcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E3417A1CABD2E900EDB581 /* StopInfoFetcher.m */; };
+		23F0A1B3308C000100C0FFEE /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 23F0A1B2308C000100C0FFEE /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -196,6 +197,7 @@
 		23E341681CA79F1A00EDB581 /* BusInfoFetcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BusInfoFetcher.m; sourceTree = "<group>"; };
 		23E341791CABD2E900EDB581 /* StopInfoFetcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StopInfoFetcher.h; sourceTree = "<group>"; };
 		23E3417A1CABD2E900EDB581 /* StopInfoFetcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = StopInfoFetcher.m; sourceTree = "<group>"; };
+		23F0A1B2308C000100C0FFEE /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -347,6 +349,7 @@
 			isa = PBXGroup;
 			children = (
 				23D75E1F1AC1654B0068C808 /* Info.plist */,
+				23F0A1B2308C000100C0FFEE /* PrivacyInfo.xcprivacy */,
 				23D75E201AC1654B0068C808 /* main.m */,
 				23420A871C8EC7DC009F40F9 /* Bus Panda-Bridging-Header.h */,
 			);
@@ -536,6 +539,7 @@
 				23DA1D202309521D00FB14E7 /* Colours.xcassets in Resources */,
 				23D75E321AC1654B0068C808 /* Images.xcassets in Resources */,
 				23AB59A31CB088960057688D /* Settings.bundle in Resources */,
+				23F0A1B3308C000100C0FFEE /* PrivacyInfo.xcprivacy in Resources */,
 				235015972318765F00D88700 /* Launch Screen.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -640,7 +644,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 202610232328;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_PREVIEWS = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -653,7 +657,7 @@
 					"@executable_path/Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 3.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda.watchkitapp";
@@ -689,7 +693,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 202610232328;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_PREVIEWS = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
@@ -702,7 +706,7 @@
 					"@executable_path/Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 3.0;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = "uk.org.pond.Bus-Panda.watchkitapp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -843,7 +847,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 202610231938;
+				CURRENT_PROJECT_VERSION = 202610232328;
 				INFOPLIST_FILE = Bus/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -873,7 +877,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 202610231938;
+				CURRENT_PROJECT_VERSION = 202610232328;
 				INFOPLIST_FILE = Bus/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
