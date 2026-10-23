@@ -752,10 +752,10 @@
 {
     ( void ) ignoredNotification;
 
-    // Reads the main-queue Core Data context and the table view, so must run
-    // on the main thread; but WatchConnectivity calls in here (via the App
-    // Delegate) on a background queue, and the context-changed notification
-    // can arrive from other contexts' threads.
+    // Reads the main-queue Core Data context, so must run on the main thread;
+    // but WatchConnectivity calls in here (via the App Delegate) on a
+    // background queue, and the context-changed notification can arrive from
+    // other contexts' threads.
     //
     if ( ! NSThread.isMainThread )
     {
@@ -771,58 +771,28 @@
         return;
     }
 
-    if ( WCSession.isSupported )
+    if ( ! WCSession.isSupported ) return;
+
+    WCSession * session = [ WCSession defaultSession ];
+
+    // The "application context" is delivered in the background, whenever the
+    // watch next connects, so it only needs a paired watch with the app
+    // installed - not one that's currently reachable.
+    //
+    if ( session.activationState != WCSessionActivationStateActivated ||
+         session.paired          == NO                                 ||
+         session.watchAppInstalled == NO )
     {
-        WCSession * session = [ WCSession defaultSession ];
-        BOOL        proceed;
+        return;
+    }
 
-        // The actiationState property for multiple Apple Watch support exists
-        // in iOS 9.3 or later only.
-        //
-        if ( [ session respondsToSelector: @selector( activationState ) ] )
-        {
-            proceed = ( session.activationState == WCSessionActivationStateActivated ) ? YES : NO;
-        }
-        else
-        {
-            proceed = YES;
-        }
+    NSError * error = nil;
 
-        if ( session.reachable && proceed )
-        {
-            NSError        * error;
-            NSMutableArray * allStops = [ [ NSMutableArray alloc ] init ];
-            NSDictionary   * dictionary;
-            NSInteger        sections = [ self numberOfSectionsInTableView: self.tableView ];
+    [ session updateApplicationContext: [ DataManager.dataManager watchPayload ] error: &error ];
 
-            for ( NSManagedObject * object in DataManager.dataManager.fetchedResultsControllerLocal.fetchedObjects )
-            {
-                // If the table view thinks it only has one section, send all
-                // stops; they're either all normal, or all preferred. If there
-                // is more than one section then there is a mixture of stop
-                // types - only send the preferred stops to the watch.
-
-                if ( sections == 1 || [ [ object valueForKey: @"preferred" ] integerValue ] > 0 )
-                {
-                    [
-                        allStops addObject:
-                        @{
-                            @"stopID":          [ object valueForKey: @"stopID"          ],
-                            @"stopDescription": [ object valueForKey: @"stopDescription" ]
-                        }
-                    ];
-                }
-            }
-
-            dictionary = @{ @"allStops": allStops };
-
-            [ session updateApplicationContext: dictionary error: &error ];
-
-            if ( error != nil )
-            {
-                NSLog( @"Error updating watch: %@", error );
-            }
-        }
+    if ( error != nil )
+    {
+        NSLog( @"Error updating watch: %@", error );
     }
 }
 

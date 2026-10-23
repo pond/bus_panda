@@ -13,8 +13,6 @@
 #import "DetailViewController.h"
 #import "MasterViewController.h"
 #import "StopMapViewController.h"
-#import "BusInfoFetcher.h"
-#import "NearestStopBusInfoFetcher.h"
 
 @interface AppDelegate ()
 
@@ -437,7 +435,11 @@
 
 // WCSessionDelegate.
 //
-// The Watch app is asking us to do something and expects a reply.
+// The watch app is asking for the current favourite stops, e.g. because it
+// has just been installed or launched; reply with them directly. (The watch
+// fetches bus times itself, straight from Metlink, so that's the only request
+// it makes. Older watch apps also asked for bus times, or the nearest stop;
+// those requests now get an empty reply.)
 //
 - ( void ) session: ( WCSession                     * ) session
  didReceiveMessage: ( NSDictionary <NSString *, id> * ) message
@@ -447,34 +449,14 @@
 
     if ( [ action isEqualToString: @"getStops" ] == YES )
     {
-        [ self pushListOfStopsToWatch: session ];
-    }
-    else if ( [ action isEqualToString: @"getBuses" ] == YES )
-    {
-        NSString * stopID = message[ @"data" ];
-
-        if ( stopID != nil )
-        {
-            [
-                BusInfoFetcher getAllBusesForStop: stopID
-                                completionHandler: ^ ( NSMutableArray * allBuses )
-                {
-                    replyHandler( @{ @"allBuses": allBuses } );
-                }
-            ];
-        }
-    }
-    else if ( [ action isEqualToString: @"getNearest" ] == YES )
-    {
-        @try
-        {
-            NearestStopBusInfoFetcher * fetcher = [ [ NearestStopBusInfoFetcher alloc ] init ];
-            [ fetcher beginWithWatchOSReplyHandler: replyHandler ];
-        }
-        @catch ( NSException * exception )
-        {
-            replyHandler( @{ @"error": @"Bus Panda was unable to read your location" } );
-        }
+        dispatch_async
+        (
+            dispatch_get_main_queue(),
+            ^ ( void )
+            {
+                replyHandler( [ DataManager.dataManager watchPayload ] );
+            }
+        );
     }
     else
     {

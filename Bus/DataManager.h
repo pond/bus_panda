@@ -74,6 +74,10 @@
 - ( NSInteger                   ) numberOfSections;
 - ( NSManagedObject * _Nullable ) findFavouriteStopByID: ( NSString * _Nonnull ) stopID;
 
+// Favourite stops for the watch; see implementation for details.
+//
+- ( NSDictionary * _Nonnull ) watchPayload;
+
 // CloudKit change management
 
 - ( void ) fetchRecentChangesWithCompletionBlock: ( void ( ^ _Nonnull )( NSError * _Nullable error ) ) completionHandler

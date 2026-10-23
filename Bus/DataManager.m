@@ -1946,6 +1946,48 @@
          includingCloudKit: NO ];
 }
 
+// Return the favourite stops to show on the watch, as a dictionary suitable
+// for WatchConnectivity: key "allStops", value an array of dictionaries with
+// keys "stopID", "stopDescription" and "preferred" (an NSNumber BOOL), in
+// list order. If any stops are preferred, only those are sent; otherwise all
+// stops are. Call on the main thread only.
+//
+- ( NSDictionary * ) watchPayload
+{
+    NSArray        * favourites   = self.fetchedResultsControllerLocal.fetchedObjects;
+    NSMutableArray * allStops     = [ [ NSMutableArray alloc ] init ];
+    BOOL             anyPreferred = NO;
+
+    for ( NSManagedObject * object in favourites )
+    {
+        if ( [ [ object valueForKey: @"preferred" ] integerValue ] > 0 )
+        {
+            anyPreferred = YES;
+            break;
+        }
+    }
+
+    for ( NSManagedObject * object in favourites )
+    {
+        NSString * stopID          = [ object valueForKey: @"stopID"          ];
+        NSString * stopDescription = [ object valueForKey: @"stopDescription" ];
+        BOOL       preferred       = [ [ object valueForKey: @"preferred" ] integerValue ] > 0;
+
+        if ( stopID == nil || ( anyPreferred && ! preferred ) ) continue;
+
+        [
+            allStops addObject:
+            @{
+                @"stopID":          stopID,
+                @"stopDescription": stopDescription ?: stopID,
+                @"preferred":       @( preferred )
+            }
+        ];
+    }
+
+    return @{ @"allStops": allStops };
+}
+
 #pragma mark - Cached bus stop location management
 
 // The stops are managed by StopMapViewController entirely, so all we do here
