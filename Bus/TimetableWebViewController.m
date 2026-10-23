@@ -60,43 +60,4 @@
     }
 }
 
-#pragma mark - Split view support
-
-// The split view's display mode button ("show/hide the list") only means
-// anything when the split view is expanded, e.g. on iPad. When collapsed
-// (iPhone; a narrow iPad window; possibly a folded iPhone Duo) it has no
-// content, but on iOS 26+ an empty item still draws an empty Liquid Glass
-// capsule next to the Back button. So only show it when expanded, and
-// re-evaluate whenever the split view might collapse or expand.
-//
-- ( void ) updateDisplayModeButton
-{
-    UISplitViewController * split = self.splitViewController;
-
-    self.navigationItem.leftItemsSupplementBackButton = YES;
-    self.navigationItem.leftBarButtonItem             = ( split != nil && split.isCollapsed == NO )
-                                                      ? split.displayModeButtonItem
-                                                      : nil;
-}
-
-- ( void ) viewWillTransitionToSize: ( CGSize ) size
-          withTransitionCoordinator: ( id <UIViewControllerTransitionCoordinator> ) coordinator
-{
-    [ super viewWillTransitionToSize: size withTransitionCoordinator: coordinator ];
-
-    [
-        coordinator animateAlongsideTransition: nil
-                                    completion: ^ ( id <UIViewControllerTransitionCoordinatorContext> context )
-        {
-            [ self updateDisplayModeButton ];
-        }
-    ];
-}
-
-- ( void ) viewWillAppear: ( BOOL ) animated
-{
-    [ super viewWillAppear: animated ];
-    [ self updateDisplayModeButton ];
-}
-
 @end

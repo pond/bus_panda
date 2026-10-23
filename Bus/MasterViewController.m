@@ -60,11 +60,6 @@
     self.navigationItem.leftBarButtonItem  = self.editButtonItem;
     self.navigationItem.rightBarButtonItem = addButton;
 
-    self.detailViewController = ( DetailViewController * )
-    [
-        [ self.splitViewController.viewControllers lastObject ] topViewController
-    ];
-
     // Add a custom notification handler to refresh data. This is triggered
     // when, for example, data changes in iCloud.
     //
@@ -250,18 +245,36 @@
     [ self presentViewController: actions animated: YES completion: nil ];
 }
 
-#pragma mark - Segues
+#pragma mark - Segues and selection
 
-- ( void ) prepareForSegue: ( UIStoryboardSegue * ) segue sender: ( id ) sender
+// The storyboard's "showDetail" segue from a stop cell is not used with the
+// column-style split view; selection is handled in code instead (see
+// -tableView:didSelectRowAtIndexPath:), which is the documented way to drive
+// a column-style split view, collapsed or expanded.
+//
+- ( BOOL ) shouldPerformSegueWithIdentifier: ( NSString * ) identifier
+                                     sender: ( id         ) sender
 {
-    if ( [ [ segue identifier ] isEqualToString: @"showDetail" ] )
-    {
-        NSIndexPath          * indexPath  = [ self.tableView indexPathForSelectedRow ];
-        NSManagedObject      * object     = [ DataManager.dataManager.fetchedResultsControllerLocal objectAtIndexPath: indexPath ];
-        DetailViewController * controller = ( DetailViewController * ) [ [ segue destinationViewController ] topViewController ];
+    if ( [ identifier isEqualToString: @"showDetail" ] ) return NO;
 
-        [ controller setDetailItem: object ];
-    }
+    return [ super shouldPerformSegueWithIdentifier: identifier sender: sender ];
+}
+
+// Show the chosen stop in the split view's secondary column. When collapsed,
+// -showColumn: pushes it onto the single navigation stack; when expanded, it
+// replaces whatever was shown before.
+//
+- ( void )      tableView: ( UITableView * ) tableView
+  didSelectRowAtIndexPath: ( NSIndexPath * ) indexPath
+{
+    NSManagedObject      * object     = [ DataManager.dataManager.fetchedResultsControllerLocal objectAtIndexPath: indexPath ];
+    DetailViewController * controller = [ self.storyboard instantiateViewControllerWithIdentifier: @"ListOfServices" ];
+    UISplitViewController * split     = self.splitViewController;
+
+    [ controller setDetailItem: object ];
+
+    [ split setViewController: controller forColumn: UISplitViewControllerColumnSecondary ];
+    [ split showColumn: UISplitViewControllerColumnSecondary ];
 }
 
 #pragma mark - Table View

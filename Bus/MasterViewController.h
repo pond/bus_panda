@@ -17,7 +17,6 @@
 
 @interface MasterViewController : UITableViewController <NSFetchedResultsControllerDelegate>
 
-@property ( strong, nonatomic ) DetailViewController * detailViewController;
 
 - ( void ) updateWatch: ( NSNotification * ) ignoredNotification;
 

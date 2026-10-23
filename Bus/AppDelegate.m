@@ -129,16 +129,30 @@
 
     [ self.tabBarController setViewControllers: viewControllers ];
 
-    // Boilerplate master/detail view setup
+    // Master/detail split view setup. This must be a column-style split view
+    // ("Double Column" in Interface Builder) - it gives the Liquid Glass
+    // sidebar on iOS 26+, manages its own show/hide-sidebar button and handles
+    // collapsing to a single navigation stack (iPhone, narrow iPad windows,
+    // a folded iPhone Duo) by itself.
 
     self.splitViewController = ( UISplitViewController * ) self.tabBarController.viewControllers.firstObject;
-    self.splitViewController.delegate = self;
-    self.splitViewController.preferredDisplayMode = UISplitViewControllerDisplayModeOneBesideSecondary;
 
-    self.detailNavigationController = self.splitViewController.viewControllers.lastObject;
+    if ( self.splitViewController.style == UISplitViewControllerStyleUnspecified )
+    {
+        NSLog( @"SERIOUS: Favourites split view is classic style; set Style to 'Double Column' in Main.storyboard" );
+    }
 
-    self.masterNavigationController = self.splitViewController.viewControllers.firstObject;
-    self.masterViewController = ( MasterViewController * ) self.masterNavigationController.topViewController;
+    self.splitViewController.delegate               = self;
+    self.splitViewController.preferredDisplayMode   = UISplitViewControllerDisplayModeOneBesideSecondary;
+    self.splitViewController.preferredSplitBehavior = UISplitViewControllerSplitBehaviorTile;
+
+    UIViewController * primary = [ self.splitViewController viewControllerForColumn: UISplitViewControllerColumnPrimary ];
+
+    self.masterNavigationController = [ primary isKindOfClass: [ UINavigationController class ] ]
+                                    ? ( UINavigationController * ) primary
+                                    : primary.navigationController;
+
+    self.masterViewController = ( MasterViewController * ) self.masterNavigationController.viewControllers.firstObject;
 
     [ _dataManager setMasterViewController: self.masterViewController ];
 
@@ -270,23 +284,27 @@
 
 #pragma mark - Split view
 
-- ( BOOL )    splitViewController: ( UISplitViewController * ) splitViewController
-  collapseSecondaryViewController: ( UIViewController      * ) secondaryViewController
-        ontoPrimaryViewController: ( UIViewController      * ) primaryViewController
+// When the split view collapses to a single stack, show the list of stops
+// rather than the empty placeholder detail view if no stop has been chosen;
+// otherwise keep showing the chosen stop.
+//
+- ( UISplitViewControllerColumn ) splitViewController: ( UISplitViewController     * ) splitViewController
+            topColumnForCollapsingToProposedTopColumn: ( UISplitViewControllerColumn ) proposedTopColumn
 {
-    if ( [ secondaryViewController isKindOfClass: [ UINavigationController class ] ] &&
-         [ [ ( UINavigationController * ) secondaryViewController topViewController ] isKindOfClass: [ DetailViewController class ] ] &&
-         ( [ ( DetailViewController   * ) [ ( UINavigationController * ) secondaryViewController topViewController ] detailItem ] == nil ) )
+    UIViewController * secondary = [ splitViewController viewControllerForColumn: UISplitViewControllerColumnSecondary ];
+
+    if ( [ secondary isKindOfClass: [ UINavigationController class ] ] )
     {
-        // Return YES to indicate that we have handled the collapse by doing
-        // nothing; the secondary controller will be discarded.
-        //
-        return YES;
+        secondary = ( ( UINavigationController * ) secondary ).viewControllers.firstObject;
     }
-    else
+
+    if ( [ secondary isKindOfClass: [ DetailViewController class ] ] &&
+         [ ( DetailViewController * ) secondary detailItem ] == nil )
     {
-        return NO;
+        return UISplitViewControllerColumnPrimary;
     }
+
+    return proposedTopColumn;
 }
 
 # pragma mark - Tab controller
@@ -308,33 +326,49 @@
     //
     if ( [ viewController.restorationIdentifier isEqualToString: @"FavouriteStops" ] )
     {
-        // If we've navigated beyond the master view of favourite stops...
+        // Find the navigation stack that's showing the stop details: the
+        // single collapsed stack, or the expanded split view's secondary
+        // column. Allow for a navigation controller nested inside the
+        // collapsed stack, just in case.
         //
-        if ( self.masterNavigationController.viewControllers.count == 2 )
+        UISplitViewController  * split     = self.splitViewController;
+        UIViewController       * secondary = [ split viewControllerForColumn: UISplitViewControllerColumnSecondary ];
+        UINavigationController * stack     = split.isCollapsed
+                                           ? self.masterNavigationController
+                                           : ( [ secondary isKindOfClass: [ UINavigationController class ] ]
+                                               ? ( UINavigationController * ) secondary
+                                               : secondary.navigationController );
+
+        if ( [ stack.topViewController isKindOfClass: [ UINavigationController class ] ] )
         {
-            UINavigationController * stopsNavigationController = self.masterNavigationController.viewControllers.lastObject;
+            stack = ( UINavigationController * ) stack.topViewController;
+        }
 
-            // ...and we're showing a particular stop, but there isn't a
-            // timetable view pushed on top of that...
-            //
-            if ( stopsNavigationController.viewControllers.count == 1 )
-            {
-                // ...and we're already on the Favourites tab, then pop down
-                // to the root view.
-                //
-                if ( tabBarController.selectedIndex == 0 )
-                {
-                    [ self.masterNavigationController popToRootViewControllerAnimated: YES ];
-                }
-            }
+        DetailViewController * detail = nil;
 
-            // ...and we're showing a particular stop with a timetable view
-            // pushed on top, so pop it away.
-            //
-            else
+        for ( UIViewController * candidate in stack.viewControllers )
+        {
+            if ( [ candidate isKindOfClass: [ DetailViewController class ] ] )
             {
-                [ stopsNavigationController popToRootViewControllerAnimated: YES ];
+                detail = ( DetailViewController * ) candidate;
             }
+        }
+
+        // If a timetable view is pushed on top of a particular stop, pop
+        // back to the stop.
+        //
+        if ( detail != nil && stack.topViewController != detail )
+        {
+            [ stack popToViewController: detail animated: YES ];
+        }
+
+        // If we're showing a particular stop in a collapsed (single stack)
+        // interface and we're already on the Favourites tab, then pop down
+        // to the list of stops.
+        //
+        else if ( detail != nil && split.isCollapsed && tabBarController.selectedIndex == 0 )
+        {
+            [ self.masterNavigationController popToRootViewControllerAnimated: YES ];
         }
     }
 

@@ -22,7 +22,6 @@
 @property ( strong, nonatomic ) UITabBarController     * tabBarController;
 @property ( strong, nonatomic ) UISplitViewController  * splitViewController;
 @property ( strong, nonatomic ) UINavigationController * masterNavigationController;
-@property ( strong, nonatomic ) UINavigationController * detailNavigationController;
 @property ( strong, nonatomic ) MasterViewController   * masterViewController;
 
 // Called by SceneDelegate once its window has been built from the storyboard.
