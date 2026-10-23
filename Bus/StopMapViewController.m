@@ -29,8 +29,6 @@
 @property ( nonatomic, assign ) CLLocationDistance     lastRequestRadius;
 
 - ( void ) updateMapWithOrWithoutLocation;
-- ( void ) spinnerOn;
-- ( void ) spinnerOff;
 - ( void ) cancelStopLocationUpdate;
 - ( void ) scheduleStopLocationUpdate;
 - ( void ) getStopsForCurrentMapRange;
@@ -172,17 +170,13 @@
     }
 }
 
-// As a precaution, make sure the network spinner is definitely cancelled
-// when the application is closed.
-//
-// This is also a good time to ask Location Services to stop updates.
+// This is a good time to ask Location Services to stop updates.
 //
 - ( void ) viewWillDisappear: ( BOOL ) animated
 {
     [ super viewWillDisappear: animated ];
 
     [ self cancelStopLocationUpdate ];
-    [ self spinnerOff               ];
 
     if ( [ CLLocationManager authorizationStatus ] == kCLAuthorizationStatusAuthorizedWhenInUse )
     {
@@ -206,22 +200,6 @@
     {
         [ self.navigationController popToRootViewControllerAnimated: YES ];
     }
-}
-
-// Turn on an activity indicator of some sort. At the time of writing this
-// comment, the network activity indicator in the status bar is used. See
-// also -spinnerOff.
-//
-- ( void ) spinnerOn
-{
-    UIApplication.sharedApplication.networkActivityIndicatorVisible = YES;
-}
-
-// Turn off the activity indicator started with -spinnerOn.
-//
-- ( void ) spinnerOff
-{
-    UIApplication.sharedApplication.networkActivityIndicatorVisible = NO;
 }
 
 // Permanently set this instance up so that its initial map view state will
@@ -308,8 +286,6 @@
     self.lastRequestCentre = centerLocation;
     self.lastRequestRadius = radius;
 
-    [ self spinnerOn ];
-
     [
         StopInfoFetcher getStopsWithinRadius: radius
                                   ofLocation: centerLocation
@@ -322,8 +298,6 @@
                 // Allow a retry of the same region.
                 //
                 self.lastRequestRadius = 0;
-
-                [ self spinnerOff ];
 
                 [
                     ErrorPresenter showModalAlertFor: self
@@ -349,8 +323,6 @@
 //
 - ( void ) addStopsToMap: ( NSArray * ) stops
 {
-    BOOL anyAdded = NO;
-
     // Lazy-initialise the local stop-added-to-map flag store and get hold of
     // the AppDelegate's full stop information cache.
 
@@ -434,16 +406,8 @@
         {
             [ self.mapView addAnnotation: existingAnnotationInfo[ @"annotation" ] ];
             self.stopsAddedToMap[ stopID ] = @( YES );
-
-            anyAdded = YES;
         }
     }
-
-    // If no stops were ultimately added, the 'stop network activity spinner
-    // when the views-were-all-added call happens' thing won't work, obviously.
-    // So stop it here instead.
-    //
-    if ( anyAdded == NO ) [ self spinnerOff ];
 }
 
 // Add any stops cached in the AppDelegate's storage via a prior call to
@@ -543,17 +507,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma mark MKMapViewDelegate protocol
 ///////////////////////////////////////////////////////////////////////////////
-
-// MKMapViewDelegate protocol. Called when annotations have been added. This is
-// in theory going to happen possibly a while after the stop location URI fetch
-// completes, while iOS's map engine crunches through the additions; so we use
-// this as a last-possible time to stop the network indicator.
-//
-- ( void )      mapView: ( MKMapView                            * ) mapView
-  didAddAnnotationViews: ( nonnull NSArray <MKAnnotationView *> * ) views
-{
-    [ self spinnerOff ];
-}
 
 // MKMapViewDelegate protocol. Called when the map changes position / zoom.
 //

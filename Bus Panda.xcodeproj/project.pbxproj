@@ -71,9 +71,6 @@
 		23E341651CA6A11400EDB581 /* RouteColours.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E341621CA6915100EDB581 /* RouteColours.swift */; };
 		23E341661CA6A1DF00EDB581 /* BusesRowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23E3415F1CA68F5F00EDB581 /* BusesRowController.swift */; };
 		23E341691CA79F1A00EDB581 /* BusInfoFetcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E341681CA79F1A00EDB581 /* BusInfoFetcher.m */; };
-		23E341761CABACB800EDB581 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 23E341701CABACB800EDB581 /* LICENSE */; };
-		23E341771CABACB800EDB581 /* MGSwipeButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E341721CABACB800EDB581 /* MGSwipeButton.m */; };
-		23E341781CABACB800EDB581 /* MGSwipeTableCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E341741CABACB800EDB581 /* MGSwipeTableCell.m */; };
 		23E3417B1CABD2E900EDB581 /* StopInfoFetcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 23E3417A1CABD2E900EDB581 /* StopInfoFetcher.m */; };
 /* End PBXBuildFile section */
 
@@ -243,11 +240,6 @@
 		23E341621CA6915100EDB581 /* RouteColours.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = RouteColours.swift; path = Bus/RouteColours.swift; sourceTree = "<group>"; };
 		23E341671CA79F1A00EDB581 /* BusInfoFetcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BusInfoFetcher.h; sourceTree = "<group>"; };
 		23E341681CA79F1A00EDB581 /* BusInfoFetcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BusInfoFetcher.m; sourceTree = "<group>"; };
-		23E341701CABACB800EDB581 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
-		23E341711CABACB800EDB581 /* MGSwipeButton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGSwipeButton.h; sourceTree = "<group>"; };
-		23E341721CABACB800EDB581 /* MGSwipeButton.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MGSwipeButton.m; sourceTree = "<group>"; };
-		23E341731CABACB800EDB581 /* MGSwipeTableCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGSwipeTableCell.h; sourceTree = "<group>"; };
-		23E341741CABACB800EDB581 /* MGSwipeTableCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MGSwipeTableCell.m; sourceTree = "<group>"; };
 		23E341791CABD2E900EDB581 /* StopInfoFetcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StopInfoFetcher.h; sourceTree = "<group>"; };
 		23E3417A1CABD2E900EDB581 /* StopInfoFetcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = StopInfoFetcher.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -448,7 +440,6 @@
 			isa = PBXGroup;
 			children = (
 				23D75E4B1AC165A70068C808 /* HTMLReader */,
-				23E3416E1CABACB800EDB581 /* MGSwipeTableCell */,
 				236FC33A1CAE124E00207C15 /* INTULocationManager */,
 			);
 			name = "Third Party";
@@ -509,18 +500,6 @@
 				23DA1D2523095F9200FB14E7 /* BackgroundColourCalculator.m */,
 			);
 			name = Shared;
-			sourceTree = "<group>";
-		};
-		23E3416E1CABACB800EDB581 /* MGSwipeTableCell */ = {
-			isa = PBXGroup;
-			children = (
-				23E341701CABACB800EDB581 /* LICENSE */,
-				23E341711CABACB800EDB581 /* MGSwipeButton.h */,
-				23E341721CABACB800EDB581 /* MGSwipeButton.m */,
-				23E341731CABACB800EDB581 /* MGSwipeTableCell.h */,
-				23E341741CABACB800EDB581 /* MGSwipeTableCell.m */,
-			);
-			path = MGSwipeTableCell;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -669,7 +648,6 @@
 				23DA1D202309521D00FB14E7 /* Colours.xcassets in Resources */,
 				23D75E321AC1654B0068C808 /* Images.xcassets in Resources */,
 				23AB59A31CB088960057688D /* Settings.bundle in Resources */,
-				23E341761CABACB800EDB581 /* LICENSE in Resources */,
 				235015972318765F00D88700 /* Launch Screen.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -717,7 +695,6 @@
 				236FC34F1CAFDC4A00207C15 /* ShorteningLabel.m in Sources */,
 				23E102691C1D0B7C00BEF3C6 /* AddStopAbstractViewController.m in Sources */,
 				236FC3481CAE124E00207C15 /* INTURequestIDGenerator.m in Sources */,
-				23E341781CABACB800EDB581 /* MGSwipeTableCell.m in Sources */,
 				23D75E761AC165A70068C808 /* HTMLElement.m in Sources */,
 				23D75E771AC165A70068C808 /* HTMLEncoding.m in Sources */,
 				23E3417B1CABD2E900EDB581 /* StopInfoFetcher.m in Sources */,
@@ -732,7 +709,6 @@
 				23AC944F209B146200B670FC /* WeatherWebViewController.m in Sources */,
 				23C937981ACDF51E00EF1441 /* TimetableWebViewController.m in Sources */,
 				23D75E2A1AC1654B0068C808 /* MasterViewController.m in Sources */,
-				23E341771CABACB800EDB581 /* MGSwipeButton.m in Sources */,
 				23D75E791AC165A70068C808 /* HTMLNode.m in Sources */,
 				23D75E7E1AC165A70068C808 /* HTMLSerialization.m in Sources */,
 				23D75E801AC165A70068C808 /* HTMLTextNode.m in Sources */,

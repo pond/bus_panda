@@ -52,7 +52,6 @@
 - ( void ) spinnerOn
 {
     [ self.activityView startAnimating ];
-    UIApplication.sharedApplication.networkActivityIndicatorVisible = YES;
 }
 
 // Turn off the activity indicator started with -spinnerOn.
@@ -60,7 +59,6 @@
 - ( void ) spinnerOff
 {
     [ self.activityView stopAnimating ];
-    UIApplication.sharedApplication.networkActivityIndicatorVisible = NO;
 }
 
 #pragma mark - Error reports

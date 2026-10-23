@@ -446,6 +446,58 @@
     return image;
 }
 
+// Ask the user to confirm deletion of the given favourite stop; if they
+// confirm, delete it (locally and from iCloud). The optional completion
+// block is called with YES if the stop was deleted, NO if it was kept.
+//
+- ( void ) confirmDeletionOfStop: ( NSString * ) stopID
+                 withDescription: ( NSString * ) stopDescription
+                      completion: ( void ( ^ )( BOOL deleted ) ) completion
+{
+    NSString * name  = stopDescription.length > 0 ? stopDescription : stopID;
+    NSString * title =
+    [
+        NSString stringWithFormat: NSLocalizedString( @"Delete “%@”?", "Title of confirmation alert for deleting a favourite bus stop; parameter is the stop's description" ),
+                                   name
+    ];
+
+    UIAlertController * alert =
+    [
+        UIAlertController alertControllerWithTitle: title
+                                           message: NSLocalizedString( @"This stop will be removed from your favourites on all of your devices.", "Message in confirmation alert for deleting a favourite bus stop" )
+                                    preferredStyle: UIAlertControllerStyleAlert
+    ];
+
+    [
+        alert addAction:
+        [
+            UIAlertAction actionWithTitle: NSLocalizedString( @"Delete", "Button in confirmation alert which deletes a favourite bus stop" )
+                                    style: UIAlertActionStyleDestructive
+                                  handler: ^ ( UIAlertAction * action )
+            {
+                [ DataManager.dataManager deleteFavourite: stopID
+                                        includingCloudKit: YES ];
+
+                if ( completion ) completion( YES );
+            }
+        ]
+    ];
+
+    [
+        alert addAction:
+        [
+            UIAlertAction actionWithTitle: NSLocalizedString( @"Keep", "Button in confirmation alert which cancels deletion of a favourite bus stop" )
+                                    style: UIAlertActionStyleCancel
+                                  handler: ^ ( UIAlertAction * action )
+            {
+                if ( completion ) completion( NO );
+            }
+        ]
+    ];
+
+    [ self presentViewController: alert animated: YES completion: nil ];
+}
+
 // Swipe-left actions for a stop, icon only: Delete (red), Prefer/Demote
 // (green) and Edit (blue). Delete is nearest the trailing edge. Full swipe
 // does nothing, so a long swipe can't delete a stop by accident.
@@ -470,10 +522,12 @@
                                                title: nil
                                              handler: ^ ( UIContextualAction * action, UIView * sourceView, void ( ^ completionHandler )( BOOL ) )
         {
-            [ dataManager deleteFavourite: stopID
-                        includingCloudKit: YES ];
-
-            completionHandler( YES );
+            // The swipe stays open while the alert is shown; telling UIKit
+            // the outcome afterwards either removes the row or slides it back.
+            //
+            [ self confirmDeletionOfStop: stopID
+                         withDescription: [ object valueForKey: @"stopDescription" ]
+                              completion: completionHandler ];
         }
     ];
 
@@ -577,8 +631,9 @@
                               identifier: nil
                                  handler: ^ ( __kindof UIAction * action )
                 {
-                    [ dataManager deleteFavourite: stopID
-                                includingCloudKit: YES ];
+                    [ self confirmDeletionOfStop: stopID
+                                 withDescription: [ object valueForKey: @"stopDescription" ]
+                                      completion: nil ];
                 }
             ];
 
@@ -645,6 +700,25 @@
 - ( void ) updateWatch: ( NSNotification * ) ignoredNotification
 {
     ( void ) ignoredNotification;
+
+    // Reads the main-queue Core Data context and the table view, so must run
+    // on the main thread; but WatchConnectivity calls in here (via the App
+    // Delegate) on a background queue, and the context-changed notification
+    // can arrive from other contexts' threads.
+    //
+    if ( ! NSThread.isMainThread )
+    {
+        dispatch_async
+        (
+            dispatch_get_main_queue(),
+            ^ ( void )
+            {
+                [ self updateWatch: nil ];
+            }
+        );
+
+        return;
+    }
 
     if ( WCSession.isSupported )
     {

@@ -59,37 +59,6 @@
     @synthesize persistentStoreCoordinatorRemote = _persistentStoreCoordinatorRemote;
     @synthesize fetchedResultsControllerRemote   = _fetchedResultsControllerRemote;
 
-#pragma mark - Any-thread spinner
-
-// Turn on the network activity indicator in the status bar. Can be called
-// from any thread. See also -spinnerOff.
-//
-- ( void ) spinnerOn
-{
-    dispatch_async
-    (
-        dispatch_get_main_queue(),
-        ^ ( void )
-        {
-            UIApplication.sharedApplication.networkActivityIndicatorVisible = YES;
-        }
-    );
-}
-
-// Turn off the activity indicator started with -spinnerOn.
-//
-- ( void ) spinnerOff
-{
-    dispatch_async
-    (
-        dispatch_get_main_queue(),
-        ^ ( void )
-        {
-            UIApplication.sharedApplication.networkActivityIndicatorVisible = NO;
-        }
-    );
-}
-
 #pragma mark - Initialisation
 
 + ( DataManager * ) dataManager
@@ -288,18 +257,29 @@
                             NSLog( @"Awaken: (Skipping - this is a screenshot build)" );
 #else
 
-                            for ( NSString * stopID in stopIDsInFlight )
-                            {
-                                NSManagedObject * object = [ DataManager.dataManager findFavouriteStopByID: stopID ];
-
-                                if ( object != nil )
+                            // This is a CloudKit callback on a background
+                            // queue, but the local Core Data context is main
+                            // queue only - so look up the records there.
+                            //
+                            dispatch_async
+                            (
+                                dispatch_get_main_queue(),
+                                ^ ( void )
                                 {
-                                    [ dataManager addOrEditFavourite: [ object valueForKey: @"stopID"          ]
-                                                  settingDescription: [ object valueForKey: @"stopDescription" ]
-                                                    andPreferredFlag: [ object valueForKey: @"preferred"       ]
-                                                   includingCloudKit: YES ];
+                                    for ( NSString * stopID in stopIDsInFlight )
+                                    {
+                                        NSManagedObject * object = [ dataManager findFavouriteStopByID: stopID ];
+
+                                        if ( object != nil )
+                                        {
+                                            [ dataManager addOrEditFavourite: [ object valueForKey: @"stopID"          ]
+                                                          settingDescription: [ object valueForKey: @"stopDescription" ]
+                                                            andPreferredFlag: [ object valueForKey: @"preferred"       ]
+                                                           includingCloudKit: YES ];
+                                        }
+                                    }
                                 }
-                            }
+                            );
 
                             // This will ignore any updates to objects that are
                             // in the local user default records and therefore
@@ -379,9 +359,6 @@
     // As per comments far above :-) now finally add the big block we just
     // defined as a (cancelleable) operation that'll get run when iOS is ready.
     //
-    self.awakenOperation.completionBlock = ^ ( void ) { [ [ DataManager dataManager ] spinnerOff ]; };
-    [ self spinnerOn ];
-
     [ self.awakenOperation addExecutionBlock: awakenOperationBlock ];
     [ self.cloudOperationsQueue addOperation: self.awakenOperation ];
 }
@@ -426,6 +403,24 @@
 - ( void ) iCloudIdentityDidChange: ( NSNotification * ) notification
 {
     ( void ) notification;
+
+    // Reads and purges the main-queue local Core Data store, then re-awakens
+    // everything, so run it all on the main thread. This also means the
+    // purge's deletions complete before the re-awaken reads the store.
+    //
+    if ( ! NSThread.isMainThread )
+    {
+        dispatch_async
+        (
+            dispatch_get_main_queue(),
+            ^ ( void )
+            {
+                [ self iCloudIdentityDidChange: notification ];
+            }
+        );
+
+        return;
+    }
 
     NSLog( @"iCloud identity has changed" );
 
@@ -1103,11 +1098,7 @@
         {
             [ self.recordUpdateOperations removeObjectForKey: record.recordID.recordName ];
         };
-
-        [ self spinnerOff ];
     };
-
-    [ self spinnerOn ];
 
     [ saveOperation addExecutionBlock: saveOperationBlock ];
     [ self.cloudOperationsQueue addOperation: saveOperation ];
@@ -1250,14 +1241,10 @@
         @"Error message shown when trying to save favourite stop changes to iCloud"
     );
 
-    [ self spinnerOn ];
-
     [
         database fetchRecordWithID: recordID
                  completionHandler: ^ ( CKRecord * _Nullable record, NSError * _Nullable error )
         {
-            [ self spinnerOff ];
-
             if ( record == nil || error.code == CKErrorUnknownItem ) // (If 'error' is nil, dereference of code will be 'nil' and comparison will fail)
             {
                 NSString * newStopDescription = ( stopDescription == nil ) ? [ stopID copy ]             : stopDescription;
@@ -1363,15 +1350,12 @@
         @"Error message shown when trying to remove favourite stop from iCloud"
     );
 
-    [ self spinnerOn ];
-
     [
         database deleteRecordWithID: recordID
                   completionHandler: ^ ( CKRecordID * _Nullable recordID, NSError * _Nullable error )
         {
             NSLog( @"Remove: Finished; error? %@", error );
 
-            [ self spinnerOff ];
             [ self handleError: error withTitle: errorTitle ];
         }
     ];

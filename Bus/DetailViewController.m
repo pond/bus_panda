@@ -49,7 +49,6 @@
 //
 - ( void ) showActivityViewerBackend
 {
-    UIApplication.sharedApplication.networkActivityIndicatorVisible = YES;
     [ self.refreshControl beginRefreshing ];
 }
 
@@ -76,8 +75,6 @@
     [ self.refreshControl performSelector: @selector( endRefreshing )
                                withObject: nil
                                afterDelay: 0.25 ];
-
-    UIApplication.sharedApplication.networkActivityIndicatorVisible = NO;
 }
 
 // Hide the activity indications shown by -showActivityViewer.
