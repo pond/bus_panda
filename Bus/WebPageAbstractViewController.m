@@ -15,7 +15,37 @@
 //
 @property ( assign, nonatomic ) BOOL hasAppeared;
 
+// Whether the current web view was set up with obscured content insets; see
+// -setUpWebViewForCurrentPage.
+//
+@property ( assign, nonatomic ) BOOL webViewUsesObscuredInsets;
+
 - ( void ) reportError: ( NSError * ) error;
+
+@end
+
+// A web view that can ignore side safe area insets, so WebKit lays pages out
+// across the full width with side bars (e.g. iPhone Duo's status bar and
+// vertical bar column) overlaying them, as in Safari.
+//
+@interface SideInsetIgnoringWebView : WKWebView
+@property ( assign, nonatomic ) BOOL ignoresSideInsets;
+@end
+
+@implementation SideInsetIgnoringWebView
+
+- ( UIEdgeInsets ) safeAreaInsets
+{
+    UIEdgeInsets insets = super.safeAreaInsets;
+
+    if ( self.ignoresSideInsets )
+    {
+        insets.left  = 0;
+        insets.right = 0;
+    }
+
+    return insets;
+}
 
 @end
 
@@ -36,6 +66,24 @@
 {
     [ self doesNotRecognizeSelector: _cmd ];
     return nil;
+}
+
+// Return YES if the page about to be shown needs WebKit told what the bars
+// cover (iOS 26+), e.g. because it uses "viewport-fit=cover" and would
+// otherwise load hidden under the navigation bar. Default is NO.
+//
+- ( BOOL ) pageNeedsObscuredContentInsets
+{
+    return NO;
+}
+
+// Return YES to lay pages out across the full width, under any side bars,
+// rather than within the side safe areas. Only suitable for views with no
+// sidebar beside them. Default is NO.
+//
+- ( BOOL ) pageIgnoresSideSafeArea
+{
+    return NO;
 }
 
 // Return an NSString giving the title for error popups.
@@ -92,73 +140,37 @@
 
 #pragma mark - View lifecycle
 
-// When the view loads, create a WKWebView and UIActivityIndicatorView with
-// frames that match and stretch to fit 'self.view'. Add them as subviews so
-// that the activity view is on top of the web view, but hides when not
-// animating; set a white opaque background. Turning on animation thus shows
-// a 'full screen' activity indicator and can hide partial rendering or any
-// hide-elements-via-JavaScript style hackery that might be going on in the
-// web view beneath.
+// When the view loads, create a full-view UIActivityIndicatorView with an
+// opaque background, on top of the web view but hidden when not animating.
+// Turning it on thus hides partial rendering, or any hide-elements-via-
+// JavaScript style hackery going on in the web view beneath.
 //
 - ( void ) viewDidLoad
 {
     [ super viewDidLoad ];
-
-    WKWebViewConfiguration * configuration =
-    [
-        [ WKWebViewConfiguration alloc ] init
-    ];
-
-    configuration.dataDetectorTypes = WKDataDetectorTypeAll;
-
-    self.webView =
-    [
-       [ WKWebView alloc ] initWithFrame: self.view.bounds
-                           configuration: configuration
-    ];
-
-    #if DEBUG
-        if (@available(iOS 16.4, *)) {
-            self.webView.inspectable = true;
-        }
-    #endif
-
-    self.webView.navigationDelegate                  = self;
-    self.webView.allowsBackForwardNavigationGestures = YES;
-    self.webView.autoresizingMask                    = UIViewAutoresizingFlexibleWidth |
-                                                       UIViewAutoresizingFlexibleHeight;
-
-    // The web view fills the whole view, under the navigation bar and tab
-    // bar, so content scrolls beneath them (Liquid Glass style). Its scroll
-    // view must always be inset by the safe area, though: the default
-    // "automatic" behaviour only does that for a view controller's main
-    // scroll view, which UIKit doesn't consider this one to be, so the top
-    // of each page would otherwise start hidden behind the navigation bar.
-    // Telling UIKit it *is* the content scroll view also lets the bars
-    // update their appearance as it scrolls.
-    //
-    self.webView.scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentAlways;
-    [ self setContentScrollView: self.webView.scrollView
-                        forEdge: NSDirectionalRectEdgeAll ];
 
     self.activityView =
     [
        [ UIActivityIndicatorView alloc ] initWithFrame: self.view.bounds
     ];
 
-    self.activityView.opaque                         = YES;
-    self.activityView.backgroundColor                = UIColor.systemBackgroundColor;
-    self.activityView.activityIndicatorViewStyle     = UIActivityIndicatorViewStyleMedium;
-    self.activityView.hidesWhenStopped               = YES;
-    self.activityView.autoresizingMask               = UIViewAutoresizingFlexibleWidth |
-                                                       UIViewAutoresizingFlexibleHeight;
+    self.activityView.opaque                     = YES;
+    self.activityView.backgroundColor            = UIColor.systemBackgroundColor;
+    self.activityView.activityIndicatorViewStyle = UIActivityIndicatorViewStyleMedium;
+    self.activityView.hidesWhenStopped           = YES;
+    self.activityView.autoresizingMask           = UIViewAutoresizingFlexibleWidth |
+                                                   UIViewAutoresizingFlexibleHeight;
 
-    self.view.autoresizesSubviews = YES;
-
-    [ self.view addSubview: self.webView      ];
     [ self.view addSubview: self.activityView ];
 
+    [ self setUpWebViewForCurrentPage ];
     [ self reloadContentBlockingRulesAndGoHome ];
+}
+
+- ( void ) viewSafeAreaInsetsDidChange
+{
+    [ super viewSafeAreaInsetsDidChange ];
+    [ self updateObscuredContentInsets ];
 }
 
 // The first load is started from -viewDidLoad, once content blocking rules
@@ -215,6 +227,110 @@
 
 #pragma mark - Custom methods
 
+// Create a web view suited to the page about to be shown, replacing any
+// existing one if it was set up differently. Changing an existing web view's
+// obscured insets between pages leaves later pages wrongly positioned, so a
+// fresh one is used instead.
+//
+- ( void ) setUpWebViewForCurrentPage
+{
+    BOOL useObscuredInsets = NO;
+
+    if ( @available( iOS 26, * ) )
+    {
+        useObscuredInsets = [ self pageNeedsObscuredContentInsets ];
+    }
+
+    if ( self.webView != nil && useObscuredInsets == self.webViewUsesObscuredInsets ) return;
+
+    if ( self.webView != nil )
+    {
+        [ self.webView stopLoading ];
+        self.webView.navigationDelegate = nil;
+        [ self.webView removeFromSuperview ];
+    }
+
+    WKWebViewConfiguration * configuration = [ [ WKWebViewConfiguration alloc ] init ];
+    configuration.dataDetectorTypes        = WKDataDetectorTypeAll;
+
+    SideInsetIgnoringWebView * webView =
+    [
+       [ SideInsetIgnoringWebView alloc ] initWithFrame: self.view.bounds
+                                          configuration: configuration
+    ];
+
+    webView.ignoresSideInsets = [ self pageIgnoresSideSafeArea ];
+
+    #if DEBUG
+        if ( @available( iOS 16.4, * ) )
+        {
+            webView.inspectable = YES;
+        }
+    #endif
+
+    webView.navigationDelegate                        = self;
+    webView.allowsBackForwardNavigationGestures       = YES;
+    webView.translatesAutoresizingMaskIntoConstraints = NO;
+
+    // Inset the scroll range by the safe area; "automatic" skips scroll views
+    // that aren't the view's own, like this one.
+    //
+    webView.scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentAlways;
+
+    [ self.view insertSubview: webView belowSubview: self.activityView ];
+
+    // On iOS 26+, fill the view so pages scroll under the Liquid Glass bars.
+    // Earlier versions stay between the bars, as there's no way to position
+    // "viewport-fit=cover" pages correctly beneath them.
+    //
+    UIView              * view   = self.view;
+    NSLayoutYAxisAnchor * top    = view.safeAreaLayoutGuide.topAnchor;
+    NSLayoutYAxisAnchor * bottom = view.safeAreaLayoutGuide.bottomAnchor;
+
+    if ( @available( iOS 26, * ) )
+    {
+        top    = view.topAnchor;
+        bottom = view.bottomAnchor;
+    }
+
+    [
+        NSLayoutConstraint activateConstraints:
+        @[
+            [ webView.leadingAnchor  constraintEqualToAnchor: view.leadingAnchor  ],
+            [ webView.trailingAnchor constraintEqualToAnchor: view.trailingAnchor ],
+            [ webView.topAnchor      constraintEqualToAnchor: top                 ],
+            [ webView.bottomAnchor   constraintEqualToAnchor: bottom              ]
+        ]
+    ];
+
+    // Lets the bars update their appearance as the page scrolls.
+    //
+    [ self setContentScrollView: webView.scrollView
+                        forEdge: NSDirectionalRectEdgeAll ];
+
+    self.webView                   = webView;
+    self.webViewUsesObscuredInsets = useObscuredInsets;
+
+    [ self updateObscuredContentInsets ];
+}
+
+// If the web view uses obscured insets, keep them matching the bars, so that
+// WebKit positions pages and their fixed headers below them. Pages that don't
+// need this avoid it, as WebKit also fills the area under the bars with the
+// colour of any fixed header, which the black navigation title can't adapt
+// to.
+//
+- ( void ) updateObscuredContentInsets
+{
+    if ( @available( iOS 26, * ) )
+    {
+        if ( self.webViewUsesObscuredInsets == NO ) return;
+
+        UIEdgeInsets safeArea = self.view.safeAreaInsets;
+        self.webView.obscuredContentInsets = UIEdgeInsetsMake( safeArea.top, 0, safeArea.bottom, 0 );
+    }
+}
+
 // (Re)compile this view's content blocking rules, replace any previously
 // installed rules with them, then load the home page. If compilation fails,
 // the page is still loaded, just without content blocking.
@@ -232,6 +348,11 @@
                 dispatch_get_main_queue(),
                 ^ ( void )
                 {
+                    // The new page may need a differently set up web view;
+                    // do that first, so the rules go on the one that's used.
+                    //
+                    [ self setUpWebViewForCurrentPage ];
+
                     WKUserContentController * controller = self.webView.configuration.userContentController;
 
                     [ controller removeAllContentRuleLists ];

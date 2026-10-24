@@ -122,6 +122,23 @@
     return @"Weather cannot be checked";
 }
 
+// The Weather tab is full width, with no sidebar, so let pages use it all.
+//
+- ( BOOL ) pageIgnoresSideSafeArea
+{
+    return YES;
+}
+
+// Windfinder's page uses "viewport-fit=cover". This must only depend on the
+// provider, as a provider change always reinstalls content blocking rules,
+// which is when the web view is set up for the new page.
+//
+- ( BOOL ) pageNeedsObscuredContentInsets
+{
+    NSString * provider = [ NSUserDefaults.standardUserDefaults stringForKey: WEATHER_PROVIDER ];
+    return [ provider isEqualToString: WEATHER_PROVIDER_WINDFINDER ];
+}
+
 #pragma mark - Custom provider fetchers
 
 // MetService:
