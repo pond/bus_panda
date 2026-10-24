@@ -388,10 +388,10 @@
     switch( section )
     {
         case 0:
-            return NSLocalizedString( @"Preferred Stops", @"'Preferred' stops section title" );
+            return NSLocalizedString( @"Pinned", @"Pinned (preferred) stops section title" );
 
         default:
-            return NSLocalizedString( @"Other Stops", @"Non-'Preferred' stops section title" );
+            return NSLocalizedString( @"Others", @"Unpinned (non-preferred) stops section title" );
     }
 }
 
@@ -477,8 +477,8 @@
 // and the context menu so they stay consistent.
 
 #define DELETE_TITLE  NSLocalizedString( @"Delete",           "Title of action for a bus stop, which deletes that stop" )
-#define PREFER_TITLE  NSLocalizedString( @"Prefer",           "Title of action for a bus stop, which flags that stop as 'preferred'" )
-#define DEMOTE_TITLE  NSLocalizedString( @"Demote",           "Title of action for a bus stop, which flags that stop as normal / not 'preferred'" )
+#define PREFER_TITLE  NSLocalizedString( @"Pin",              "Title of action for a bus stop, which pins it (flags it as 'preferred')" )
+#define DEMOTE_TITLE  NSLocalizedString( @"Unpin",            "Title of action for a bus stop, which unpins it (flags it as normal / not 'preferred')" )
 #define EDIT_TITLE    NSLocalizedString( @"Edit Description", "Title of action for a bus stop, which edits that stop's description" )
 
 #define DELETE_SYMBOL @"trash.fill"

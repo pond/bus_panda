@@ -11,7 +11,7 @@
 
 // Define this and run in the simulator for screenshots on the App Store.
 //
-#undef SCREENSHOT_BUILD
+#define SCREENSHOT_BUILD
 
 #pragma mark - User default keys
 
