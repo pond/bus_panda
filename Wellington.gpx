@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Simulated location for testing: central Wellington, New Zealand
+  (Lambton Quay, near the Cable Car). Select as the scheme's Default
+  Location so every run from Xcode starts here.
+-->
+<gpx version="1.1" creator="Bus Panda" xmlns="http://www.topografix.com/GPX/1/1">
+    <wpt lat="-41.2865" lon="174.7762">
+        <name>Wellington</name>
+    </wpt>
+</gpx>

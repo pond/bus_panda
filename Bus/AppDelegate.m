@@ -13,8 +13,6 @@
 #import "DetailViewController.h"
 #import "MasterViewController.h"
 #import "StopMapViewController.h"
-#import "BusInfoFetcher.h"
-#import "NearestStopBusInfoFetcher.h"
 
 @interface AppDelegate ()
 
@@ -22,6 +20,11 @@
     // doesn't go away at inconvenient moments!
     //
     @property ( strong ) DataManager * dataManager;
+
+    // Set once the first scene has connected and one-off startup work that
+    // depends on the view hierarchy has been done.
+    //
+    @property ( assign ) BOOL hasPerformedFirstSceneSetup;
 
 @end
 
@@ -38,53 +41,26 @@
 
     [ application registerForRemoteNotifications ];
 
-    if (@available(iOS 11, *))
-    {
-        self.window.tintColor = [ UIColor colorNamed: @"busLivery" ];
-    }
-    
-    // Fix visual problems that arise in XCode 13 when running on iOS 15, just
-    // because of rebuilding on that XCode version without any other changes -
-    // see "https://stackoverflow.com/a/69135729".
-    //
-    if (@available(iOS 15.0, *)) {
-        [UINavigationBar appearance].scrollEdgeAppearance = [[UINavigationBarAppearance alloc] init];
-        [UITabBar        appearance].scrollEdgeAppearance = [[UITabBarAppearance        alloc] init];
-    }
-
-    // Tab bar setups
-
-    self.tabBarController = ( UITabBarController * ) self.window.rootViewController;
-    self.tabBarController.delegate = self;
-
-    // TODO: Implement "follow" and/or "settings".
-    //
-    NSMutableArray * viewControllers = [ ( NSMutableArray * ) self.tabBarController.viewControllers mutableCopy ];
-
-    [ viewControllers removeObjectAtIndex: 4 ]; // Settings
-    [ viewControllers removeObjectAtIndex: 2 ]; // Follow
-
-    [ self.tabBarController setViewControllers: viewControllers ];
-
-    // Boilerplate master/detail view setup
-
-    self.splitViewController = ( UISplitViewController * ) self.tabBarController.viewControllers.firstObject;
-    self.splitViewController.delegate = self;
-    self.splitViewController.preferredDisplayMode = UISplitViewControllerDisplayModeAllVisible;
-
-    self.detailNavigationController = self.splitViewController.viewControllers.lastObject;
-    self.detailNavigationController.topViewController.navigationItem.leftBarButtonItem = self.splitViewController.displayModeButtonItem;
-
-    self.masterNavigationController = self.splitViewController.viewControllers.firstObject;
-    self.masterViewController = ( MasterViewController * ) self.masterNavigationController.topViewController;
-
-    // Wake up local Core Data and iCloud. This also registers for remote
-    // notifications (for CloudKit changes), but the AppDelegate object has
-    // to handle them - see -didReceiveRemoteNotification:... later.
+    // Keep the data manager singleton alive. It is wired up to the view
+    // hierarchy and woken up later, once a scene has connected - see
+    // -configureForWindow:.
     //
     _dataManager = DataManager.dataManager;
-    [ _dataManager setMasterViewController: self.masterViewController ];
-    [ _dataManager awakenAllStores ];
+
+    // Bar appearance. On iOS 26+ leave bars alone so they get Liquid Glass
+    // and the scroll edge effect. Earlier, give bars their standard blurred
+    // background at the scroll edge too, as they had before iOS 15 - see
+    // "https://stackoverflow.com/a/69135729".
+    //
+    if (@available(iOS 26, *))
+    {
+        // Nothing to do
+    }
+    else
+    {
+        [ UINavigationBar appearance ].scrollEdgeAppearance = [ [ UINavigationBarAppearance alloc ] init ];
+        [ UITabBar        appearance ].scrollEdgeAppearance = [ [ UITabBarAppearance        alloc ] init ];
+    }
 
     // On a clean install, some iOS versions may not read the Settings bundle
     // into the NSUserDefaults unless the user has by happenstance manually
@@ -117,6 +93,74 @@
     {
         [ defaults setValue: WEATHER_PROVIDER_ACCUWEATHER forKey: WEATHER_PROVIDER ];
     }
+
+    return YES;
+}
+
+# pragma mark - Scene support
+
+// Called by SceneDelegate when its window scene connects, with the window
+// UIKit has already built from Main.storyboard. Records the useful parts of
+// the view hierarchy and, the first time only, wakes up the data stores and
+// WatchKit session (both of which need the MasterViewController).
+//
+// A scene can be disconnected by the system while the process lives on, then
+// reconnected with a brand new window and controllers; so the hierarchy
+// wiring runs every time, but the one-off startup work does not.
+//
+- ( void ) configureForWindow: ( UIWindow * ) window
+{
+    window.tintColor = [ UIColor colorNamed: @"busLivery" ];
+
+    // Tab bar setups
+
+    self.tabBarController = ( UITabBarController * ) window.rootViewController;
+    self.tabBarController.delegate = self;
+
+    // TODO: Implement "follow" and/or "settings".
+    //
+    NSMutableArray * viewControllers = [ self.tabBarController.viewControllers mutableCopy ];
+
+    [ viewControllers removeObjectAtIndex: 4 ]; // Settings
+    [ viewControllers removeObjectAtIndex: 2 ]; // Follow
+
+    [ self.tabBarController setViewControllers: viewControllers ];
+
+    // Master/detail split view setup. This must be a column-style split view
+    // ("Double Column" in Interface Builder) - it gives the Liquid Glass
+    // sidebar on iOS 26+, manages its own show/hide-sidebar button and handles
+    // collapsing to a single navigation stack (iPhone, narrow iPad windows,
+    // a folded iPhone Duo) by itself.
+
+    self.splitViewController = ( UISplitViewController * ) self.tabBarController.viewControllers.firstObject;
+
+    if ( self.splitViewController.style == UISplitViewControllerStyleUnspecified )
+    {
+        NSLog( @"SERIOUS: Favourites split view is classic style; set Style to 'Double Column' in Main.storyboard" );
+    }
+
+    self.splitViewController.delegate               = self;
+    self.splitViewController.preferredDisplayMode   = UISplitViewControllerDisplayModeOneBesideSecondary;
+    self.splitViewController.preferredSplitBehavior = UISplitViewControllerSplitBehaviorTile;
+
+    UIViewController * primary = [ self.splitViewController viewControllerForColumn: UISplitViewControllerColumnPrimary ];
+
+    self.masterNavigationController = [ primary isKindOfClass: [ UINavigationController class ] ]
+                                    ? ( UINavigationController * ) primary
+                                    : primary.navigationController;
+
+    self.masterViewController = ( MasterViewController * ) self.masterNavigationController.viewControllers.firstObject;
+
+    [ _dataManager setMasterViewController: self.masterViewController ];
+
+    if ( self.hasPerformedFirstSceneSetup ) return;
+    self.hasPerformedFirstSceneSetup = YES;
+
+    // Wake up local Core Data and iCloud. This also registers for remote
+    // notifications (for CloudKit changes), but the AppDelegate object has
+    // to handle them - see -didReceiveRemoteNotification:... later.
+    //
+    [ _dataManager awakenAllStores ];
 
 #ifdef SCREENSHOT_BUILD
 
@@ -191,8 +235,6 @@
 
         [ self pushListOfStopsToWatch: session ];
     }
-
-    return YES;
 }
 
 # pragma mark - Termination
@@ -239,23 +281,27 @@
 
 #pragma mark - Split view
 
-- ( BOOL )    splitViewController: ( UISplitViewController * ) splitViewController
-  collapseSecondaryViewController: ( UIViewController      * ) secondaryViewController
-        ontoPrimaryViewController: ( UIViewController      * ) primaryViewController
+// When the split view collapses to a single stack, show the list of stops
+// rather than the placeholder detail view if no stop has been chosen, or if
+// the chosen stop has since been deleted; otherwise keep showing the stop.
+//
+- ( UISplitViewControllerColumn ) splitViewController: ( UISplitViewController     * ) splitViewController
+            topColumnForCollapsingToProposedTopColumn: ( UISplitViewControllerColumn ) proposedTopColumn
 {
-    if ( [ secondaryViewController isKindOfClass: [ UINavigationController class ] ] &&
-         [ [ ( UINavigationController * ) secondaryViewController topViewController ] isKindOfClass: [ DetailViewController class ] ] &&
-         ( [ ( DetailViewController   * ) [ ( UINavigationController * ) secondaryViewController topViewController ] detailItem ] == nil ) )
+    UIViewController * secondary = [ splitViewController viewControllerForColumn: UISplitViewControllerColumnSecondary ];
+
+    if ( [ secondary isKindOfClass: [ UINavigationController class ] ] )
     {
-        // Return YES to indicate that we have handled the collapse by doing
-        // nothing; the secondary controller will be discarded.
-        //
-        return YES;
+        secondary = ( ( UINavigationController * ) secondary ).viewControllers.firstObject;
     }
-    else
+
+    if ( [ secondary isKindOfClass: [ DetailViewController class ] ] &&
+         [ ( DetailViewController * ) secondary hasStop ] == NO )
     {
-        return NO;
+        return UISplitViewControllerColumnPrimary;
     }
+
+    return proposedTopColumn;
 }
 
 # pragma mark - Tab controller
@@ -277,33 +323,49 @@
     //
     if ( [ viewController.restorationIdentifier isEqualToString: @"FavouriteStops" ] )
     {
-        // If we've navigated beyond the master view of favourite stops...
+        // Find the navigation stack that's showing the stop details: the
+        // single collapsed stack, or the expanded split view's secondary
+        // column. Allow for a navigation controller nested inside the
+        // collapsed stack, just in case.
         //
-        if ( self.masterNavigationController.viewControllers.count == 2 )
+        UISplitViewController  * split     = self.splitViewController;
+        UIViewController       * secondary = [ split viewControllerForColumn: UISplitViewControllerColumnSecondary ];
+        UINavigationController * stack     = split.isCollapsed
+                                           ? self.masterNavigationController
+                                           : ( [ secondary isKindOfClass: [ UINavigationController class ] ]
+                                               ? ( UINavigationController * ) secondary
+                                               : secondary.navigationController );
+
+        if ( [ stack.topViewController isKindOfClass: [ UINavigationController class ] ] )
         {
-            UINavigationController * stopsNavigationController = self.masterNavigationController.viewControllers.lastObject;
+            stack = ( UINavigationController * ) stack.topViewController;
+        }
 
-            // ...and we're showing a particular stop, but there isn't a
-            // timetable view pushed on top of that...
-            //
-            if ( stopsNavigationController.viewControllers.count == 1 )
-            {
-                // ...and we're already on the Favourites tab, then pop down
-                // to the root view.
-                //
-                if ( tabBarController.selectedIndex == 0 )
-                {
-                    [ self.masterNavigationController popToRootViewControllerAnimated: YES ];
-                }
-            }
+        DetailViewController * detail = nil;
 
-            // ...and we're showing a particular stop with a timetable view
-            // pushed on top, so pop it away.
-            //
-            else
+        for ( UIViewController * candidate in stack.viewControllers )
+        {
+            if ( [ candidate isKindOfClass: [ DetailViewController class ] ] )
             {
-                [ stopsNavigationController popToRootViewControllerAnimated: YES ];
+                detail = ( DetailViewController * ) candidate;
             }
+        }
+
+        // If a timetable view is pushed on top of a particular stop, pop
+        // back to the stop.
+        //
+        if ( detail != nil && stack.topViewController != detail )
+        {
+            [ stack popToViewController: detail animated: YES ];
+        }
+
+        // If we're showing a particular stop in a collapsed (single stack)
+        // interface and we're already on the Favourites tab, then pop down
+        // to the list of stops.
+        //
+        else if ( detail != nil && split.isCollapsed && tabBarController.selectedIndex == 0 )
+        {
+            [ self.masterNavigationController popToRootViewControllerAnimated: YES ];
         }
     }
 
@@ -373,7 +435,11 @@
 
 // WCSessionDelegate.
 //
-// The Watch app is asking us to do something and expects a reply.
+// The watch app is asking for the current favourite stops, e.g. because it
+// has just been installed or launched; reply with them directly. (The watch
+// fetches bus times itself, straight from Metlink, so that's the only request
+// it makes. Older watch apps also asked for bus times, or the nearest stop;
+// those requests now get an empty reply.)
 //
 - ( void ) session: ( WCSession                     * ) session
  didReceiveMessage: ( NSDictionary <NSString *, id> * ) message
@@ -383,34 +449,14 @@
 
     if ( [ action isEqualToString: @"getStops" ] == YES )
     {
-        [ self pushListOfStopsToWatch: session ];
-    }
-    else if ( [ action isEqualToString: @"getBuses" ] == YES )
-    {
-        NSString * stopID = message[ @"data" ];
-
-        if ( stopID != nil )
-        {
-            [
-                BusInfoFetcher getAllBusesForStop: stopID
-                                completionHandler: ^ ( NSMutableArray * allBuses )
-                {
-                    replyHandler( @{ @"allBuses": allBuses } );
-                }
-            ];
-        }
-    }
-    else if ( [ action isEqualToString: @"getNearest" ] == YES )
-    {
-        @try
-        {
-            NearestStopBusInfoFetcher * fetcher = [ [ NearestStopBusInfoFetcher alloc ] init ];
-            [ fetcher beginWithWatchOSReplyHandler: replyHandler ];
-        }
-        @catch ( NSException * exception )
-        {
-            replyHandler( @{ @"error": @"Bus Panda was unable to read your location" } );
-        }
+        dispatch_async
+        (
+            dispatch_get_main_queue(),
+            ^ ( void )
+            {
+                replyHandler( [ DataManager.dataManager watchPayload ] );
+            }
+        );
     }
     else
     {

@@ -10,6 +10,7 @@
 
 #import "AppDelegate.h"
 #import "DetailViewController.h"
+#import "DataManager.h"
 #import "BusInfoFetcher.h"
 #import "ServiceDescriptionCell.h"
 #import "TimetableWebViewController.h"
@@ -19,12 +20,18 @@
 
 #import "Bus_Panda-Swift.h"
 
+// How often the schedule for a stop is refreshed while it's on screen, in
+// seconds. See -startAutoRefresh.
+//
+#define AUTO_REFRESH_INTERVAL ( double ) 30
+
 @interface DetailViewController ()
 
 @property ( strong, nonatomic ) NSURLSessionTask * apiTask;
 @property ( strong, nonatomic ) NSMutableArray   * parsedSections;
 @property ( strong, nonatomic ) UIRefreshControl * refreshControl;
 @property ( strong, nonatomic ) NSTimer          * autoRefresh;
+@property ( strong, nonatomic ) NSDate           * lastFetchCompleted;
 
 - ( void ) showActivityViewer;
 - ( void ) hideActivityViewer;
@@ -49,7 +56,6 @@
 //
 - ( void ) showActivityViewerBackend
 {
-    UIApplication.sharedApplication.networkActivityIndicatorVisible = YES;
     [ self.refreshControl beginRefreshing ];
 }
 
@@ -76,8 +82,6 @@
     [ self.refreshControl performSelector: @selector( endRefreshing )
                                withObject: nil
                                afterDelay: 0.25 ];
-
-    UIApplication.sharedApplication.networkActivityIndicatorVisible = NO;
 }
 
 // Hide the activity indications shown by -showActivityViewer.
@@ -98,7 +102,13 @@
 
 - ( void ) configureView
 {
-    if ( ! self.detailItem ) return;
+    if ( ! [ self hasStop ] )
+    {
+        [ self showPlaceholder ];
+        return;
+    }
+
+    self.tableView.backgroundView = nil;
 
     NSString * stopID          = [ self.detailItem valueForKey: @"stopID"          ];
     NSString * stopDescription = [ self.detailItem valueForKey: @"stopDescription" ];
@@ -109,19 +119,52 @@
     // Kick off fetcher tasks for the API.
     //
     self.parsedSections = nil;
-    self.apiTask        =
+
+    [ self fetchScheduleForStop: stopID quietly: NO ];
+}
+
+// Fetch the schedule for the given stop, replacing any fetch still running.
+// Results from a replaced fetch are ignored (so its "cancelled" error isn't
+// reported). If 'quietly' is YES - for automatic refreshes - errors are
+// ignored too, leaving the last good schedule on screen rather than showing
+// an alert every refresh interval while, say, offline.
+//
+- ( void ) fetchScheduleForStop: ( NSString * ) stopID
+                        quietly: ( BOOL       ) quietly
+{
+    [ self.apiTask cancel ];
+
+    __block NSURLSessionTask * task = nil;
+
+    task =
     [
         BusInfoFetcher getAllBusesForStop: stopID
                         completionHandler: ^ ( NSMutableArray * sections )
         {
+            if ( task != self.apiTask ) return; // Superseded or cancelled
+
+            NSArray * services = sections.lastObject[ @"services" ];
+            BOOL      isError  = [ ( NSNumber * ) ( ( NSDictionary * ) services.firstObject )[ @"error" ] boolValue ];
+
+            if ( quietly && isError )
+            {
+                NSLog( @"Automatic refresh failed; keeping previous schedule: %@", sections );
+                self.apiTask = nil;
+                return;
+            }
+
             [ self handleApiTaskResults: sections ];
         }
     ];
+
+    self.apiTask = task;
 }
 
 - ( void ) handleApiTaskResults: ( NSMutableArray * ) sections
 {
-    self.apiTask = nil;
+    self.apiTask            = nil;
+    self.lastFetchCompleted = [ NSDate date ];
+
     [ self mergeResults: sections ];
 }
 
@@ -150,14 +193,193 @@
         return;
     }
 
-    self.parsedSections = sections;
+    // A successful fetch with nothing scheduled comes back as a single
+    // placeholder entry flagged "empty". Show an empty table with a message
+    // in place of a list, rather than a placeholder row that would look
+    // tappable (and lead to a timetable view with nothing in it).
+    //
+    BOOL thisIsEmpty = [ ( NSNumber * ) thisServiceList.firstObject[ @"empty" ] boolValue ];
+
+    self.parsedSections = thisIsEmpty ? [ NSMutableArray array ] : sections;
 
     // For the refresh control hiding to work properly with smooth
     // animation, the table data MUST be reloaded *before* we hide
     // the activity viewer.
     //
     [ self.tableView reloadData ];
+    [ self showEmptyMessage: thisIsEmpty ];
     [ self hideActivityViewer ];
+}
+
+// Show or hide a "no services scheduled" message in place of the list. Uses
+// the table's background view, so pull-to-refresh still works.
+//
+- ( void ) showEmptyMessage: ( BOOL ) show
+{
+    if ( show == NO )
+    {
+        self.tableView.backgroundView = nil;
+        return;
+    }
+
+    if ( self.tableView.backgroundView != nil ) return; // Already showing
+
+    self.tableView.backgroundView =
+    [
+        DetailViewController emptyStateViewWithSymbol: @"bus"
+                                                 title: NO_SERVICES_SCHEDULED_MESSAGE
+                                                  hint: NSLocalizedString( @"Pull down to refresh.", "Hint shown when no services are currently scheduled at a stop" )
+    ];
+}
+
+// See header for details.
+//
+- ( BOOL ) hasStop
+{
+    id item = self.detailItem;
+
+    if ( item == nil ) return NO;
+
+    if ( [ item isKindOfClass: [ NSManagedObject class ] ] )
+    {
+        NSManagedObject * object = ( NSManagedObject * ) item;
+        return ( object.isDeleted || object.managedObjectContext == nil ) ? NO : YES;
+    }
+
+    return YES;
+}
+
+// See header for details.
+//
+- ( void ) showPlaceholder
+{
+    if ( ! self.isViewLoaded ) return; // Done in -viewDidLoad instead
+
+    self.title          = nil;
+    self.parsedSections = nil;
+
+    [ self.apiTask cancel ];
+    self.apiTask = nil;
+
+    [ self.tableView reloadData ];
+    [ self hideActivityViewer   ];
+
+    BOOL haveFavourites = DataManager.dataManager.fetchedResultsControllerLocal.fetchedObjects.count > 0;
+
+    self.tableView.backgroundView =
+    haveFavourites
+    ? [ DetailViewController emptyStateViewWithSymbol: @"bus"
+                                                title: NSLocalizedString( @"No Stop Selected", "Title shown when no favourite stop is chosen" )
+                                                 hint: NSLocalizedString( @"Choose one of your favourite stops.", "Hint shown when no favourite stop is chosen" ) ]
+    : [ DetailViewController noFavouritesView ];
+}
+
+// See header for details.
+//
++ ( UIView * ) noFavouritesView
+{
+    NSString * title = NSLocalizedString( @"No Favourites Yet", "Title shown when no favourite stops have been added" );
+
+    if ( DataManager.dataManager.checkingICloud )
+    {
+        return
+        [
+            DetailViewController emptyStateViewWithSymbol: @"icloud"
+                                                     title: title
+                                                      hint: NSLocalizedString( @"Checking iCloud for favourites from your other devices", "Hint shown when no favourite stops are present yet, while checking iCloud" )
+        ];
+    }
+
+    return
+    [
+        DetailViewController emptyStateViewWithSymbol: @"star"
+                                                 title: title
+                                                  hint: NSLocalizedString( @"Tap + to add a stop using the map or its stop ID.", "Hint shown when no favourite stops have been added" )
+    ];
+}
+
+// See header for details.
+//
+// On iOS 17+ this is the system's standard empty-state view; earlier, a
+// hand-built equivalent. Either way: an icon, a prominent title that uses
+// Dynamic Type and wraps as needed, and a quieter hint underneath, kept
+// within readable margins so long text never runs to the screen edges.
+//
++ ( UIView * ) emptyStateViewWithSymbol: ( NSString * ) symbolName
+                                  title: ( NSString * ) titleText
+                                   hint: ( NSString * ) hint
+{
+    UIImage * image = [ UIImage systemImageNamed: symbolName ];
+
+    if (@available(iOS 17, *))
+    {
+        UIContentUnavailableConfiguration * config = [ UIContentUnavailableConfiguration emptyConfiguration ];
+
+        config.image         = image;
+        config.text          = titleText;
+        config.secondaryText = hint;
+
+        return [ [ UIContentUnavailableView alloc ] initWithConfiguration: config ];
+    }
+
+    // Pre-iOS 17 fallback.
+
+    UIImageView * imageView = [ [ UIImageView alloc ] initWithImage: image ];
+
+    imageView.preferredSymbolConfiguration = [ UIImageSymbolConfiguration configurationWithTextStyle: UIFontTextStyleLargeTitle ];
+    imageView.tintColor                    = UIColor.secondaryLabelColor;
+    imageView.contentMode                  = UIViewContentModeScaleAspectFit;
+
+    UIFontDescriptor * titleDescriptor =
+    [
+        [ UIFontDescriptor preferredFontDescriptorWithTextStyle: UIFontTextStyleTitle2 ]
+        fontDescriptorWithSymbolicTraits: UIFontDescriptorTraitBold
+    ];
+
+    UILabel * title = [ [ UILabel alloc ] init ];
+
+    title.text                              = titleText;
+    title.font                              = [ UIFont fontWithDescriptor: titleDescriptor size: 0 ];
+    title.adjustsFontForContentSizeCategory = YES;
+    title.textColor                         = UIColor.labelColor;
+    title.textAlignment                     = NSTextAlignmentCenter;
+    title.numberOfLines                     = 0;
+
+    UILabel * subtitle = [ [ UILabel alloc ] init ];
+
+    subtitle.text                              = hint;
+    subtitle.font                              = [ UIFont preferredFontForTextStyle: UIFontTextStyleBody ];
+    subtitle.adjustsFontForContentSizeCategory = YES;
+    subtitle.textColor                         = UIColor.secondaryLabelColor;
+    subtitle.textAlignment                     = NSTextAlignmentCenter;
+    subtitle.numberOfLines                     = 0;
+
+    UIStackView * stack = [ [ UIStackView alloc ] initWithArrangedSubviews: @[ imageView, title, subtitle ] ];
+
+    stack.axis                                      = UILayoutConstraintAxisVertical;
+    stack.alignment                                 = UIStackViewAlignmentCenter;
+    stack.spacing                                   = 8;
+    stack.translatesAutoresizingMaskIntoConstraints = NO;
+
+    [ stack setCustomSpacing: 16 afterView: imageView ];
+
+    UIView * container = [ [ UIView alloc ] init ];
+    [ container addSubview: stack ];
+
+    UILayoutGuide * readable = container.readableContentGuide;
+
+    [
+        NSLayoutConstraint activateConstraints:
+        @[
+            [ stack.leadingAnchor  constraintEqualToAnchor: readable.leadingAnchor  constant:  16 ],
+            [ stack.trailingAnchor constraintEqualToAnchor: readable.trailingAnchor constant: -16 ],
+            [ stack.centerYAnchor  constraintEqualToAnchor: container.safeAreaLayoutGuide.centerYAnchor ],
+            [ title.widthAnchor    constraintLessThanOrEqualToAnchor: stack.widthAnchor ],
+            [ subtitle.widthAnchor constraintLessThanOrEqualToAnchor: stack.widthAnchor ]
+        ]
+    ];
+
+    return container;
 }
 
 #pragma mark - View lifecycle
@@ -174,31 +396,90 @@
 
     [ self.tableView addSubview: self.refreshControl ];
 
-    self.autoRefresh = [ NSTimer timerWithTimeInterval: 60.0
-                                                target: self
-                                              selector: @selector( doAutoRefresh )
-                                              userInfo: nil
-                                               repeats: YES ];
-
-    [ [ NSRunLoop mainRunLoop ] addTimer: self.autoRefresh
-                                 forMode: NSDefaultRunLoopMode ];
+    // Timers don't run in the background, so refresh as soon as the app
+    // returns to the foreground, if this view is showing.
+    //
+    [ [ NSNotificationCenter defaultCenter ] addObserver: self
+                                                selector: @selector( sceneWillEnterForeground: )
+                                                    name: UISceneWillEnterForegroundNotification
+                                                  object: nil ];
 
     [ self configureView ];
 }
 
+- ( void ) dealloc
+{
+    [ [ NSNotificationCenter defaultCenter ] removeObserver: self ];
+    [ self.autoRefresh invalidate ];
+}
+
+#pragma mark - Automatic refresh
+
+// Start refreshing every AUTO_REFRESH_INTERVAL seconds; safe to call if
+// already running (the old timer is replaced). Started whenever the view
+// appears and stopped whenever it has disappeared (see -viewWillAppear: and
+// -viewDidDisappear:), so it always resumes after e.g. viewing a timetable
+// or visiting another tab.
+//
+// The timer runs in the common run loop modes so it keeps going while the
+// list is being touched or scrolled, and holds this view controller only
+// weakly so it can't keep it alive.
+//
+- ( void ) startAutoRefresh
+{
+    [ self stopAutoRefresh ];
+
+    __weak DetailViewController * weakSelf = self;
+
+    self.autoRefresh =
+    [
+        NSTimer timerWithTimeInterval: AUTO_REFRESH_INTERVAL
+                              repeats: YES
+                                block: ^ ( NSTimer * timer )
+        {
+            [ weakSelf doAutoRefresh ];
+        }
+    ];
+
+    [ [ NSRunLoop mainRunLoop ] addTimer: self.autoRefresh
+                                 forMode: NSRunLoopCommonModes ];
+}
+
+// Stop automatic refreshes started with -startAutoRefresh.
+//
+- ( void ) stopAutoRefresh
+{
+    [ self.autoRefresh invalidate ];
+    self.autoRefresh = nil;
+}
+
+// Returns YES if the schedule hasn't been fetched for at least a refresh
+// interval (or ever), so is worth fetching again straight away.
+//
+- ( BOOL ) scheduleIsStale
+{
+    return self.lastFetchCompleted == nil ||
+           -self.lastFetchCompleted.timeIntervalSinceNow >= AUTO_REFRESH_INTERVAL;
+}
+
+// Notification handler; see -viewDidLoad.
+//
+- ( void ) sceneWillEnterForeground: ( NSNotification * ) notification
+{
+    if ( self.viewIfLoaded.window != nil && [ self scheduleIsStale ] )
+    {
+        [ self doAutoRefresh ];
+    }
+}
+
 - ( void ) doAutoRefresh
 {
+    if ( ! [ self hasStop ] ) return;
+
     NSString * stopID = [ self.detailItem valueForKey: @"stopID" ];
     if ( stopID == nil ) return;
 
-    self.apiTask =
-    [
-        BusInfoFetcher getAllBusesForStop: stopID
-                        completionHandler: ^ ( NSMutableArray * sections )
-        {
-            [ self handleApiTaskResults: sections ];
-        }
-    ];
+    [ self fetchScheduleForStop: stopID quietly: YES ];
 }
 
 // http://stackoverflow.com/questions/19379510/uitableviewcell-doesnt-get-deselected-when-swiping-back-quickly
@@ -208,16 +489,30 @@
     [ super viewWillAppear: animated ];
     [ self.tableView deselectRowAtIndexPath: [ self.tableView indexPathForSelectedRow ]
                                    animated: animated ];
+
+    // Returning to a schedule that's out of date (e.g. back from a timetable
+    // after a while)? Refresh it now rather than waiting for the timer. The
+    // initial load is done by -viewDidLoad, so this won't duplicate it.
+    //
+    if ( self.lastFetchCompleted != nil && [ self scheduleIsStale ] )
+    {
+        [ self doAutoRefresh ];
+    }
+
+    [ self startAutoRefresh ];
 }
 
-- ( void ) viewWillDisappear: ( BOOL ) animated
+// Stop refreshing only once the view really has gone. Unlike
+// -viewWillDisappear:, this isn't called if the user starts a back swipe
+// and then changes their mind.
+//
+- ( void ) viewDidDisappear: ( BOOL ) animated
 {
-    [ super viewWillDisappear: animated ];
+    [ super viewDidDisappear: animated ];
 
-    [ [ NSOperationQueue mainQueue ] addOperationWithBlock: ^ { [ self.autoRefresh invalidate ]; } ];
+    [ self stopAutoRefresh ];
 
     [ self.apiTask cancel ];
-
     self.apiTask = nil;
 }
 
@@ -295,18 +590,7 @@
         sdc.name.text   = @"";
         sdc.when.text   = @"";
 
-        UIColor * backgroundColor;
-
-        if (@available(iOS 13, *))
-        {
-            backgroundColor = [ UIColor systemBackgroundColor ];
-        }
-        else
-        {
-            backgroundColor = [ UIColor whiteColor ];
-        }
-
-        sdc.number.backgroundColor = backgroundColor;
+        sdc.number.backgroundColor = UIColor.systemBackgroundColor;
         return;
     }
 
@@ -326,12 +610,9 @@
     // Dark mode - if the background is pure black, invert it to white in dark
     // mode by using semantic colour 'labelColor'.
     //
-    if (@available(iOS 13, *))
+    if ( [ colour isEqualToString: @"000000" ] )
     {
-        if ( [ colour isEqualToString: @"000000" ] )
-        {
-            background = [ UIColor labelColor ];
-        }
+        background = UIColor.labelColor;
     }
 
     sdc.number.backgroundColor = background;
@@ -374,9 +655,6 @@
 
         TimetableWebViewController * controller = ( TimetableWebViewController * ) [ segue destinationViewController ];
         [ controller setDetailItem: entry ];
-
-        controller.navigationItem.leftBarButtonItem = self.splitViewController.displayModeButtonItem;
-        controller.navigationItem.leftItemsSupplementBackButton = YES;
     }
 }
 

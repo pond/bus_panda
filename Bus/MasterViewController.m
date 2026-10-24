@@ -31,17 +31,6 @@
 
 #pragma mark - View lifecycle
 
-- ( void ) awakeFromNib
-{
-    [ super awakeFromNib ];
-
-    if ( [ [ UIDevice currentDevice ] userInterfaceIdiom ] == UIUserInterfaceIdiomPad )
-    {
-        self.clearsSelectionOnViewWillAppear = NO;
-        self.preferredContentSize            = CGSizeMake( 320.0, 600.0 );
-    }
-}
-
 - ( void ) viewDidLoad
 {
     [ super viewDidLoad ];
@@ -50,20 +39,20 @@
     //
     self.clearsSelectionOnViewWillAppear = NO;
 
+    // The "+" button shows a menu of ways to add a stop as soon as it's
+    // tapped (it has a menu but no action of its own).
+    //
     UIBarButtonItem * addButton =
     [
         [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemAdd
-                                                       target: self
-                                                       action: @selector( openAddStopModal: )
+                                                       target: nil
+                                                       action: nil
     ];
+
+    addButton.menu = [ self addStopMenu ];
 
     self.navigationItem.leftBarButtonItem  = self.editButtonItem;
     self.navigationItem.rightBarButtonItem = addButton;
-
-    self.detailViewController = ( DetailViewController * )
-    [
-        [ self.splitViewController.viewControllers lastObject ] topViewController
-    ];
 
     // Add a custom notification handler to refresh data. This is triggered
     // when, for example, data changes in iCloud.
@@ -71,6 +60,13 @@
     [ [ NSNotificationCenter defaultCenter ] addObserver: self
                                                 selector: @selector( reloadFetchedResults: )
                                                     name: DATA_CHANGED_NOTIFICATION_NAME
+                                                  object: nil ];
+
+    // Update "no favourites" messages when checking iCloud starts or stops.
+    //
+    [ [ NSNotificationCenter defaultCenter ] addObserver: self
+                                                selector: @selector( iCloudCheckDidChange: )
+                                                    name: ICLOUD_CHECK_CHANGED_NOTIFICATION_NAME
                                                   object: nil ];
 
     // Add an observer triggered whenever the Core Data list of favourite
@@ -108,13 +104,144 @@
     // property in this instance.
 }
 
-// http://stackoverflow.com/questions/19379510/uitableviewcell-doesnt-get-deselected-when-swiping-back-quickly
+// When collapsed (iPhone), clear the selection on return from a stop's
+// schedule - see:
+//
+//   http://stackoverflow.com/questions/19379510/uitableviewcell-doesnt-get-deselected-when-swiping-back-quickly
+//
+// When expanded (iPad), keep it: the selected row shows which stop's
+// schedule is on screen alongside the list.
 //
 - ( void ) viewWillAppear: ( BOOL ) animated
 {
     [ super viewWillAppear: animated ];
-    [ self.tableView deselectRowAtIndexPath: [ self.tableView indexPathForSelectedRow ]
-                                   animated: animated ];
+
+    if ( self.splitViewController.isCollapsed )
+    {
+        [ self.tableView deselectRowAtIndexPath: [ self.tableView indexPathForSelectedRow ]
+                                       animated: animated ];
+    }
+}
+
+- ( void ) viewDidAppear: ( BOOL ) animated
+{
+    [ super viewDidAppear: animated ];
+    [ self updateForCurrentFavourites ];
+}
+
+// The split view may collapse or expand (rotation, window resizing, an
+// iPhone Duo folding), which changes what should be shown where.
+//
+- ( void ) viewWillTransitionToSize: ( CGSize ) size
+          withTransitionCoordinator: ( id <UIViewControllerTransitionCoordinator> ) coordinator
+{
+    [ super viewWillTransitionToSize: size withTransitionCoordinator: coordinator ];
+
+    [
+        coordinator animateAlongsideTransition: nil
+                                    completion: ^ ( id <UIViewControllerTransitionCoordinatorContext> context )
+        {
+            [ self updateForCurrentFavourites ];
+        }
+    ];
+}
+
+// Keep what's on screen consistent with the current favourites. Called when
+// the view appears, whenever the list's data changes (including deletions,
+// local or via iCloud) and after size changes.
+//
+// When the split view is expanded (e.g. iPad; an unfolded iPhone Duo), there
+// is always something sensible in the detail column:
+//
+// - If it is showing a stop that still exists, leave it alone - that's the
+//   user's choice.
+// - Otherwise, if there are any favourites, show the first. The list puts
+//   preferred stops first, so that's the first preferred stop if there are
+//   any, else the first other stop. This covers launch, and deletion of the
+//   stop being shown.
+// - Otherwise show a "no favourites yet" message there.
+//
+// When collapsed (iPhone), if a stop that has been deleted is showing, go
+// back to the list; and the list itself shows "no favourites yet" when
+// empty.
+//
+// Notification handler; see -viewDidLoad.
+//
+- ( void ) iCloudCheckDidChange: ( NSNotification * ) notification
+{
+    [ self updateForCurrentFavourites ];
+}
+
+- ( void ) updateForCurrentFavourites
+{
+    UISplitViewController * split = self.splitViewController;
+
+    if ( split == nil || self.view.window == nil ) return; // Not ready yet
+
+    NSUInteger favouriteCount = DataManager.dataManager.fetchedResultsControllerLocal.fetchedObjects.count;
+
+    // Empty-list message, only when collapsed; when expanded, the detail
+    // column shows it instead.
+
+    if ( favouriteCount == 0 && split.isCollapsed )
+    {
+        self.tableView.backgroundView = [ DetailViewController noFavouritesView ];
+    }
+    else
+    {
+        self.tableView.backgroundView = nil;
+    }
+
+    if ( split.isCollapsed )
+    {
+        for ( UIViewController * controller in self.navigationController.viewControllers )
+        {
+            if ( [ controller isKindOfClass: [ DetailViewController class ] ] &&
+                 [ ( DetailViewController * ) controller hasStop ] == NO &&
+                 [ ( DetailViewController * ) controller detailItem ] != nil )
+            {
+                [ self.navigationController popToRootViewControllerAnimated: YES ];
+                break;
+            }
+        }
+
+        return;
+    }
+
+    UIViewController * secondary = [ split viewControllerForColumn: UISplitViewControllerColumnSecondary ];
+
+    if ( [ secondary isKindOfClass: [ UINavigationController class ] ] )
+    {
+        secondary = ( ( UINavigationController * ) secondary ).viewControllers.firstObject;
+    }
+
+    DetailViewController * detail = [ secondary isKindOfClass: [ DetailViewController class ] ]
+                                  ? ( DetailViewController * ) secondary
+                                  : nil;
+
+    if ( [ detail hasStop ] ) return;
+
+    if ( favouriteCount > 0 )
+    {
+        NSIndexPath * first = [ NSIndexPath indexPathForRow: 0 inSection: 0 ];
+
+        [ self.tableView selectRowAtIndexPath: first
+                                     animated: NO
+                               scrollPosition: UITableViewScrollPositionNone ];
+
+        [ self tableView: self.tableView didSelectRowAtIndexPath: first ];
+    }
+    else if ( detail != nil && detail.detailItem == nil )
+    {
+        [ detail showPlaceholder ]; // Already a placeholder; update its message
+    }
+    else
+    {
+        DetailViewController * placeholder = [ self.storyboard instantiateViewControllerWithIdentifier: @"ListOfServices" ];
+
+        [ split setViewController: [ [ UINavigationController alloc ] initWithRootViewController: placeholder ]
+                        forColumn: UISplitViewControllerColumnSecondary ];
+    }
 }
 
 - ( void ) dealloc
@@ -136,35 +263,53 @@
     ];
 }
 
-- ( void ) openAddStopModal: ( id ) sender
+// Return the menu for the "+" button: the ways of adding a stop. UIKit runs
+// the chosen action only once the menu has gone, so presenting a modal from
+// it is reliable (unlike from an action sheet's handler on iPad, where the
+// presentation could collide with the popover's dismissal and be ignored).
+//
+- ( UIMenu * ) addStopMenu
 {
-    UIAlertController * actions =
+    UIAction * stopMapAction =
     [
-        UIAlertController alertControllerWithTitle: nil
-                                           message: nil
-                                    preferredStyle: UIAlertControllerStyleActionSheet
-    ];
-
-    UIAlertAction * stopMapAction =
-    [
-        UIAlertAction actionWithTitle: @"Add Using Map"
-                                style: UIAlertActionStyleDefault
-                              handler: ^ ( UIAlertAction * action )
+        UIAction actionWithTitle: NSLocalizedString( @"Add Using Map", "Menu item for adding a bus stop by choosing it on a map" )
+                           image: nil
+                      identifier: nil
+                         handler: ^ ( __kindof UIAction * action )
         {
             UINavigationController * stopMapNavigationController =
             [
                 self.storyboard instantiateViewControllerWithIdentifier: @"StopMap"
             ];
 
+            // On iPad (regular width and height), the default sheet is far
+            // too small for a map on a large screen. Use a form sheet sized
+            // in proportion to the window instead; the map view keeps it in
+            // proportion if the window changes size. Use the window's traits,
+            // since this list is in a split view column with its own. Not on
+            // a Mac, where sheets are separate windows that macOS sizes.
+            //
+            UIWindow          * window = self.view.window;
+            UITraitCollection * traits = window.traitCollection;
+
+            if ( NSProcessInfo.processInfo.isMacCatalystApp == NO              &&
+                 traits.horizontalSizeClass == UIUserInterfaceSizeClassRegular &&
+                 traits.verticalSizeClass   == UIUserInterfaceSizeClassRegular )
+            {
+                stopMapNavigationController.modalPresentationStyle = UIModalPresentationFormSheet;
+                stopMapNavigationController.preferredContentSize   = [ StopMapViewController sheetSizeForWindowSize: window.bounds.size ];
+            }
+
             [ self openSpecificModal: stopMapNavigationController ];
         }
     ];
 
-    UIAlertAction * enterStopIDAction =
+    UIAction * enterStopIDAction =
     [
-        UIAlertAction actionWithTitle: @"Add by Stop ID"
-                                style: UIAlertActionStyleDefault
-                              handler: ^ ( UIAlertAction * action )
+        UIAction actionWithTitle: NSLocalizedString( @"Add by Stop ID", "Menu item for adding a bus stop by typing in its ID" )
+                           image: nil
+                      identifier: nil
+                         handler: ^ ( __kindof UIAction * action )
         {
             UINavigationController * enterStopIDNavigationController =
             [
@@ -175,96 +320,49 @@
         }
     ];
 
-    UIAlertAction * cancel =
-    [
-        UIAlertAction actionWithTitle: @"Cancel"
-                                style: UIAlertActionStyleCancel
-                              handler: ^ ( UIAlertAction * action )
-        {
-            [ actions dismissViewControllerAnimated: ( YES ) completion: nil ];
-        }
-    ];
-
-    [ actions addAction: stopMapAction     ];
-    [ actions addAction: enterStopIDAction ];
-    [ actions addAction: cancel            ];
-
-    // On the iPhone (at the time of writing) modal action sheets implicitly
-    // always pop up over the whole screen. On an iPad, you need to tell the
-    // system where to ground the popover - in this case the "+" button that
-    // caused the action method here to be run in the first place.
-    //
-    actions.popoverPresentationController.barButtonItem = sender;
-
-    [ self presentViewController: actions animated: YES completion: nil ];
+    return [ UIMenu menuWithTitle: @"" children: @[ stopMapAction, enterStopIDAction ] ];
 }
 
-- ( void ) openMoreOptionsModalFrom: ( id ) sender
-                          forObject: ( NSManagedObject * ) object
+// Open the modal editor for the given favourite stop's description.
+//
+- ( void ) openDescriptionEditorForObject: ( NSManagedObject * ) object
 {
-    UIAlertController * actions =
+    UINavigationController * editStopDescriptionNavigationController =
     [
-        UIAlertController alertControllerWithTitle: nil
-                                           message: nil
-                                    preferredStyle: UIAlertControllerStyleActionSheet
+        self.storyboard instantiateViewControllerWithIdentifier: @"EditStopDescription"
     ];
 
-    UIAlertAction * editAction =
-    [
-        UIAlertAction actionWithTitle: @"Edit Description"
-                                style: UIAlertActionStyleDefault
-                              handler: ^ ( UIAlertAction * action )
-        {
-            UINavigationController * editStopDescriptionNavigationController =
-            [
-                self.storyboard instantiateViewControllerWithIdentifier: @"EditStopDescription"
-            ];
+    EditStopDescriptionViewController * editStopDescriptionController = editStopDescriptionNavigationController.childViewControllers.firstObject;
+    editStopDescriptionController.sourceObject = object;
 
-            EditStopDescriptionViewController * editStopDescriptionController = editStopDescriptionNavigationController.childViewControllers.firstObject;
-            editStopDescriptionController.sourceObject = object;
-
-            [ self openSpecificModal: editStopDescriptionNavigationController ];
-        }
-    ];
-
-    UIAlertAction * cancel =
-    [
-        UIAlertAction actionWithTitle: @"Cancel"
-                                style: UIAlertActionStyleCancel
-                              handler: ^ ( UIAlertAction * action )
-        {
-            [ actions dismissViewControllerAnimated: ( YES ) completion: nil ];
-        }
-    ];
-
-    [ actions addAction: editAction ];
-    [ actions addAction: cancel     ];
-
-    // On the iPhone (at the time of writing) modal action sheets implicitly
-    // always pop up over the whole screen. On an iPad, you need to tell the
-    // system where to ground the popover - in this case the "+" button that
-    // caused the action method here to be run in the first place.
-    //
-    actions.popoverPresentationController.barButtonItem = sender;
-
-    [ self presentViewController: actions animated: YES completion: nil ];
+    [ self openSpecificModal: editStopDescriptionNavigationController ];
 }
 
-#pragma mark - Segues
+#pragma mark - Selection
 
-- ( void ) prepareForSegue: ( UIStoryboardSegue * ) segue sender: ( id ) sender
+// Show the chosen stop in the split view's secondary column. When collapsed,
+// -showColumn: pushes it onto the single navigation stack; when expanded, it
+// replaces whatever was shown before.
+//
+// The detail view is given its own new navigation controller. Passing a bare
+// view controller instead works on iOS 26+, but on earlier versions (at least
+// iOS 18) UIKit pushes it onto the column's *existing* navigation controller
+// - the storyboard's placeholder "Services" view, then every previously
+// chosen stop - corrupting the collapsed navigation stack on iPhone. A new
+// navigation controller replaces the column's contents outright everywhere.
+//
+- ( void )      tableView: ( UITableView * ) tableView
+  didSelectRowAtIndexPath: ( NSIndexPath * ) indexPath
 {
-    if ( [ [ segue identifier ] isEqualToString: @"showDetail" ] )
-    {
-        NSIndexPath          * indexPath  = [ self.tableView indexPathForSelectedRow ];
-        NSManagedObject      * object     = [ DataManager.dataManager.fetchedResultsControllerLocal objectAtIndexPath: indexPath ];
-        DetailViewController * controller = ( DetailViewController * ) [ [ segue destinationViewController ] topViewController ];
+    NSManagedObject        * object     = [ DataManager.dataManager.fetchedResultsControllerLocal objectAtIndexPath: indexPath ];
+    DetailViewController   * controller = [ self.storyboard instantiateViewControllerWithIdentifier: @"ListOfServices" ];
+    UINavigationController * navigation = [ [ UINavigationController alloc ] initWithRootViewController: controller ];
+    UISplitViewController  * split      = self.splitViewController;
 
-        [ controller setDetailItem: object ];
+    [ controller setDetailItem: object ];
 
-        controller.navigationItem.leftBarButtonItem = self.splitViewController.displayModeButtonItem;
-        controller.navigationItem.leftItemsSupplementBackButton = YES;
-    }
+    [ split setViewController: navigation forColumn: UISplitViewControllerColumnSecondary ];
+    [ split showColumn: UISplitViewControllerColumnSecondary ];
 }
 
 #pragma mark - Table View
@@ -290,41 +388,42 @@
     switch( section )
     {
         case 0:
-            return NSLocalizedString( @"Preferred Stops", @"'Preferred' stops section title" );
+            return NSLocalizedString( @"Pinned", @"Pinned (preferred) stops section title" );
 
         default:
-            return NSLocalizedString( @"Other Stops", @"Non-'Preferred' stops section title" );
+            return NSLocalizedString( @"Others", @"Unpinned (non-preferred) stops section title" );
     }
 }
 
 - ( CGFloat )    tableView: ( UITableView * ) tableView
   heightForHeaderInSection: ( NSInteger     ) section
 {
-    // Show no section title unless there are at least two sections.
+    // Show no section title unless there are at least two sections. On iOS
+    // 26+ let the system size headers (including for Dynamic Type).
 
     if ( DataManager.dataManager.shouldShowSectionHeader == NO ) return 0;
-    else                                                         return 32;
+
+    if (@available(iOS 26, *))
+    {
+        return UITableViewAutomaticDimension;
+    }
+
+    return 32;
 }
 
 - ( void )    tableView: ( UITableView * ) tableView
   willDisplayHeaderView: ( UIView      * ) view
              forSection: ( NSInteger     ) section
 {
-    if (@available(iOS 13, *))
-    {
-        // Increase constrast of the section header background colour. The
-        // default is almost invisible.
+    // On iOS 26+, leave headers in the system style.
 
-        UITableViewHeaderFooterView * hfView = ( UITableViewHeaderFooterView * ) view;
-        hfView.backgroundView.backgroundColor = [ UIColor systemGray6Color ];
-    }
-    else
-    {
-        // Slightly darken the near-invisible section header background colour.
+    if (@available(iOS 26, *)) return;
 
-        UITableViewHeaderFooterView * hfView = ( UITableViewHeaderFooterView * ) view;
-        hfView.backgroundView.backgroundColor = [ UIColor colorWithRed: 0.9 green: 0.9 blue: 0.9 alpha: 1 ];
-    }
+    // Earlier, increase contrast of the section header background colour.
+    // The default is almost invisible.
+
+    UITableViewHeaderFooterView * hfView = ( UITableViewHeaderFooterView * ) view;
+    hfView.backgroundView.backgroundColor = [ UIColor systemGray6Color ];
 }
 
 - ( UITableViewCell * ) tableView: ( UITableView * ) tableView
@@ -372,75 +471,237 @@
     
     cell.stopID.text          = stopID;
     cell.stopDescription.text = stopDescription;
+}
 
-    // MGSwipeTableCell extensions - see:
-    //
-    // https://github.com/MortimerGoro/MGSwipeTableCell
+// Titles and symbols for the per-stop actions, shared by the swipe actions
+// and the context menu so they stay consistent.
 
-    MGSwipeButton * delete =
+#define DELETE_TITLE  NSLocalizedString( @"Delete",           "Title of action for a bus stop, which deletes that stop" )
+#define PREFER_TITLE  NSLocalizedString( @"Pin",              "Title of action for a bus stop, which pins it (flags it as 'preferred')" )
+#define DEMOTE_TITLE  NSLocalizedString( @"Unpin",            "Title of action for a bus stop, which unpins it (flags it as normal / not 'preferred')" )
+#define EDIT_TITLE    NSLocalizedString( @"Edit Description", "Title of action for a bus stop, which edits that stop's description" )
+
+#define DELETE_SYMBOL @"trash.fill"
+#define PREFER_SYMBOL @"pin.fill"
+#define DEMOTE_SYMBOL @"pin.slash.fill"
+#define EDIT_SYMBOL   @"pencil"
+
+// Return an SF Symbol image carrying an accessibility label, for icon-only
+// swipe actions (which then still make sense to VoiceOver).
+//
+- ( UIImage * ) symbolNamed: ( NSString * ) name
+         accessibilityLabel: ( NSString * ) label
+{
+    UIImage * image = [ UIImage systemImageNamed: name ];
+    image.accessibilityLabel = label;
+    return image;
+}
+
+// Ask the user to confirm deletion of the given favourite stop; if they
+// confirm, delete it (locally and from iCloud). The optional completion
+// block is called with YES if the stop was deleted, NO if it was kept.
+//
+- ( void ) confirmDeletionOfStop: ( NSString * ) stopID
+                 withDescription: ( NSString * ) stopDescription
+                      completion: ( void ( ^ )( BOOL deleted ) ) completion
+{
+    NSString * name  = stopDescription.length > 0 ? stopDescription : stopID;
+    NSString * title =
     [
-        MGSwipeButton buttonWithTitle: NSLocalizedString( @"Delete", "Title of button in a table row for a bus stop, which deletes that stop" )
-                      backgroundColor: [ UIColor redColor ]
-                             callback:  ^ BOOL ( MGSwipeTableCell * sender )
-        {
-            [ dataManager deleteFavourite: stopID
-                        includingCloudKit: YES ];
+        NSString stringWithFormat: NSLocalizedString( @"Delete “%@”?", "Title of confirmation alert for deleting a favourite bus stop; parameter is the stop's description" ),
+                                   name
+    ];
 
-            return YES; // Yes => do slide the table row back to normal position
+    UIAlertController * alert =
+    [
+        UIAlertController alertControllerWithTitle: title
+                                           message: NSLocalizedString( @"This stop will be removed from your favourites on all of your devices.", "Message in confirmation alert for deleting a favourite bus stop" )
+                                    preferredStyle: UIAlertControllerStyleAlert
+    ];
+
+    [
+        alert addAction:
+        [
+            UIAlertAction actionWithTitle: NSLocalizedString( @"Delete", "Button in confirmation alert which deletes a favourite bus stop" )
+                                    style: UIAlertActionStyleDestructive
+                                  handler: ^ ( UIAlertAction * action )
+            {
+                [ DataManager.dataManager deleteFavourite: stopID
+                                        includingCloudKit: YES ];
+
+                if ( completion ) completion( YES );
+            }
+        ]
+    ];
+
+    [
+        alert addAction:
+        [
+            UIAlertAction actionWithTitle: NSLocalizedString( @"Keep", "Button in confirmation alert which cancels deletion of a favourite bus stop" )
+                                    style: UIAlertActionStyleCancel
+                                  handler: ^ ( UIAlertAction * action )
+            {
+                if ( completion ) completion( NO );
+            }
+        ]
+    ];
+
+    [ self presentViewController: alert animated: YES completion: nil ];
+}
+
+// Swipe-left actions for a stop, icon only: Delete (red), Prefer/Demote
+// (green) and Edit (blue). Delete is nearest the trailing edge. Full swipe
+// does nothing, so a long swipe can't delete a stop by accident.
+//
+// Less common actions, now and in future, belong in the context menu (see
+// -tableView:contextMenuConfigurationForRowAtIndexPath:point:) rather than
+// in more swipe buttons.
+//
+- ( UISwipeActionsConfiguration * )            tableView: ( UITableView * ) tableView
+  trailingSwipeActionsConfigurationForRowAtIndexPath: ( NSIndexPath * ) indexPath
+{
+    DataManager     * dataManager = DataManager.dataManager;
+    NSManagedObject * object      = [ dataManager.fetchedResultsControllerLocal objectAtIndexPath: indexPath ];
+    NSString        * stopID      = [ object valueForKey: @"stopID" ];
+    BOOL              isPreferred = [ [ object valueForKey: @"preferred" ] isEqual: STOP_IS_PREFERRED_VALUE ];
+
+    if ( stopID == nil ) return nil;
+
+    UIContextualAction * delete =
+    [
+        UIContextualAction contextualActionWithStyle: UIContextualActionStyleDestructive
+                                               title: nil
+                                             handler: ^ ( UIContextualAction * action, UIView * sourceView, void ( ^ completionHandler )( BOOL ) )
+        {
+            // The swipe stays open while the alert is shown; telling UIKit
+            // the outcome afterwards either removes the row or slides it back.
+            //
+            [ self confirmDeletionOfStop: stopID
+                         withDescription: [ object valueForKey: @"stopDescription" ]
+                              completion: completionHandler ];
         }
     ];
 
-    MGSwipeButton * more =
-    [
-        MGSwipeButton buttonWithTitle: NSLocalizedString( @"More...", "Title of button in a table row for a bus stop, which shows extra options" )
-                      backgroundColor: [ UIColor grayColor ]
-                             callback: ^ BOOL ( MGSwipeTableCell * sender )
-        {
-            [ self openMoreOptionsModalFrom: self.navigationItem.rightBarButtonItem
-                                  forObject: object ];
+    delete.image           = [ self symbolNamed: DELETE_SYMBOL accessibilityLabel: DELETE_TITLE ];
+    delete.backgroundColor = UIColor.systemRedColor;
 
-            return YES; // Yes => do slide the table row back to normal position
-        }
-    ];
-
-    MGSwipeButton * prefer =
+    UIContextualAction * preference =
     [
-        MGSwipeButton buttonWithTitle: NSLocalizedString( @"Prefer", "Title of button in a table row for a bus stop, which flags that stop as 'preferred'" )
-                      backgroundColor: [ UIColor colorWithRed: 0 green: 0.8 blue: 0 alpha: 1 ]
-                             callback: ^ BOOL ( MGSwipeTableCell * sender )
+        UIContextualAction contextualActionWithStyle: UIContextualActionStyleNormal
+                                               title: nil
+                                             handler: ^ ( UIContextualAction * action, UIView * sourceView, void ( ^ completionHandler )( BOOL ) )
         {
             [ dataManager addOrEditFavourite: stopID
                           settingDescription: nil
-                            andPreferredFlag: STOP_IS_PREFERRED_VALUE
+                            andPreferredFlag: isPreferred ? STOP_IS_NOT_PREFERRED_VALUE : STOP_IS_PREFERRED_VALUE
                            includingCloudKit: YES ];
 
-            return YES; // Yes => do slide the table row back to normal position
+            completionHandler( YES );
         }
     ];
 
-    MGSwipeButton * unprefer =
+    preference.image           = isPreferred
+                               ? [ self symbolNamed: DEMOTE_SYMBOL accessibilityLabel: DEMOTE_TITLE ]
+                               : [ self symbolNamed: PREFER_SYMBOL accessibilityLabel: PREFER_TITLE ];
+    preference.backgroundColor = UIColor.systemGreenColor;
+
+    UIContextualAction * edit =
     [
-        MGSwipeButton buttonWithTitle: NSLocalizedString( @"Demote", "Title of button in a table row for a bus stop, which flags that stop as normal / not 'preferred'" )
-                      backgroundColor: [ UIColor blueColor ]
-                             callback: ^ BOOL ( MGSwipeTableCell * sender )
+        UIContextualAction contextualActionWithStyle: UIContextualActionStyleNormal
+                                               title: nil
+                                             handler: ^ ( UIContextualAction * action, UIView * sourceView, void ( ^ completionHandler )( BOOL ) )
         {
-            [ dataManager addOrEditFavourite: stopID
-                          settingDescription: nil
-                            andPreferredFlag: STOP_IS_NOT_PREFERRED_VALUE
-                           includingCloudKit: YES ];
-
-            return YES; // Yes => do slide the table row back to normal position
+            completionHandler( YES );
+            [ self openDescriptionEditorForObject: object ];
         }
     ];
 
-    if ( [ [ object valueForKey: @"preferred" ] isEqual: STOP_IS_PREFERRED_VALUE ] )
-    {
-        cell.rightButtons = @[ delete, unprefer, more ];
-    }
-    else
-    {
-        cell.rightButtons = @[ delete, prefer, more ];
-    }
+    edit.image           = [ self symbolNamed: EDIT_SYMBOL accessibilityLabel: EDIT_TITLE ];
+    edit.backgroundColor = UIColor.systemBlueColor;
+
+    UISwipeActionsConfiguration * configuration =
+    [
+        UISwipeActionsConfiguration configurationWithActions: @[ delete, preference, edit ]
+    ];
+
+    configuration.performsFirstActionWithFullSwipe = NO;
+
+    return configuration;
+}
+
+// Long-press context menu for a stop. This is the place for every per-stop
+// action, including any future ones that don't merit a swipe button. The
+// destructive Delete is kept apart, at the end, as the HIG recommends.
+//
+- ( UIContextMenuConfiguration * ) tableView: ( UITableView * ) tableView
+   contextMenuConfigurationForRowAtIndexPath: ( NSIndexPath * ) indexPath
+                                       point: ( CGPoint       ) point
+{
+    DataManager     * dataManager = DataManager.dataManager;
+    NSManagedObject * object      = [ dataManager.fetchedResultsControllerLocal objectAtIndexPath: indexPath ];
+    NSString        * stopID      = [ object valueForKey: @"stopID" ];
+    BOOL              isPreferred = [ [ object valueForKey: @"preferred" ] isEqual: STOP_IS_PREFERRED_VALUE ];
+
+    if ( stopID == nil ) return nil;
+
+    return
+    [
+        UIContextMenuConfiguration configurationWithIdentifier: nil
+                                               previewProvider: nil
+                                                actionProvider: ^ UIMenu * ( NSArray < UIMenuElement * > * suggestedActions )
+        {
+            UIAction * edit =
+            [
+                UIAction actionWithTitle: EDIT_TITLE
+                                   image: [ UIImage systemImageNamed: EDIT_SYMBOL ]
+                              identifier: nil
+                                 handler: ^ ( __kindof UIAction * action )
+                {
+                    [ self openDescriptionEditorForObject: object ];
+                }
+            ];
+
+            UIAction * preference =
+            [
+                UIAction actionWithTitle: isPreferred ? DEMOTE_TITLE : PREFER_TITLE
+                                   image: [ UIImage systemImageNamed: isPreferred ? DEMOTE_SYMBOL : PREFER_SYMBOL ]
+                              identifier: nil
+                                 handler: ^ ( __kindof UIAction * action )
+                {
+                    [ dataManager addOrEditFavourite: stopID
+                                  settingDescription: nil
+                                    andPreferredFlag: isPreferred ? STOP_IS_NOT_PREFERRED_VALUE : STOP_IS_PREFERRED_VALUE
+                                   includingCloudKit: YES ];
+                }
+            ];
+
+            UIAction * delete =
+            [
+                UIAction actionWithTitle: DELETE_TITLE
+                                   image: [ UIImage systemImageNamed: DELETE_SYMBOL ]
+                              identifier: nil
+                                 handler: ^ ( __kindof UIAction * action )
+                {
+                    [ self confirmDeletionOfStop: stopID
+                                 withDescription: [ object valueForKey: @"stopDescription" ]
+                                      completion: nil ];
+                }
+            ];
+
+            delete.attributes = UIMenuElementAttributesDestructive;
+
+            UIMenu * destructive =
+            [
+                UIMenu menuWithTitle: @""
+                               image: nil
+                          identifier: nil
+                             options: UIMenuOptionsDisplayInline
+                            children: @[ delete ]
+            ];
+
+            return [ UIMenu menuWithTitle: @"" children: @[ edit, preference, destructive ] ];
+        }
+    ];
 }
 
 #pragma mark - Observers (NSNotificationCentre and KVO)
@@ -474,6 +735,10 @@
                                       withObject: nil
                                    waitUntilDone: NO ];
 
+    [ self performSelectorOnMainThread: @selector( updateForCurrentFavourites )
+                            withObject: nil
+                         waitUntilDone: NO ];
+
     [ self performSelectorOnMainThread: @selector( updateWatch: )
                             withObject: [ WCSession defaultSession ]
                          waitUntilDone: NO ];
@@ -487,58 +752,47 @@
 {
     ( void ) ignoredNotification;
 
-    if ( WCSession.isSupported )
+    // Reads the main-queue Core Data context, so must run on the main thread;
+    // but WatchConnectivity calls in here (via the App Delegate) on a
+    // background queue, and the context-changed notification can arrive from
+    // other contexts' threads.
+    //
+    if ( ! NSThread.isMainThread )
     {
-        WCSession * session = [ WCSession defaultSession ];
-        BOOL        proceed;
-
-        // The actiationState property for multiple Apple Watch support exists
-        // in iOS 9.3 or later only.
-        //
-        if ( [ session respondsToSelector: @selector( activationState ) ] )
-        {
-            proceed = ( session.activationState == WCSessionActivationStateActivated ) ? YES : NO;
-        }
-        else
-        {
-            proceed = YES;
-        }
-
-        if ( session.reachable && proceed )
-        {
-            NSError        * error;
-            NSMutableArray * allStops = [ [ NSMutableArray alloc ] init ];
-            NSDictionary   * dictionary;
-            NSInteger        sections = [ self numberOfSectionsInTableView: self.tableView ];
-
-            for ( NSManagedObject * object in DataManager.dataManager.fetchedResultsControllerLocal.fetchedObjects )
+        dispatch_async
+        (
+            dispatch_get_main_queue(),
+            ^ ( void )
             {
-                // If the table view thinks it only has one section, send all
-                // stops; they're either all normal, or all preferred. If there
-                // is more than one section then there is a mixture of stop
-                // types - only send the preferred stops to the watch.
-
-                if ( sections == 1 || [ [ object valueForKey: @"preferred" ] integerValue ] > 0 )
-                {
-                    [
-                        allStops addObject:
-                        @{
-                            @"stopID":          [ object valueForKey: @"stopID"          ],
-                            @"stopDescription": [ object valueForKey: @"stopDescription" ]
-                        }
-                    ];
-                }
+                [ self updateWatch: nil ];
             }
+        );
 
-            dictionary = @{ @"allStops": allStops };
+        return;
+    }
 
-            [ session updateApplicationContext: dictionary error: &error ];
+    if ( ! WCSession.isSupported ) return;
 
-            if ( error != nil )
-            {
-                NSLog( @"Error updating watch: %@", error );
-            }
-        }
+    WCSession * session = [ WCSession defaultSession ];
+
+    // The "application context" is delivered in the background, whenever the
+    // watch next connects, so it only needs a paired watch with the app
+    // installed - not one that's currently reachable.
+    //
+    if ( session.activationState != WCSessionActivationStateActivated ||
+         session.paired          == NO                                 ||
+         session.watchAppInstalled == NO )
+    {
+        return;
+    }
+
+    NSError * error = nil;
+
+    [ session updateApplicationContext: [ DataManager.dataManager watchPayload ] error: &error ];
+
+    if ( error != nil )
+    {
+        NSLog( @"Error updating watch: %@", error );
     }
 }
 
@@ -684,6 +938,7 @@
 {
     [ self.tableView endUpdates ];
     [ self updateWatch: nil ];
+    [ self updateForCurrentFavourites ];
 }
 
 // TODO possibly:
