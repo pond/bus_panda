@@ -74,7 +74,7 @@
 - ( NSInteger                   ) numberOfSections;
 - ( NSManagedObject * _Nullable ) findFavouriteStopByID: ( NSString * _Nonnull ) stopID;
 
-// Favourite stops for the watch; see implementation for details.
+// Favourite stops for the watch. See implementation for details.
 //
 - ( NSDictionary * _Nonnull ) watchPayload;
 

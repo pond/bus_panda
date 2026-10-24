@@ -123,16 +123,12 @@
 // Called internally by the iCloud availability change notification handliner
 // as well as by the app delegate at startup.
 //
-// Set "checkingICloud" (see header) from any thread; the change is made,
-// and announced if it really is a change, on the main thread.
-//
 - ( void ) setCheckingICloudFromAnyThread: ( BOOL ) checking
 {
     void ( ^ update )( void ) = ^ ( void )
     {
         if ( self.checkingICloud == checking ) return;
-
-        self.checkingICloud = checking;
+        else self.checkingICloud = checking;
 
         [ [ NSNotificationCenter defaultCenter ] postNotificationName: ICLOUD_CHECK_CHANGED_NOTIFICATION_NAME
                                                                object: self ];
@@ -293,9 +289,9 @@
                             [ dataManager setCheckingICloudFromAnyThread: NO ];
 #else
 
-                            // This is a CloudKit callback on a background
-                            // queue, but the local Core Data context is main
-                            // queue only - so look up the records there.
+                            // This CloudKit callback is on a background queue
+                            // but the local Core Data context is for the main
+                            // queue only - we must look up the records there.
                             //
                             dispatch_async
                             (
@@ -440,9 +436,8 @@
 {
     ( void ) notification;
 
-    // Reads and purges the main-queue local Core Data store, then re-awakens
-    // everything, so run it all on the main thread. This also means the
-    // purge's deletions complete before the re-awaken reads the store.
+    // The local managed object context is main-queue only, so if necessary,
+    // schedule this method to be run-run on that thread and bail out.
     //
     if ( ! NSThread.isMainThread )
     {
@@ -1155,10 +1150,8 @@
              andPreferredFlag: ( NSNumber * _Nullable ) preferred
             includingCloudKit: ( BOOL                 ) includeCloudKit
 {
-    // The local managed object context is main-queue only, and saving it
-    // drives table view updates via the fetched results controller, so this
-    // must run on the main thread. Callers include CloudKit operation
-    // callbacks and NSOperation blocks on background queues; hop over.
+    // The local managed object context is main-queue only, so if necessary,
+    // schedule this method to be run-run on that thread and bail out.
     //
     if ( ! NSThread.isMainThread )
     {
@@ -1320,7 +1313,8 @@
 - ( void ) deleteFavourite: ( NSString * _Nonnull ) stopID
          includingCloudKit: ( BOOL                ) includeCloudKit
 {
-    // See -addOrEditFavourite:... for why.
+    // The local managed object context is main-queue only, so if necessary,
+    // schedule this method to be run-run on that thread and bail out.
     //
     if ( ! NSThread.isMainThread )
     {
@@ -1947,10 +1941,14 @@
 }
 
 // Return the favourite stops to show on the watch, as a dictionary suitable
-// for WatchConnectivity: key "allStops", value an array of dictionaries with
-// keys "stopID", "stopDescription" and "preferred" (an NSNumber BOOL), in
-// list order. If any stops are preferred, only those are sent; otherwise all
-// stops are. Call on the main thread only.
+// for WatchConnectivity:
+//
+// * Key "allStops"
+// * Value - array of dictionaries with keys "stopID", "stopDescription" and
+//   "preferred" (an NSNumber BOOL), sorted in the order intended for display.
+//
+// If any stops are preferred then only those are sent, otherwise all stops
+// are sent. Call on the main thread only.
 //
 - ( NSDictionary * ) watchPayload
 {

@@ -5,6 +5,8 @@
 //  Created by Andrew Hodgkinson on 1/04/16.
 //  Copyright © 2016 Andrew Hodgkinson. All rights reserved.
 //
+//  TODO: Unify, probably via Swift conversion on the iPhone side.
+//
 
 import Foundation
 

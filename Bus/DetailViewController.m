@@ -141,7 +141,7 @@
         BusInfoFetcher getAllBusesForStop: stopID
                         completionHandler: ^ ( NSMutableArray * sections )
         {
-            if ( task != self.apiTask ) return; // Superseded or cancelled
+            if ( task != self.apiTask ) return; // Superceded or cancelled
 
             NSArray * services = sections.lastObject[ @"services" ];
             BOOL      isError  = [ ( NSNumber * ) ( ( NSDictionary * ) services.firstObject )[ @"error" ] boolValue ];
@@ -172,6 +172,7 @@
 {
     NSArray * thisServiceList = ( NSArray * ) sections.lastObject[ @"services" ];
     BOOL      thisIsAnError   = [ ( NSNumber * ) thisServiceList.firstObject[ @"error" ] boolValue ];
+    BOOL      thisIsEmpty     = [ ( NSNumber * ) thisServiceList.firstObject[ @"empty" ] boolValue ];
 
     if ( thisIsAnError )
     {
@@ -192,15 +193,14 @@
 
         return;
     }
-
-    // A successful fetch with nothing scheduled comes back as a single
-    // placeholder entry flagged "empty". Show an empty table with a message
-    // in place of a list, rather than a placeholder row that would look
-    // tappable (and lead to a timetable view with nothing in it).
-    //
-    BOOL thisIsEmpty = [ ( NSNumber * ) thisServiceList.firstObject[ @"empty" ] boolValue ];
-
-    self.parsedSections = thisIsEmpty ? [ NSMutableArray array ] : sections;
+    else if ( thisIsEmpty )
+    {
+        self.parsedSections = [ NSMutableArray array ];
+    }
+    else
+    {
+        self.parsedSections = sections;
+    }
 
     // For the refresh control hiding to work properly with smooth
     // animation, the table data MUST be reloaded *before* we hide
@@ -219,17 +219,16 @@
     if ( show == NO )
     {
         self.tableView.backgroundView = nil;
-        return;
     }
-
-    if ( self.tableView.backgroundView != nil ) return; // Already showing
-
-    self.tableView.backgroundView =
-    [
-        DetailViewController emptyStateViewWithSymbol: @"bus"
-                                                 title: NO_SERVICES_SCHEDULED_MESSAGE
-                                                  hint: NSLocalizedString( @"Pull down to refresh.", "Hint shown when no services are currently scheduled at a stop" )
-    ];
+    if ( self.tableView.backgroundView == nil ) // (not already showing)
+    {
+        self.tableView.backgroundView =
+        [
+            DetailViewController emptyStateViewWithSymbol: @"bus"
+                                                    title: NO_SERVICES_SCHEDULED_MESSAGE
+                                                     hint: NSLocalizedString( @"Pull down to refresh.", "Hint shown when no services are currently scheduled at a stop" )
+        ];
+    }
 }
 
 // See header for details.
@@ -238,15 +237,19 @@
 {
     id item = self.detailItem;
 
-    if ( item == nil ) return NO;
-
-    if ( [ item isKindOfClass: [ NSManagedObject class ] ] )
+    if ( item == nil )
+    {
+        return NO;
+    }
+    else if ( [ item isKindOfClass: [ NSManagedObject class ] ] )
     {
         NSManagedObject * object = ( NSManagedObject * ) item;
         return ( object.isDeleted || object.managedObjectContext == nil ) ? NO : YES;
     }
-
-    return YES;
+    else
+    {
+        return YES;
+    }
 }
 
 // See header for details.
@@ -266,12 +269,18 @@
 
     BOOL haveFavourites = DataManager.dataManager.fetchedResultsControllerLocal.fetchedObjects.count > 0;
 
-    self.tableView.backgroundView =
-    haveFavourites
-    ? [ DetailViewController emptyStateViewWithSymbol: @"bus"
-                                                title: NSLocalizedString( @"No Stop Selected", "Title shown when no favourite stop is chosen" )
-                                                 hint: NSLocalizedString( @"Choose one of your favourite stops.", "Hint shown when no favourite stop is chosen" ) ]
-    : [ DetailViewController noFavouritesView ];
+    if ( haveFavourites )
+    {
+        self.tableView.backgroundView = [
+            DetailViewController emptyStateViewWithSymbol: @"bus"
+                                                    title: NSLocalizedString( @"No Stop Selected", "Title shown when no favourite stop is chosen" )
+                                                     hint: NSLocalizedString( @"Choose one of your favourite stops.", "Hint shown when no favourite stop is chosen" )
+        ];
+    }
+    else
+    {
+        [ DetailViewController noFavouritesView ];
+    }
 }
 
 // See header for details.
@@ -279,31 +288,28 @@
 + ( UIView * ) noFavouritesView
 {
     NSString * title = NSLocalizedString( @"No Favourites Yet", "Title shown when no favourite stops have been added" );
+    NSString * symbol;
+    NSString * hint;
 
     if ( DataManager.dataManager.checkingICloud )
     {
-        return
-        [
-            DetailViewController emptyStateViewWithSymbol: @"icloud"
-                                                     title: title
-                                                      hint: NSLocalizedString( @"Checking iCloud for favourites from your other devices", "Hint shown when no favourite stops are present yet, while checking iCloud" )
-        ];
+        symbol = @"icloud";
+        hint   = NSLocalizedString( @"Checking iCloud for favourites from your other devices", "Hint shown when no favourite stops are present yet, while checking iCloud" );
+    }
+    else
+    {
+        symbol = @"star";
+        hint   = NSLocalizedString( @"Tap + to add a stop using the map or its stop ID.", "Hint shown when no favourite stops have been added" );
     }
 
-    return
-    [
-        DetailViewController emptyStateViewWithSymbol: @"star"
-                                                 title: title
-                                                  hint: NSLocalizedString( @"Tap + to add a stop using the map or its stop ID.", "Hint shown when no favourite stops have been added" )
-    ];
+    return [ DetailViewController emptyStateViewWithSymbol: symbol title: title hint: hint ];
 }
 
 // See header for details.
 //
-// On iOS 17+ this is the system's standard empty-state view; earlier, a
-// hand-built equivalent. Either way: an icon, a prominent title that uses
-// Dynamic Type and wraps as needed, and a quieter hint underneath, kept
-// within readable margins so long text never runs to the screen edges.
+// On iOS 17+ this is the system's standard empty-state view; earlier, a manual
+// equivalent. Either way there's an icon, a prominent title that uses Dynamic
+// Type and wraps as needed, with hint text underneath.
 //
 + ( UIView * ) emptyStateViewWithSymbol: ( NSString * ) symbolName
                                   title: ( NSString * ) titleText
@@ -415,15 +421,15 @@
 
 #pragma mark - Automatic refresh
 
-// Start refreshing every AUTO_REFRESH_INTERVAL seconds; safe to call if
-// already running (the old timer is replaced). Started whenever the view
+// Start refreshing every AUTO_REFRESH_INTERVAL seconds. Safe to call if
+// already running - the old timer is replaced. Started whenever the view
 // appears and stopped whenever it has disappeared (see -viewWillAppear: and
 // -viewDidDisappear:), so it always resumes after e.g. viewing a timetable
 // or visiting another tab.
 //
 // The timer runs in the common run loop modes so it keeps going while the
-// list is being touched or scrolled, and holds this view controller only
-// weakly so it can't keep it alive.
+// list is being touched or scrolled. It keeps only a weak reference to this
+// view controller only, so it can't keep it alive.
 //
 - ( void ) startAutoRefresh
 {

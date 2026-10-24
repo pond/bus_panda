@@ -21,8 +21,8 @@
     //
     @property ( strong ) DataManager * dataManager;
 
-    // Set once the first scene has connected and one-off startup work that
-    // depends on the view hierarchy has been done.
+    // Set once the first scene has connected, and any one-off startup work
+    // that depends on the view hierarchy has been completed.
     //
     @property ( assign ) BOOL hasPerformedFirstSceneSetup;
 
@@ -99,14 +99,14 @@
 
 # pragma mark - Scene support
 
-// Called by SceneDelegate when its window scene connects, with the window
+// Called by SceneDelegate when its window scene connects. Is passed the window
 // UIKit has already built from Main.storyboard. Records the useful parts of
 // the view hierarchy and, the first time only, wakes up the data stores and
 // WatchKit session (both of which need the MasterViewController).
 //
 // A scene can be disconnected by the system while the process lives on, then
-// reconnected with a brand new window and controllers; so the hierarchy
-// wiring runs every time, but the one-off startup work does not.
+// reconnected with a brand new window and controllers. The hierarchy recording
+// happens every time, but the one-off startup work does not.
 //
 - ( void ) configureForWindow: ( UIWindow * ) window
 {
@@ -126,12 +126,11 @@
 
     [ self.tabBarController setViewControllers: viewControllers ];
 
-    // Master/detail split view setup. This must be a column-style split view
-    // ("Double Column" in Interface Builder) - it gives the Liquid Glass
-    // sidebar on iOS 26+, manages its own show/hide-sidebar button and handles
-    // collapsing to a single navigation stack (iPhone, narrow iPad windows,
-    // a folded iPhone Duo) by itself.
-
+    // Master/detail split view setup. This is a Double Column split view which
+    // leads to a Liquid Glass sidebar on iOS 26+, manages its own "show / hide
+    // sidebar" button and handles collapsing to a single navigation stack on
+    // e.g. (iPhone, narrow iPad windows, a folded iPhone Duo etc.) by itself.
+    //
     self.splitViewController = ( UISplitViewController * ) self.tabBarController.viewControllers.firstObject;
 
     if ( self.splitViewController.style == UISplitViewControllerStyleUnspecified )
@@ -157,7 +156,7 @@
     self.hasPerformedFirstSceneSetup = YES;
 
     // Wake up local Core Data and iCloud. This also registers for remote
-    // notifications (for CloudKit changes), but the AppDelegate object has
+    // notifications of CloudKit changes, but the AppDelegate object has
     // to handle them - see -didReceiveRemoteNotification:... later.
     //
     [ _dataManager awakenAllStores ];
@@ -323,18 +322,20 @@
     //
     if ( [ viewController.restorationIdentifier isEqualToString: @"FavouriteStops" ] )
     {
-        // Find the navigation stack that's showing the stop details: the
-        // single collapsed stack, or the expanded split view's secondary
-        // column. Allow for a navigation controller nested inside the
-        // collapsed stack, just in case.
+        // Find the navigation stack that's showing the stop details - that
+        // should be the single collapsed stack, or the expanded split view's
+        // secondary column. Allow for a navigation controller nested inside
+        // the collapsed stack, just in case!
         //
         UISplitViewController  * split     = self.splitViewController;
         UIViewController       * secondary = [ split viewControllerForColumn: UISplitViewControllerColumnSecondary ];
         UINavigationController * stack     = split.isCollapsed
                                            ? self.masterNavigationController
-                                           : ( [ secondary isKindOfClass: [ UINavigationController class ] ]
-                                               ? ( UINavigationController * ) secondary
-                                               : secondary.navigationController );
+                                           : (
+                                                 [ secondary isKindOfClass: [ UINavigationController class ] ]
+                                                 ? ( UINavigationController * ) secondary
+                                                 : secondary.navigationController
+                                             );
 
         if ( [ stack.topViewController isKindOfClass: [ UINavigationController class ] ] )
         {
@@ -436,10 +437,8 @@
 // WCSessionDelegate.
 //
 // The watch app is asking for the current favourite stops, e.g. because it
-// has just been installed or launched; reply with them directly. (The watch
-// fetches bus times itself, straight from Metlink, so that's the only request
-// it makes. Older watch apps also asked for bus times, or the nearest stop;
-// those requests now get an empty reply.)
+// has just been installed or launched. Reply with them directly. Note that
+// arrival schedules for individual stops are fetched by the watch app itself.
 //
 - ( void ) session: ( WCSession                     * ) session
  didReceiveMessage: ( NSDictionary <NSString *, id> * ) message

@@ -29,11 +29,12 @@
 //
 - ( void ) dismissAdditionView;
 
-// For modal forms: put a system Cancel button on the left of the navigation
-// bar and a system Done button on the right, calling the given selectors on
+// For modal forms, put a system 'Cancel' button on the left of the navigation
+// bar and a system 'Done' button on the right, calling the given selectors on
 // 'self'. On iOS 26+ these are the standard Liquid Glass close (X) and
-// prominent confirm (checkmark) buttons. Returns the Done button, so that
-// callers can enable or disable it.
+// prominent confirm (checkmark) buttons.
+//
+// Returns a pointer to the 'Done' button.
 //
 - ( UIBarButtonItem * _Nonnull ) installCancelAction: ( SEL _Nonnull ) cancelAction
                                        andDoneAction: ( SEL _Nonnull ) doneAction;

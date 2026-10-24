@@ -122,7 +122,7 @@
     return @"Weather cannot be checked";
 }
 
-// The Weather tab is full width, with no sidebar, so let pages use it all.
+// YES if the Weather tab should show pages at full width - no sidebar.
 //
 - ( BOOL ) pageIgnoresSideSafeArea
 {
@@ -342,13 +342,6 @@
 }
 
 // Generic (currently only used for Windfinder).
-//
-// "[class^=da-]:has(> [data-ad-slot])" hides an ad slot's wrapper, e.g.
-// Windfinder's "da-horizontal" or "da-sticky-bottom", which otherwise leaves
-// an empty, coloured band in the page. Those classes are also used for
-// non-ad content, hence only matching wrappers that directly contain an ad
-// slot. ":has()" needs iOS 15.4+; on earlier versions these rules won't
-// compile and the page loads without content blocking.
 //
 - ( NSString * ) rulesForGenericUntrustworthy
 {

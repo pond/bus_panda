@@ -121,7 +121,7 @@
                               : nil;
 
                 // Anything other than an array (e.g. missing, or NSNull) is
-                // a response we don't understand; leave "services" nil. An
+                // a response we don't understand; leave "services" 'nil'. An
                 // *empty* array is a valid response with nothing scheduled.
                 //
                 if ( [ departures isKindOfClass: [ NSArray class ] ] )
@@ -373,7 +373,7 @@
             }
         }
 
-        // If anything failed then "services" is nil and we return an error
+        // If anything failed then "services" is 'nil' and we return an error
         // placeholder entry. If the fetch worked but there are no services
         // (or none we could use), return a non-error "empty" placeholder, so
         // that callers can tell the two cases apart.

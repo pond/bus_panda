@@ -42,11 +42,11 @@
 }
 
 // Fetch any iCloud changes we might have missed while in the background.
-// CloudKit's "something changed" pushes are silent and best-effort: iOS may
-// delay or drop them (and the Simulator rarely gets them), so without this,
-// edits made on other devices might not appear until a manual pull-to-
-// refresh. Only changes since the last fetch are requested, so this is
-// normally a small, quick request.
+// CloudKit's "something changed" pushes are silent and best-effort - iOS may
+// delay or drop them, and the Simulator rarely gets them, so without this,
+// edits made on other devices might not appear until a manual pull-to-refresh.
+// Only changes since the last fetch are requested, so this is normally a small,
+// quick request.
 //
 // Not called at launch - only on returning from the background - so it
 // doesn't duplicate the start-up fetch in -[DataManager awakenAllStores].

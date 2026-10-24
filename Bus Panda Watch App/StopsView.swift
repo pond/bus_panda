@@ -2,7 +2,7 @@
 //  StopsView.swift
 //  Bus Panda Watch App
 //
-//  The watch app's first screen: favourite stops sent by the iPhone app.
+//  The watch app's main view - favourite stops sent by the iPhone app.
 //
 
 import SwiftUI
@@ -98,8 +98,7 @@ private struct StopRow: View
         .padding( .vertical, 2 )
     }
 
-    // Long stop names are shortened as the old watch app did, e.g. dropping
-    // "Street" and vowels, so they fit the narrow screen.
+    // Shorten a description via StringShortner.
     //
     private var shortDescription: String
     {

@@ -53,9 +53,9 @@
     return self.numberField.text.length == 4 ? YES : NO;
 }
 
-// Called whenever the stop ID field's text changes. Done is only enabled
-// for a complete stop ID; once one has been typed, input moves on to the
-// optional description (the number pad has no "Next" or "Return" key).
+// Called whenever the stop ID field's text changes. The 'Done' button is only
+// enabled for a complete stop ID. Once one has been typed in, focus moves to
+// the optional description (iOS's number pad has no "Next" or "Return" key).
 //
 - ( void ) numberFieldDidChange: ( UITextField * ) textField
 {
@@ -66,8 +66,9 @@
     if ( complete ) [ self.descriptionField becomeFirstResponder ];
 }
 
-// The stop ID field is set to clear when editing begins (see storyboard),
-// which doesn't count as an editing change, so re-check Done here too.
+// The stop ID field is set up so that it clears (empties) when editing begins
+// (see storyboard), but that doesn't count as an editing change. Update the
+// 'Done' button state here to account for that.
 //
 - ( void ) textFieldDidBeginEditing: ( UITextField * ) textField
 {
@@ -77,8 +78,8 @@
     }
 }
 
-// The description keyboard's "Done" key adds the stop, as long as there's a
-// complete stop ID; otherwise it does nothing.
+// The 'Done' button adds the stop, as long as there's a complete stop ID;
+// otherwise it does nothing.
 //
 - ( BOOL ) textFieldShouldReturn: ( UITextField * ) textField
 {

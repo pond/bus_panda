@@ -21,11 +21,7 @@
 //
 // All of this state is only ever read or written on the main thread. While
 // the one-and-only fetch is in progress, further requests are queued in
-// 'pendingRequests' and all answered when it completes. Previously, every
-// request made before the first fetch completed started its own fetch, and
-// their completion handlers then appended to a shared mutable array from
-// several threads at once - a crash ("malloc: double free") and duplicate
-// cache entries.
+// 'pendingRequests' and dealt with when the current request completes.
 //
 static NSArray        * previouslyFetchedStops = nil;
 static NSMutableArray * pendingRequests        = nil;
@@ -56,7 +52,7 @@ static BOOL             fetchInProgress        = NO;
     NSLog( @"Get stops sorted by proximity to lat. %f, lon. %f", coordinate.latitude, coordinate.longitude );
 
     // Answer from the cache if possible.
-
+    //
     if ( previouslyFetchedStops != nil )
     {
         [ StopInfoFetcher getSortedStopsFromCacheWithinRadius: radiusInMetres
@@ -67,7 +63,7 @@ static BOOL             fetchInProgress        = NO;
 
     // Otherwise queue this request until the fetch completes, starting the
     // fetch if it isn't already running.
-
+    //
     if ( pendingRequests == nil ) pendingRequests = [ [ NSMutableArray alloc ] init ];
 
     [
@@ -127,7 +123,7 @@ static BOOL             fetchInProgress        = NO;
             if ( ! [ stops isKindOfClass: [ NSArray class ] ] )
             {
                 NSDictionary * details = @{
-                    NSLocalizedDescriptionKey: @"Bus stops retrieved from the Internet were sent in a way that Bus Panda does not understand."
+                    NSLocalizedDescriptionKey: @"The bus stop list was sent in a way that Bus Panda does not understand."
                 };
 
                 error = [ NSError errorWithDomain: @"bus_panda_stops" code: 200 userInfo: details ];
@@ -136,7 +132,7 @@ static BOOL             fetchInProgress        = NO;
         else if ( error == nil )
         {
             NSDictionary * details = @{
-                NSLocalizedDescriptionKey: @"Bus stops could not be retrieved from the Internet."
+                NSLocalizedDescriptionKey: @"The bus stop list could not be retrieved."
             };
 
             error = [ NSError errorWithDomain: @"bus_panda_stops" code: 201 userInfo: details ];

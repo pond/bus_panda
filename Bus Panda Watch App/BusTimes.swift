@@ -2,11 +2,14 @@
 //  BusTimes.swift
 //  Bus Panda Watch App
 //
-//  Fetches upcoming buses for a stop directly from the Metlink API, so the
-//  watch doesn't need the iPhone to be nearby (it uses the iPhone's network
-//  connection when it is, or Wi-Fi / cellular otherwise). This mirrors the
-//  parsing in the iPhone app's BusInfoFetcher, simplified for the watch: one
-//  list rather than "Today" / "Tomorrow" sections.
+//  Fetches the arrival schedule for a stop from the Metlink API. The Watch
+//  watch doesn't need an iPhone to be nearby, though it uses the iPhone's
+//  network connection when it is, or Wi-Fi / cellular otherwise.
+//
+//  This mirrors parsing in the iPhone app's BusInfoFetcher, simplified for
+//  the watch - no 'Today'/'Tomorrow' sections.
+//
+//  TODO: Unify, probably via Swift conversion on the iPhone side.
 //
 
 import Foundation
@@ -37,9 +40,11 @@ enum BusTimesFetcher
 {
     // Same key as the iPhone app (MAGIC in Constants.h).
     //
+    // TODO: Unify, probably via Swift conversion on the iPhone side.
+    //
     private static let apiKey = "iuoMNXQjzC1PjijgMjKkHhYWPb4ZES2UpaYfgsd0"
 
-    // There's little room on a watch; don't list more than this.
+    // Watch screens are small! Don't list more arrivals than this.
     //
     static let maximumServices = 10
 
@@ -82,6 +87,7 @@ enum BusTimesFetcher
             let isRealTime  = !status.isEmpty
 
             var destination = trimmed( ( departure[ "destination" ] as? [ String: Any ] )?[ "name" ] ) ?? ""
+
             if destination.isEmpty { destination = "Route \( number )" }
             if isCancelled         { destination = "Cancelled"         }
 
@@ -104,7 +110,7 @@ enum BusTimesFetcher
 
     // MARK: - Private
 
-    // As on the iPhone: prefer the real-time expected arrival, then expected
+    // As on the iPhone, prefer the real-time expected arrival, then expected
     // departure, then the timetabled ("aimed") arrival or departure. A
     // timetabled time is shown as a clock time; a real-time one as minutes
     // from now, rounding down so as to err on the side of being early.
@@ -116,7 +122,10 @@ enum BusTimesFetcher
         var realTime  = isRealTime
         var timeText  = trimmed( arrival[ "expected" ] ) ?? ""
 
-        if timeText.isEmpty { timeText = trimmed( leaving[ "expected" ] ) ?? "" }
+        if timeText.isEmpty
+        {
+            timeText = trimmed( leaving[ "expected" ] ) ?? ""
+        }
 
         if timeText.isEmpty
         {

@@ -38,13 +38,12 @@
 @end
 
 // Delays before stops are requested for the current map view, in seconds.
-// Map region changes closer together than this are merged into one request.
 //
-// Until the full list of stops has been downloaded, a request means network
-// access, so a longer delay merges the series of short animated moves the map
-// makes when first locating the user. After that, requests are answered
-// locally and quickly, so a short delay keeps stops appearing promptly as the
-// map is panned - longer delays feel like an area has no stops.
+// A map usually makes a rapid series of animated movements when first shown
+// and locating the user. A longer inter-request period is used for that to
+// avoid making lots of unnecessary requests. After that, we assume that the
+// end user is responsible for map movements so requests are answered more
+// promptly - longer delays can feel like an area has no stops to show.
 //
 #define STOP_LOCATION_UPDATE_DELAY_UNCACHED ( double ) 1.0
 #define STOP_LOCATION_UPDATE_DELAY_CACHED   ( double ) 0.2
@@ -108,8 +107,8 @@
 //
 // The size comes from the *presenting* view controller's window. Using this
 // view's own window would be wrong on Mac Catalyst, where a sheet is a
-// separate window: each resize would shrink it to a fraction of itself,
-// causing another resize, until AppKit gave up and terminated the app.
+// separate window. Each resize would shrink it to a fraction of itself,
+// causing another resize, until AppKit gave up and terminated the app!
 //
 - ( void ) viewWillTransitionToSize: ( CGSize ) size
           withTransitionCoordinator: ( id <UIViewControllerTransitionCoordinator> ) coordinator
@@ -142,13 +141,9 @@
 }
 
 // For "Add Using Map", when this view's navigation controller is presented
-// modally, put Cancel and Refresh buttons in the navigation bar - consistent
-// with the other "add" and "edit" sheets, and on iOS 26+ the standard Liquid
-// Glass close (X) and refresh buttons. The "Nearby" tab uses an instance
-// from a different storyboard scene, not presented modally, which has
-// neither.
+// modally, put Cancel and Refresh buttons in the navigation bar.
 //
-// This is also a good time to ask Location Services to start updates.
+// This is also a good time to tell Location Services to start updates.
 //
 - ( void ) viewWillAppear: ( BOOL ) animated
 {
@@ -179,7 +174,7 @@
     }
 }
 
-// This is a good time to ask Location Services to stop updates.
+// Tell Location Services to stop updates.
 //
 - ( void ) viewWillDisappear: ( BOOL ) animated
 {

@@ -4,21 +4,23 @@
 //
 //  The favourite stops to show on the watch. The iPhone app sends them via
 //  WatchConnectivity's "application context", which is delivered in the
-//  background whenever the watch next connects; the most recent list is
+//  background whenever the watch next connects. The most recent list is
 //  cached here so it's available immediately at launch, with or without the
 //  iPhone nearby.
 //
 //  The payload is a dictionary with key "allStops", an array of dictionaries
 //  with keys "stopID" (String), "stopDescription" (String) and "preferred"
-//  (Bool) - see -[DataManager watchPayload] in the iPhone app.
+//  (Bool). See -[DataManager watchPayload] in the iPhone app.
+//
+//  TODO: Unify, probably via Swift conversion on the iPhone side.
 //
 
 import Combine
 import Foundation
 import WatchConnectivity
 
-// One favourite stop. Explicitly nonisolated, so it can be created and used
-// from any thread whatever the target's default actor isolation.
+// Can be created and used from any thread whatever the target's default
+// actor isolation.
 //
 nonisolated struct FavouriteStop: Identifiable, Hashable, Codable, Sendable
 {
@@ -122,7 +124,7 @@ final class FavouritesStore: NSObject, ObservableObject
         hasReceivedStops = defaults.bool( forKey: Self.hasReceivedKey )
     }
 
-    // Parse a payload from the iPhone; returns nil if it doesn't contain a
+    // Parse a payload from the iPhone. Returns 'nil' if it doesn't contain a
     // list of stops at all (e.g. an empty application context).
     //
     nonisolated private static func stops( from payload: [ String: Any ] ) -> [ FavouriteStop ]?
@@ -146,15 +148,15 @@ final class FavouritesStore: NSObject, ObservableObject
 
 // MARK: - WCSessionDelegate
 //
-// WatchConnectivity calls these on a background queue; anything that changes
+// WatchConnectivity calls these on a background queue. Anything that changes
 // published state hops to the main actor.
 
 extension FavouritesStore: WCSessionDelegate
 {
     nonisolated func session(
-        _                                   session: WCSession,
+        _                                 session: WCSession,
         activationDidCompleteWith activationState: WCSessionActivationState,
-        error:                                       Error?
+                                            error: Error?
     )
     {
         if let error
@@ -167,7 +169,7 @@ extension FavouritesStore: WCSessionDelegate
     }
 
     nonisolated func session(
-        _                                session: WCSession,
+        _                                       session: WCSession,
         didReceiveApplicationContext applicationContext: [ String: Any ]
     )
     {

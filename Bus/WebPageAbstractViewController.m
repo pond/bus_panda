@@ -122,8 +122,8 @@
 {
     if ( error == nil ) return;
 
-    if ( [ error.domain isEqualToString: NSURLErrorDomain    ] && error.code == NSURLErrorCancelled ) return;
-    if ( [ error.domain isEqualToString: @"WebKitErrorDomain" ] && error.code == 102                ) return;
+    if ( [ error.domain isEqualToString: NSURLErrorDomain     ] && error.code == NSURLErrorCancelled ) return;
+    if ( [ error.domain isEqualToString: @"WebKitErrorDomain" ] && error.code == 102                 ) return;
 
     [ self spinnerOff ];
 
@@ -174,17 +174,16 @@
 }
 
 // The first load is started from -viewDidLoad, once content blocking rules
-// are ready. Starting it here too used to race with that, giving spurious
-// "Frame load interrupted" errors. Only later appearances reload, so that
-// e.g. returning to the Weather tab still refreshes the forecast.
+// are ready. Don't do that here too, as that'd fetch twice. We do need to load
+// the page on subsequent re-appearances though, so that e.g. revisiting the
+// Weather tab will reload the forecast.
 //
 - ( void ) viewDidAppear: ( BOOL ) animated
 {
     [ super viewDidAppear: animated ];
 
     if ( self.hasAppeared ) [ self goHome ];
-
-    self.hasAppeared = YES;
+    else self.hasAppeared = YES;
 }
 
 - ( void ) viewWillDisappear: ( BOOL ) animated
@@ -228,9 +227,11 @@
 #pragma mark - Custom methods
 
 // Create a web view suited to the page about to be shown, replacing any
-// existing one if it was set up differently. Changing an existing web view's
-// obscured insets between pages leaves later pages wrongly positioned, so a
-// fresh one is used instead.
+// existing one if it was set up differently. Trying to change things like
+// obscured inset values on an *existing* view doesn't work reliably, with
+// pages ending up positioned incorrectly (e.g. the top edge of the page being
+// hidden below the navigation bar is a common issue if moving from Windfinder
+// to another provider).
 //
 - ( void ) setUpWebViewForCurrentPage
 {
@@ -261,6 +262,9 @@
 
     webView.ignoresSideInsets = [ self pageIgnoresSideSafeArea ];
 
+    // Useful if you need to remotely examine the web view under simulation via
+    // the host Mac's Safari's 'develop' menu for any reason.
+    //
     #if DEBUG
         if ( @available( iOS 16.4, * ) )
         {
@@ -272,8 +276,11 @@
     webView.allowsBackForwardNavigationGestures       = YES;
     webView.translatesAutoresizingMaskIntoConstraints = NO;
 
-    // Inset the scroll range by the safe area; "automatic" skips scroll views
-    // that aren't the view's own, like this one.
+    // Always pad the page by the safe area, so it starts below the bars
+    // but can scroll beneath them. The default ("automatic") only does this
+    // reliably for a view controller's main scroll view, but for others, like
+    // this one inside the web view, it skips any direction the content can't
+    // yet scroll, e.g. before a page has loaded.
     //
     webView.scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentAlways;
 
@@ -317,8 +324,7 @@
 // If the web view uses obscured insets, keep them matching the bars, so that
 // WebKit positions pages and their fixed headers below them. Pages that don't
 // need this avoid it, as WebKit also fills the area under the bars with the
-// colour of any fixed header, which the black navigation title can't adapt
-// to.
+// colour of any fixed header, to which the black navigation title can't adapt.
 //
 - ( void ) updateObscuredContentInsets
 {

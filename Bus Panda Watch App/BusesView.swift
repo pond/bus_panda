@@ -2,8 +2,8 @@
 //  BusesView.swift
 //  Bus Panda Watch App
 //
-//  Upcoming buses at one stop, fetched directly from Metlink and refreshed
-//  every 30 seconds while on screen (and on returning to the app).
+//  A stop's arrival schedule, fetched directly from Metlink and refreshed
+//  every 30 seconds while on screen (or on returning to the app).
 //
 
 import SwiftUI
@@ -20,6 +20,7 @@ struct BusesView: View
     @State private var errorText: String?        = nil
 
     // Same interval as the iPhone app's schedule view.
+    // TODO: Unify, probably via Swift conversion on the iPhone side.
     //
     private static let refreshInterval: UInt64 = 30
 
@@ -78,8 +79,8 @@ struct BusesView: View
         }
     }
 
-    // Runs for as long as the view is on screen; SwiftUI cancels it when the
-    // view goes away.
+    // This runs for as long as the view is on screen. SwiftUI cancels it when
+    // the view goes away.
     //
     private func refreshPeriodically() async
     {
@@ -90,7 +91,7 @@ struct BusesView: View
         }
     }
 
-    // Fetch bus times. On failure, keep showing any earlier results; only
+    // Fetch the schedule. On failure, keep showing any earlier results - only
     // show an error if there's nothing else to show.
     //
     private func load() async
@@ -151,8 +152,10 @@ private struct ServiceRow: View
         RouteColours.colourFromHexString( service.colourHex )
     }
 
-    // Black or white text, whichever reads best on the badge colour (the same
-    // rule as the iPhone app's BackgroundColourCalculator).
+    // Black or white text, whichever reads best on the badge colour. This is
+    // the same 'algorithm' as the iPhone app's BackgroundColourCalculator.
+    //
+    // TODO: Unify, probably via Swift conversion on the iPhone side.
     //
     private var textColour: Color
     {

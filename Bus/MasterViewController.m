@@ -17,6 +17,19 @@
 #import "StopMapViewController.h"
 #import "FavouritesCell.h"
 
+// Titles and symbols for the per-stop actions, shared by the swipe actions
+// and the context menu so they stay consistent.
+//
+#define DELETE_TITLE  NSLocalizedString( @"Delete",           "Title of action for a bus stop, which deletes that stop" )
+#define PREFER_TITLE  NSLocalizedString( @"Pin",              "Title of action for a bus stop, which pins it (flags it as 'preferred')" )
+#define DEMOTE_TITLE  NSLocalizedString( @"Unpin",            "Title of action for a bus stop, which unpins it (flags it as normal / not 'preferred')" )
+#define EDIT_TITLE    NSLocalizedString( @"Edit Description", "Title of action for a bus stop, which edits that stop's description" )
+
+#define DELETE_SYMBOL @"trash.fill"
+#define PREFER_SYMBOL @"pin.fill"
+#define DEMOTE_SYMBOL @"pin.slash.fill"
+#define EDIT_SYMBOL   @"pencil"
+
 @interface MasterViewController ()
 
     // Pull-to-refresh to force full CloudKit resync.
@@ -109,7 +122,7 @@
 //
 //   http://stackoverflow.com/questions/19379510/uitableviewcell-doesnt-get-deselected-when-swiping-back-quickly
 //
-// When expanded (iPad), keep it: the selected row shows which stop's
+// When expanded (iPad), keep it. The selected row shows which stop's
 // schedule is on screen alongside the list.
 //
 - ( void ) viewWillAppear: ( BOOL ) animated
@@ -150,20 +163,21 @@
 // the view appears, whenever the list's data changes (including deletions,
 // local or via iCloud) and after size changes.
 //
-// When the split view is expanded (e.g. iPad; an unfolded iPhone Duo), there
+// When the split view is expanded (e.g. iPad or unfolded iPhone Duo), there
 // is always something sensible in the detail column:
 //
-// - If it is showing a stop that still exists, leave it alone - that's the
+// * If it is showing a stop that still exists, leave it alone - that's the
 //   user's choice.
-// - Otherwise, if there are any favourites, show the first. The list puts
-//   preferred stops first, so that's the first preferred stop if there are
-//   any, else the first other stop. This covers launch, and deletion of the
-//   stop being shown.
-// - Otherwise show a "no favourites yet" message there.
+//
+// * Otherwise, if there are any favourites, show the first. The list puts
+//   preferred stops first, so that's the first pinned stop if there are any,
+//   else the first other stop. This covers launch, and deletion of the stop
+//   being shown.
+//
+// * Otherwise show a "no favourites yet" message there.
 //
 // When collapsed (iPhone), if a stop that has been deleted is showing, go
-// back to the list; and the list itself shows "no favourites yet" when
-// empty.
+// back to the list; the list itself shows "no favourites yet" when empty.
 //
 // Notification handler; see -viewDidLoad.
 //
@@ -263,10 +277,7 @@
     ];
 }
 
-// Return the menu for the "+" button: the ways of adding a stop. UIKit runs
-// the chosen action only once the menu has gone, so presenting a modal from
-// it is reliable (unlike from an action sheet's handler on iPad, where the
-// presentation could collide with the popover's dismissal and be ignored).
+// Return the menu for the "+" button - the ways of adding a stop.
 //
 - ( UIMenu * ) addStopMenu
 {
@@ -283,11 +294,11 @@
             ];
 
             // On iPad (regular width and height), the default sheet is far
-            // too small for a map on a large screen. Use a form sheet sized
-            // in proportion to the window instead; the map view keeps it in
+            // too small for a map on a large screen, so use a form sheet sized
+            // in proportion to the window instead. The map view keeps it in
             // proportion if the window changes size. Use the window's traits,
-            // since this list is in a split view column with its own. Not on
-            // a Mac, where sheets are separate windows that macOS sizes.
+            // since this list is in a split view column with its own. Not done
+            // on a Mac, where sheets are separate windows that macOS sizes.
             //
             UIWindow          * window = self.view.window;
             UITraitCollection * traits = window.traitCollection;
@@ -341,7 +352,7 @@
 #pragma mark - Selection
 
 // Show the chosen stop in the split view's secondary column. When collapsed,
-// -showColumn: pushes it onto the single navigation stack; when expanded, it
+// -showColumn: pushes it onto the single navigation stack. When expanded, it
 // replaces whatever was shown before.
 //
 // The detail view is given its own new navigation controller. Passing a bare
@@ -399,7 +410,7 @@
   heightForHeaderInSection: ( NSInteger     ) section
 {
     // Show no section title unless there are at least two sections. On iOS
-    // 26+ let the system size headers (including for Dynamic Type).
+    // 26+, let the system size headers (including for Dynamic Type).
 
     if ( DataManager.dataManager.shouldShowSectionHeader == NO ) return 0;
 
@@ -416,12 +427,12 @@
              forSection: ( NSInteger     ) section
 {
     // On iOS 26+, leave headers in the system style.
-
+    //
     if (@available(iOS 26, *)) return;
 
-    // Earlier, increase contrast of the section header background colour.
+    // Otherwise, increase contrast of the section header background colour.
     // The default is almost invisible.
-
+    //
     UITableViewHeaderFooterView * hfView = ( UITableViewHeaderFooterView * ) view;
     hfView.backgroundView.backgroundColor = [ UIColor systemGray6Color ];
 }
@@ -473,19 +484,6 @@
     cell.stopDescription.text = stopDescription;
 }
 
-// Titles and symbols for the per-stop actions, shared by the swipe actions
-// and the context menu so they stay consistent.
-
-#define DELETE_TITLE  NSLocalizedString( @"Delete",           "Title of action for a bus stop, which deletes that stop" )
-#define PREFER_TITLE  NSLocalizedString( @"Pin",              "Title of action for a bus stop, which pins it (flags it as 'preferred')" )
-#define DEMOTE_TITLE  NSLocalizedString( @"Unpin",            "Title of action for a bus stop, which unpins it (flags it as normal / not 'preferred')" )
-#define EDIT_TITLE    NSLocalizedString( @"Edit Description", "Title of action for a bus stop, which edits that stop's description" )
-
-#define DELETE_SYMBOL @"trash.fill"
-#define PREFER_SYMBOL @"pin.fill"
-#define DEMOTE_SYMBOL @"pin.slash.fill"
-#define EDIT_SYMBOL   @"pencil"
-
 // Return an SF Symbol image carrying an accessibility label, for icon-only
 // swipe actions (which then still make sense to VoiceOver).
 //
@@ -497,7 +495,7 @@
     return image;
 }
 
-// Ask the user to confirm deletion of the given favourite stop; if they
+// Ask the user to confirm deletion of the given favourite stop. If they
 // confirm, delete it (locally and from iCloud). The optional completion
 // block is called with YES if the stop was deleted, NO if it was kept.
 //
@@ -549,9 +547,9 @@
     [ self presentViewController: alert animated: YES completion: nil ];
 }
 
-// Swipe-left actions for a stop, icon only: Delete (red), Prefer/Demote
-// (green) and Edit (blue). Delete is nearest the trailing edge. Full swipe
-// does nothing, so a long swipe can't delete a stop by accident.
+// Swipe-left actions for a stop, icon only: Delete (red), Prefer/Demote AKA
+// Pin/Unpin (green) and Edit (blue). Delete is nearest the trailing edge. Full
+// swipe does nothing so a long swipe can't delete a stop by accident!
 //
 // Less common actions, now and in future, belong in the context menu (see
 // -tableView:contextMenuConfigurationForRowAtIndexPath:point:) rather than
@@ -779,8 +777,8 @@
     // watch next connects, so it only needs a paired watch with the app
     // installed - not one that's currently reachable.
     //
-    if ( session.activationState != WCSessionActivationStateActivated ||
-         session.paired          == NO                                 ||
+    if ( session.activationState   != WCSessionActivationStateActivated ||
+         session.paired            == NO                                ||
          session.watchAppInstalled == NO )
     {
         return;
