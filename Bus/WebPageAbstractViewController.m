@@ -113,18 +113,37 @@
 
     self.webView =
     [
-       [ WKWebView alloc ] initWithFrame: self.view.frame
+       [ WKWebView alloc ] initWithFrame: self.view.bounds
                            configuration: configuration
     ];
+
+    #if DEBUG
+        if (@available(iOS 16.4, *)) {
+            self.webView.inspectable = true;
+        }
+    #endif
 
     self.webView.navigationDelegate                  = self;
     self.webView.allowsBackForwardNavigationGestures = YES;
     self.webView.autoresizingMask                    = UIViewAutoresizingFlexibleWidth |
                                                        UIViewAutoresizingFlexibleHeight;
 
+    // The web view fills the whole view, under the navigation bar and tab
+    // bar, so content scrolls beneath them (Liquid Glass style). Its scroll
+    // view must always be inset by the safe area, though: the default
+    // "automatic" behaviour only does that for a view controller's main
+    // scroll view, which UIKit doesn't consider this one to be, so the top
+    // of each page would otherwise start hidden behind the navigation bar.
+    // Telling UIKit it *is* the content scroll view also lets the bars
+    // update their appearance as it scrolls.
+    //
+    self.webView.scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentAlways;
+    [ self setContentScrollView: self.webView.scrollView
+                        forEdge: NSDirectionalRectEdgeAll ];
+
     self.activityView =
     [
-       [ UIActivityIndicatorView alloc ] initWithFrame: self.view.frame
+       [ UIActivityIndicatorView alloc ] initWithFrame: self.view.bounds
     ];
 
     self.activityView.opaque                         = YES;

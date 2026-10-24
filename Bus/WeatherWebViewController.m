@@ -14,6 +14,15 @@
 // TODO: WUnderground and Weather.com disabled as experience is very poor.
 //       See settings PList.
 
+@interface WeatherWebViewController ()
+
+// The weather provider whose content blocking rules were most recently
+// compiled and installed; see -contentBlockingRules and -goHome.
+//
+@property ( strong, nonatomic ) NSString * rulesProvider;
+
+@end
+
 @implementation WeatherWebViewController
 
 - ( void ) viewDidLoad
@@ -22,9 +31,6 @@
 
     // Watch for user defaults changes as we'll need to reload the weather page
     // if someone changes their weather provider settings.
-    //
-    // Watch for user defaults changes as we'll need to reload the table data
-    // to reflect a 'shorten names to fit' settings change.
     //
     NSUserDefaults * defaults = NSUserDefaults.standardUserDefaults;
 
@@ -47,12 +53,11 @@
                            change: ( NSDictionary * ) change
                           context: ( void         * ) context
 {
-    ( void ) object;
-    ( void ) change;
-    ( void ) context;
-
     if ( [ keyPath isEqualToString: WEATHER_PROVIDER ] )
     {
+        // Only reload now if the page is on screen. Otherwise, -goHome
+        // notices the change when the view next appears.
+        //
         dispatch_async
         (
             dispatch_get_main_queue(),
@@ -60,10 +65,17 @@
             {
                 if ( self.isViewLoaded == YES && self.view.window != nil )
                 {
-                    [ self reloadContentBlockingRulesAndGoHome ];
+                    [ self goHome ];
                 }
             }
         );
+    }
+    else
+    {
+        [ super observeValueForKeyPath: keyPath
+                              ofObject: object
+                                change: change
+                               context: context ];
     }
 }
 
@@ -71,9 +83,20 @@
 
 - ( void ) goHome
 {
-    [ self spinnerOn ];
-
     NSString * provider = [ NSUserDefaults.standardUserDefaults stringForKey: WEATHER_PROVIDER ];
+
+    // If the provider has changed since its content blocking rules were last
+    // installed, install the new provider's rules first. That compiles them
+    // via -contentBlockingRules, which records the new provider, then calls
+    // back here, at which point the providers match and the page loads.
+    //
+    if ( ! [ provider ?: @"" isEqualToString: self.rulesProvider ?: @"" ] )
+    {
+        [ self reloadContentBlockingRulesAndGoHome ];
+        return;
+    }
+
+    [ self spinnerOn ];
 
     if      ( [ provider isEqualToString: WEATHER_PROVIDER_WEATHERWATCH ] ) [ self visitWeatherWatch ];
     else if ( [ provider isEqualToString: WEATHER_PROVIDER_ACCUWEATHER  ] ) [ self visitAccuWeather  ];
@@ -85,6 +108,8 @@
 - ( NSString * ) contentBlockingRules
 {
     NSString * provider = [ NSUserDefaults.standardUserDefaults stringForKey: WEATHER_PROVIDER ];
+
+    self.rulesProvider = provider;
 
     if      ( [ provider isEqualToString: WEATHER_PROVIDER_WEATHERWATCH ] ) return [ self rulesForWeatherWatch ];
     else if ( [ provider isEqualToString: WEATHER_PROVIDER_ACCUWEATHER  ] ) return [ self rulesForAccuWeather  ];
@@ -243,7 +268,7 @@
     return [ self rulesForGenericUntrustworthy ];
 }
 
-// Windfinder
+// WeatherWatch
 //
 - ( NSString * ) rulesForWeatherWatch
 {
@@ -260,16 +285,6 @@
       }, \
       { \
         \"trigger\": { \
-          \"url-filter\": \"\\/cdn\\\\.windfinder\\\\.com\\/ads\\\\.js\", \
-          \"resource-type\": [ \"script\" ] \
-        }, \
-        \"url-filter-is-case-sensitive\": true, \
-        \"action\": { \
-          \"type\": \"block\" \
-        } \
-      }, \
-      { \
-        \"trigger\": { \
           \"url-filter\": \".*\", \
           \"if-domain\": [ \"doubleclick.net\", \"facebook.net\", \"googletagservices.com\", \"googlesyndication.com\", \"google-analytics.com\", \"adservice.google.com\", \"adservice.google.co.nz\", \"newrelic.com\", \"pubmatic.com\", \"rubiconproject.com\", \"ampproject.org\", \"adsafeprotected.com\" ], \
           \"resource-type\": [ \"script\" ] \
@@ -281,7 +296,7 @@
     ]";
 }
 
-// Windfinder
+// AccuWeather
 //
 - ( NSString * ) rulesForAccuWeather
 {
@@ -309,7 +324,14 @@
     ]";
 }
 
-// Generic
+// Generic (currently only used for Windfinder).
+//
+// "[class^=da-]:has(> [data-ad-slot])" hides an ad slot's wrapper, e.g.
+// Windfinder's "da-horizontal" or "da-sticky-bottom", which otherwise leaves
+// an empty, coloured band in the page. Those classes are also used for
+// non-ad content, hence only matching wrappers that directly contain an ad
+// slot. ":has()" needs iOS 15.4+; on earlier versions these rules won't
+// compile and the page loads without content blocking.
 //
 - ( NSString * ) rulesForGenericUntrustworthy
 {
@@ -321,7 +343,7 @@
         }, \
         \"action\": { \
           \"type\": \"css-display-none\", \
-        \"selector\": \"[id^=google_ads], .top-banner-ad, #google-center-div, .ad-horizontal, .ad-sticky-bottom, #google_image_div\" \
+        \"selector\": \"[id^=google_ads], [data-ad-slot], [class^=da-]:has(> [data-ad-slot]), .top-banner-ad, #google-center-div, .ad-horizontal, .ad-sticky-bottom, #google_image_div\" \
         } \
       }, \
       { \
