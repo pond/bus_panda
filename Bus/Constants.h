@@ -66,6 +66,10 @@
 #define ENTITY_AND_RECORD_NAME           @"BusStop"
 #define DATA_CHANGED_NOTIFICATION_NAME   @"BusPandaDataChanged"
 
+// Posted on the main thread when DataManager's "checkingICloud" changes.
+//
+#define ICLOUD_CHECK_CHANGED_NOTIFICATION_NAME @"BusPandaICloudCheckChanged"
+
 // There seems no reason to keep this especially secure...
 //
 //   https://opendata.metlink.org.nz/

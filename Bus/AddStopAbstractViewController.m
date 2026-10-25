@@ -38,4 +38,34 @@
     [ self dismissViewControllerAnimated: YES completion: nil ];
 }
 
+// See header for details.
+//
+- ( UIBarButtonItem * _Nonnull ) installCancelAction: ( SEL _Nonnull ) cancelAction
+                                       andDoneAction: ( SEL _Nonnull ) doneAction
+{
+    UIBarButtonItem * cancel =
+    [
+        [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemCancel
+                                                       target: self
+                                                       action: cancelAction
+    ];
+
+    UIBarButtonItem * done =
+    [
+        [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemDone
+                                                       target: self
+                                                       action: doneAction
+    ];
+
+    if (@available(iOS 26, *))
+    {
+        done.style = UIBarButtonItemStyleProminent;
+    }
+
+    self.navigationItem.leftBarButtonItem  = cancel;
+    self.navigationItem.rightBarButtonItem = done;
+
+    return done;
+}
+
 @end

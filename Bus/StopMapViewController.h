@@ -19,4 +19,10 @@
 
 - ( void ) configureForNearbyStops;
 
+// Size for the "Add Using Map" sheet in a regular-width, regular-height
+// environment (e.g. iPad), given the size of the window it appears in. The
+// default iPad sheet size is far too small for a map on a large screen.
+//
++ ( CGSize ) sheetSizeForWindowSize: ( CGSize ) windowSize;
+
 @end

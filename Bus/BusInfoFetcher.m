@@ -116,7 +116,18 @@
                                                                     options: 0
                                                                       error: nil ];
 
-                services = servicesOverview[ @"departures" ];
+                id departures = [ servicesOverview isKindOfClass: [ NSDictionary class ] ]
+                              ? servicesOverview[ @"departures" ]
+                              : nil;
+
+                // Anything other than an array (e.g. missing, or NSNull) is
+                // a response we don't understand; leave "services" 'nil'. An
+                // *empty* array is a valid response with nothing scheduled.
+                //
+                if ( [ departures isKindOfClass: [ NSArray class ] ] )
+                {
+                    services = departures;
+                }
             }
             @catch ( NSException * exception ) // Assumed JSON processing error
             {
@@ -362,11 +373,41 @@
             }
         }
 
-        // If anything failed then e.g. the "home" document would've been nil,
-        // or other such cascaded failures would have resulted ultimately in an
-        // empty services list.
+        // If anything failed then "services" is 'nil' and we return an error
+        // placeholder entry. If the fetch worked but there are no services
+        // (or none we could use), return a non-error "empty" placeholder, so
+        // that callers can tell the two cases apart.
 
-        if ( [ services count ] == 0 )
+        NSUInteger usableServiceCount = 0;
+
+        for ( NSDictionary * section in parsedSections )
+        {
+            usableServiceCount += [ section[ @"services" ] count ];
+        }
+
+        if ( services != nil && usableServiceCount == 0 )
+        {
+            [ parsedSections removeAllObjects ];
+
+            [
+                parsedSections addObject:
+                @{
+                    @"title":    TODAY_SECTION_TITLE,
+                    @"services":
+                    @[
+                        @{
+                            @"empty":         @( YES ),
+                            @"colour":        PLACEHOLDER_COLOUR,
+                            @"number":        PLACEHOLDER_SERVICE,
+                            @"name":          NO_SERVICES_SCHEDULED_MESSAGE,
+                            @"when":          PLACEHOLDER_WHEN,
+                            @"timetablePath": @""
+                        }
+                    ]
+                }
+            ];
+        }
+        else if ( services == nil )
         {
             NSString * message = ( error == nil )
                                ? @"No live info available"

@@ -30,4 +30,10 @@
                      ofLocation: ( CLLocationCoordinate2D ) coordinate
               completionHandler: ( void ( ^ ) ( NSMutableArray * allStops, NSError * error ) ) handler;
 
+// Returns YES if all stops have already been fetched, so that requests are
+// answered locally and quickly, without network access. Call from the main
+// thread only.
+//
++ ( BOOL ) hasCachedStops;
+
 @end

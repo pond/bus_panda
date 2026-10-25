@@ -35,6 +35,13 @@
 //
 - ( void ) awakenAllStores;
 
+// YES from the start of -awakenAllStores until either iCloud turns out to be
+// unavailable, or the initial fetch of favourites from iCloud has finished
+// (successfully or not). Read on the main thread only. Changes are announced
+// with ICLOUD_CHECK_CHANGED_NOTIFICATION_NAME, posted on the main thread.
+//
+@property ( readonly, nonatomic ) BOOL checkingICloud;
+
 // Call from AppDelegate's -application:didReceiveRemoteNotification:...
 // method, passing the second two parameters through. Handles CloudKit
 // notifications only.
@@ -66,6 +73,10 @@
 - ( BOOL                        ) shouldShowSectionHeader;
 - ( NSInteger                   ) numberOfSections;
 - ( NSManagedObject * _Nullable ) findFavouriteStopByID: ( NSString * _Nonnull ) stopID;
+
+// Favourite stops for the watch. See implementation for details.
+//
+- ( NSDictionary * _Nonnull ) watchPayload;
 
 // CloudKit change management
 

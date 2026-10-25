@@ -64,14 +64,14 @@ import UIKit
     //
     @objc class func colourFromHexString( _ hexString: String ) -> UIColor
     {
-        var rgbValue: UInt32 = 0
+        var rgbValue: UInt64 = 0
         let scanner          = Scanner( string: hexString )
 
-        scanner.scanHexInt32( &rgbValue )
+        scanner.scanHexInt64( &rgbValue )
 
-        let   red: UInt32 = ( rgbValue & 0xFF0000 ) >> 16
-        let green: UInt32 = ( rgbValue &   0xFF00 ) >>  8
-        let  blue: UInt32 = ( rgbValue &     0xFF )
+        let   red: UInt64 = ( rgbValue & 0xFF0000 ) >> 16
+        let green: UInt64 = ( rgbValue &   0xFF00 ) >>  8
+        let  blue: UInt64 = ( rgbValue &     0xFF )
 
         return UIColor(
               red: CGFloat( red   ) / 255.0,
@@ -84,68 +84,90 @@ import UIKit
     static let map:    NSMutableDictionary = [:]
     static let newMap: NSDictionary        =
     [
-        // Wellington bus routes on or after 2018-07-15:
+        // Wellington bus routes on or after 2026-10-23:
         //
-        // https://www.metlink.org.nz/assets/2018-Wellington-City-Bus-Network/mid-2018-route-map.pdf
+        // https://www.metlink.org.nz/assets/Network-maps/2026/Wellington-Region-Network-Map-July-2026.pdf
 
         // High frequency routes
 
-        "1":   "E31937",
-        "2":   "0072BB",
-        "3":   "5E9732",
-        "7":   "A0208B",
-        "21":  "EE80B3",
-        "22":  "F4911D",
+        "AX":  "8CC0D8",
+        "1":   "D02339",
+        "2":   "1E66A3",
+        "3":   "588C32",
+        "4":   "B47B44",
+        "7":   "8F297B",
+        "21":  "E378A5",
+        "22":  "E7872C",
 
         // Other standard routes
 
-        "12":  "59A1D2",
-        "14":  "59A1D2",
-        "17":  "59A1D2",
-        "18":  "59A1D2",
-        "19":  "59A1D2",
-        "20":  "59A1D2",
-        "23":  "59A1D2",
-        "24":  "59A1D2",
-        "25":  "59A1D2",
-        "29":  "59A1D2",
-        "60":  "59A1D2",
+        "14":  "5996C0",
+        "17":  "5996C0",
+        "18":  "5996C0",
+        "19":  "5996C0",
+        "20":  "5996C0",
+        "23":  "5996C0",
+        "24":  "5996C0",
+        "25":  "5996C0",
+        "27":  "5996C0",
+        "29":  "5996C0",
+        "52":  "5996C0",
+        "60":  "5996C0",
 
-        // Other peak, extended and express routes
+        // Peak-only routes
 
+        "HX":  "636466",
         "12E": "636466",
         "13":  "636466",
-        "17E": "636466",
-        "18E": "636466",
-        "19E": "636466",
-        "23E": "636466",
         "26":  "636466",
-        "28":  "636466",
-        "29E": "636466",
         "30X": "636466",
         "31X": "636466",
         "32X": "636466",
         "33":  "636466",
         "34":  "636466",
+        "35":  "636466",
+        "36":  "636466",
         "37":  "636466",
+        "39":  "636466",
         "56":  "636466",
         "57":  "636466",
         "58":  "636466",
         "60E": "636466",
+        "81":  "636466",
+        "84":  "636466",
 
-        // Airport flyer
+        // Hutt Valley Train Lines and Bus Routes
 
-        "91":  "000000",
+        "HVL": "E5782D",
+        "MEL": "E5782D",
+        "WRL": "F9C623",
+        "110": "89458A",
+        "120": "187F52",
+        "130": "1C618F",
 
-        // Wellington Harbour Ferry, rail
+        "83":  "59A1D2",
+        "111": "59A1D2",
+        "112": "59A1D2",
+        "114": "59A1D2",
+        "115": "59A1D2",
+        "121": "59A1D2",
+        "145": "59A1D2",
+        "149": "59A1D2",
+        "150": "59A1D2",
+        "154": "59A1D2",
+        "160": "59A1D2",
+        "170": "59A1D2",
+
+        "81":  "70706F",
+        "84":  "70706F",
+        "113": "70706F",
+
+        // Ferry and/or legacy
 
         "CCL": "003F5F",
         "WHF": "003F5F",
-        "HVL": "003F5F",
-        "MEL": "003F5F",
         "JVL": "003F5F",
         "KPL": "003F5F",
-        "WRL": "003F5F",
     ]
 
     static let oldMap: NSDictionary =

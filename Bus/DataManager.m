@@ -34,6 +34,10 @@
     //
     @property ( strong ) NSBlockOperation * awakenOperation;
 
+    // See header; privately writable, via -setCheckingICloudFromAnyThread:.
+    //
+    @property ( readwrite, nonatomic ) BOOL checkingICloud;
+
     // The above queue has the major awaken operation performed in it, but we
     // also do per-record saves using that queue too. This means that if one
     // save is delayed for some reason (e.g. rate limits) but then the same
@@ -58,37 +62,6 @@
     @synthesize managedObjectContextRemote       = _managedObjectContextRemote;
     @synthesize persistentStoreCoordinatorRemote = _persistentStoreCoordinatorRemote;
     @synthesize fetchedResultsControllerRemote   = _fetchedResultsControllerRemote;
-
-#pragma mark - Any-thread spinner
-
-// Turn on the network activity indicator in the status bar. Can be called
-// from any thread. See also -spinnerOff.
-//
-- ( void ) spinnerOn
-{
-    dispatch_async
-    (
-        dispatch_get_main_queue(),
-        ^ ( void )
-        {
-            UIApplication.sharedApplication.networkActivityIndicatorVisible = YES;
-        }
-    );
-}
-
-// Turn off the activity indicator started with -spinnerOn.
-//
-- ( void ) spinnerOff
-{
-    dispatch_async
-    (
-        dispatch_get_main_queue(),
-        ^ ( void )
-        {
-            UIApplication.sharedApplication.networkActivityIndicatorVisible = NO;
-        }
-    );
-}
 
 #pragma mark - Initialisation
 
@@ -150,12 +123,32 @@
 // Called internally by the iCloud availability change notification handliner
 // as well as by the app delegate at startup.
 //
+- ( void ) setCheckingICloudFromAnyThread: ( BOOL ) checking
+{
+    void ( ^ update )( void ) = ^ ( void )
+    {
+        if ( self.checkingICloud == checking ) return;
+        else self.checkingICloud = checking;
+
+        [ [ NSNotificationCenter defaultCenter ] postNotificationName: ICLOUD_CHECK_CHANGED_NOTIFICATION_NAME
+                                                               object: self ];
+    };
+
+    if ( NSThread.isMainThread ) update();
+    else                         dispatch_async( dispatch_get_main_queue(), update );
+}
+
 - ( void ) awakenAllStores
 {
     // If we're already running an 'awaken' job, cancel it. This later one
     // takes priority.
     //
     [ self.cloudOperationsQueue cancelAllOperations ];
+
+    // Until we know otherwise, assume favourites might be on their way from
+    // iCloud.
+    //
+    [ self setCheckingICloudFromAnyThread: YES ];
 
     // (Re)define the operation block (any old operation now being cancelled)
     // allowing any old one to be garbage collected.
@@ -185,6 +178,7 @@
                     NSLog( @"-- !! Not signed in to iCloud" );
 
                     [ defaults setBool: NO forKey: ICLOUD_IS_AVAILABLE ];
+                    [ dataManager setCheckingICloudFromAnyThread: NO ];
 
                     if ( [ defaults boolForKey: HAVE_SHOWN_ICLOUD_SIGNIN_WARNING ] != YES )
                     {
@@ -201,6 +195,7 @@
                     NSLog( @"-- !! Unusual iCloud account status %ld", ( long ) accountStatus );
 
                     [ defaults setBool: NO forKey: ICLOUD_IS_AVAILABLE ];
+                    [ dataManager setCheckingICloudFromAnyThread: NO ];
                     if ( thisOperation.cancelled ) return;
 
                     [ dataManager showMessage: @"iCloud is not available, either due to parental controls or an error. Bus Panda will not be able to synchronise favourite stops with your other devices."
@@ -230,9 +225,10 @@
                         NSError                   * _Nullable operationError
                     )
                     {
-                        if ( error != nil )
+                        if ( operationError != nil )
                         {
-                            NSLog( @"Awaken: FATAL: Could not create zone: %@", error );
+                            NSLog( @"Awaken: FATAL: Could not create zone: %@", operationError );
+                            [ dataManager setCheckingICloudFromAnyThread: NO ];
                         }
                         else
                         {
@@ -245,6 +241,10 @@
                             id completionBlock = ^ ( NSError * _Nullable error )
                             {
                                 if ( thisOperation.cancelled ) return;
+
+                                // The initial fetch from iCloud is over.
+                                //
+                                [ dataManager setCheckingICloudFromAnyThread: NO ];
 
                                 // If no error & we had something from CloudKit, we're done as
                                 // if anything is in there at all, it's considered data master.
@@ -286,20 +286,32 @@
 
 #ifdef SCREENSHOT_BUILD
                             NSLog( @"Awaken: (Skipping - this is a screenshot build)" );
+                            [ dataManager setCheckingICloudFromAnyThread: NO ];
 #else
 
-                            for ( NSString * stopID in stopIDsInFlight )
-                            {
-                                NSManagedObject * object = [ DataManager.dataManager findFavouriteStopByID: stopID ];
-
-                                if ( object != nil )
+                            // This CloudKit callback is on a background queue
+                            // but the local Core Data context is for the main
+                            // queue only - we must look up the records there.
+                            //
+                            dispatch_async
+                            (
+                                dispatch_get_main_queue(),
+                                ^ ( void )
                                 {
-                                    [ dataManager addOrEditFavourite: [ object valueForKey: @"stopID"          ]
-                                                  settingDescription: [ object valueForKey: @"stopDescription" ]
-                                                    andPreferredFlag: [ object valueForKey: @"preferred"       ]
-                                                   includingCloudKit: YES ];
+                                    for ( NSString * stopID in stopIDsInFlight )
+                                    {
+                                        NSManagedObject * object = [ dataManager findFavouriteStopByID: stopID ];
+
+                                        if ( object != nil )
+                                        {
+                                            [ dataManager addOrEditFavourite: [ object valueForKey: @"stopID"          ]
+                                                          settingDescription: [ object valueForKey: @"stopDescription" ]
+                                                            andPreferredFlag: [ object valueForKey: @"preferred"       ]
+                                                           includingCloudKit: YES ];
+                                        }
+                                    }
                                 }
-                            }
+                            );
 
                             // This will ignore any updates to objects that are
                             // in the local user default records and therefore
@@ -379,9 +391,6 @@
     // As per comments far above :-) now finally add the big block we just
     // defined as a (cancelleable) operation that'll get run when iOS is ready.
     //
-    self.awakenOperation.completionBlock = ^ ( void ) { [ [ DataManager dataManager ] spinnerOff ]; };
-    [ self spinnerOn ];
-
     [ self.awakenOperation addExecutionBlock: awakenOperationBlock ];
     [ self.cloudOperationsQueue addOperation: self.awakenOperation ];
 }
@@ -426,6 +435,23 @@
 - ( void ) iCloudIdentityDidChange: ( NSNotification * ) notification
 {
     ( void ) notification;
+
+    // The local managed object context is main-queue only, so if necessary,
+    // schedule this method to be run-run on that thread and bail out.
+    //
+    if ( ! NSThread.isMainThread )
+    {
+        dispatch_async
+        (
+            dispatch_get_main_queue(),
+            ^ ( void )
+            {
+                [ self iCloudIdentityDidChange: notification ];
+            }
+        );
+
+        return;
+    }
 
     NSLog( @"iCloud identity has changed" );
 
@@ -1103,11 +1129,7 @@
         {
             [ self.recordUpdateOperations removeObjectForKey: record.recordID.recordName ];
         };
-
-        [ self spinnerOff ];
     };
-
-    [ self spinnerOn ];
 
     [ saveOperation addExecutionBlock: saveOperationBlock ];
     [ self.cloudOperationsQueue addOperation: saveOperation ];
@@ -1128,6 +1150,25 @@
              andPreferredFlag: ( NSNumber * _Nullable ) preferred
             includingCloudKit: ( BOOL                 ) includeCloudKit
 {
+    // The local managed object context is main-queue only, so if necessary,
+    // schedule this method to be run-run on that thread and bail out.
+    //
+    if ( ! NSThread.isMainThread )
+    {
+        dispatch_async
+        (
+            dispatch_get_main_queue(),
+            ^ ( void )
+            {
+                [ self addOrEditFavourite: stopID
+                       settingDescription: stopDescription
+                         andPreferredFlag: preferred
+                        includingCloudKit: includeCloudKit ];
+            }
+        );
+
+        return;
+    }
 
     NSLog( @"Add or edit: %@ (%@): %@", stopID, preferred, stopDescription );
 
@@ -1229,14 +1270,10 @@
         @"Error message shown when trying to save favourite stop changes to iCloud"
     );
 
-    [ self spinnerOn ];
-
     [
         database fetchRecordWithID: recordID
                  completionHandler: ^ ( CKRecord * _Nullable record, NSError * _Nullable error )
         {
-            [ self spinnerOff ];
-
             if ( record == nil || error.code == CKErrorUnknownItem ) // (If 'error' is nil, dereference of code will be 'nil' and comparison will fail)
             {
                 NSString * newStopDescription = ( stopDescription == nil ) ? [ stopID copy ]             : stopDescription;
@@ -1276,6 +1313,23 @@
 - ( void ) deleteFavourite: ( NSString * _Nonnull ) stopID
          includingCloudKit: ( BOOL                ) includeCloudKit
 {
+    // The local managed object context is main-queue only, so if necessary,
+    // schedule this method to be run-run on that thread and bail out.
+    //
+    if ( ! NSThread.isMainThread )
+    {
+        dispatch_async
+        (
+            dispatch_get_main_queue(),
+            ^ ( void )
+            {
+                [ self deleteFavourite: stopID includingCloudKit: includeCloudKit ];
+            }
+        );
+
+        return;
+    }
+
     NSLog( @"Remove: %@", stopID);
 
     if ( stopID == nil ) return; // Indicates nasty bug, but try not to just crash...
@@ -1326,15 +1380,12 @@
         @"Error message shown when trying to remove favourite stop from iCloud"
     );
 
-    [ self spinnerOn ];
-
     [
         database deleteRecordWithID: recordID
                   completionHandler: ^ ( CKRecordID * _Nullable recordID, NSError * _Nullable error )
         {
             NSLog( @"Remove: Finished; error? %@", error );
 
-            [ self spinnerOff ];
             [ self handleError: error withTitle: errorTitle ];
         }
     ];
@@ -1727,9 +1778,19 @@
     changesOperation.fetchAllChanges  = YES;
     changesOperation.recordZoneIDs    = @[ zoneID ];
 
-    changesOperation.recordChangedBlock =
-    ^ ( CKRecord * _Nonnull record )
+    changesOperation.recordWasChangedBlock =
+    ^ (
+        CKRecordID * _Nonnull  recordID,
+        CKRecord   * _Nullable record,
+        NSError    * _Nullable error
+    )
     {
+        if ( error != nil || record == nil )
+        {
+            NSLog( @"CloudKit change: Could not fetch changed record %@: %@", recordID.recordName, error );
+            return;
+        }
+
         [ defaults setBool: YES forKey: HAVE_RECEIVED_CLOUDKIT_DATA ];
         [ self recordDidChange: record ];
     };
@@ -1877,6 +1938,52 @@
 
     [ self deleteFavourite: recordID.recordName
          includingCloudKit: NO ];
+}
+
+// Return the favourite stops to show on the watch, as a dictionary suitable
+// for WatchConnectivity:
+//
+// * Key "allStops"
+// * Value - array of dictionaries with keys "stopID", "stopDescription" and
+//   "preferred" (an NSNumber BOOL), sorted in the order intended for display.
+//
+// If any stops are preferred then only those are sent, otherwise all stops
+// are sent. Call on the main thread only.
+//
+- ( NSDictionary * ) watchPayload
+{
+    NSArray        * favourites   = self.fetchedResultsControllerLocal.fetchedObjects;
+    NSMutableArray * allStops     = [ [ NSMutableArray alloc ] init ];
+    BOOL             anyPreferred = NO;
+
+    for ( NSManagedObject * object in favourites )
+    {
+        if ( [ [ object valueForKey: @"preferred" ] integerValue ] > 0 )
+        {
+            anyPreferred = YES;
+            break;
+        }
+    }
+
+    for ( NSManagedObject * object in favourites )
+    {
+        NSString * stopID          = [ object valueForKey: @"stopID"          ];
+        NSString * stopDescription = [ object valueForKey: @"stopDescription" ];
+        BOOL       preferred       = [ [ object valueForKey: @"preferred" ] integerValue ] > 0;
+
+        if ( stopID == nil || ( anyPreferred && ! preferred ) ) continue;
+
+        [
+            allStops addObject:
+            @{
+                @"stopID":          stopID,
+                @"stopDescription": stopDescription ?: stopID,
+                @"preferred":       @( preferred )
+            }
+        ];
+    }
+
+    return @{ @"allStops": allStops };
 }
 
 #pragma mark - Cached bus stop location management

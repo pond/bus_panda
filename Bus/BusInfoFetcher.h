@@ -21,6 +21,10 @@
 #define PLACEHOLDER_COLOUR  @"888888"
 #define PLACEHOLDER_SERVICE @"ℹ︎"
 
+// A successful API enquiry returned no services.
+//
+#define NO_SERVICES_SCHEDULED_MESSAGE @"No services are currently scheduled"
+
 @interface BusInfoFetcher : NSObject
 
 // This does what its name suggests. The given handler is always called, even
@@ -40,7 +44,11 @@
 // keys as follows:
 //
 //   "error"         - If present with any value, this is an error placeholder
-//                     item (other fields are filled in with defaults)
+//                     item; other fields are filled in with defaults. The
+//                     fetch failed or the response could not be understood.
+//   "empty"         - If present with any value, this is a placeholder item
+//                     saying that the fetch succeeded but no services are
+//                     currently scheduled. Other fields as for "error".
 //   "colour"        - Suggested 6-hex-digit RGB colour for the route
 //   "number"        - Bus number as a string, e.g. "1", "N/A"
 //   "name"          - Service name, e.g. "Island Bay", "No Network Access"

@@ -16,13 +16,16 @@
                                        UITabBarControllerDelegate,
                                        WCSessionDelegate >
 
-// Useful parts of the view hierarchy, established at startup
-
-@property ( strong, nonatomic ) UIWindow               * window;
+// Useful parts of the view hierarchy, established when the scene connects
+// (see -configureForWindow:)
+//
 @property ( strong, nonatomic ) UITabBarController     * tabBarController;
 @property ( strong, nonatomic ) UISplitViewController  * splitViewController;
 @property ( strong, nonatomic ) UINavigationController * masterNavigationController;
-@property ( strong, nonatomic ) UINavigationController * detailNavigationController;
 @property ( strong, nonatomic ) MasterViewController   * masterViewController;
+
+// Called by SceneDelegate once its window has been built from the storyboard.
+//
+- ( void ) configureForWindow: ( UIWindow * ) window;
 
 @end

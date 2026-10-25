@@ -22,9 +22,13 @@
 @property ( nonatomic, assign ) BOOL                  showNearbyStops;
 @property ( nonatomic, assign ) BOOL                  mapLocationHasBeenUpdated;
 
+// Centre and radius of the most recent stop request; radius is zero if there
+// is none. See -getStopsForCurrentMapRange.
+//
+@property ( nonatomic, assign ) CLLocationCoordinate2D lastRequestCentre;
+@property ( nonatomic, assign ) CLLocationDistance     lastRequestRadius;
+
 - ( void ) updateMapWithOrWithoutLocation;
-- ( void ) spinnerOn;
-- ( void ) spinnerOff;
 - ( void ) cancelStopLocationUpdate;
 - ( void ) scheduleStopLocationUpdate;
 - ( void ) getStopsForCurrentMapRange;
@@ -33,16 +37,34 @@
 
 @end
 
-// Delay before a request is sent to MetLink to get stops for the current
-// map view, in seconds.
+// Delays before stops are requested for the current map view, in seconds.
 //
-#define STOP_LOCATION_UPDATE_TIMER_DELAY ( double ) 0.5
+// A map usually makes a rapid series of animated movements when first shown
+// and locating the user. A longer inter-request period is used for that to
+// avoid making lots of unnecessary requests. After that, we assume that the
+// end user is responsible for map movements so requests are answered more
+// promptly - longer delays can feel like an area has no stops to show.
+//
+#define STOP_LOCATION_UPDATE_DELAY_UNCACHED ( double ) 1.0
+#define STOP_LOCATION_UPDATE_DELAY_CACHED   ( double ) 0.2
+
+// A stop request is skipped if the map's centre has moved by less than this
+// fraction of the visible radius, and the radius itself has changed by less
+// than this fraction, since the last request - it would return the same
+// stops. See -getStopsForCurrentMapRange.
+//
+#define STOP_REQUEST_SAME_REGION_TOLERANCE ( double ) 0.05
 
 // Radius (m) for the typical starting view of the map view, for far out and
 // nearby views respectively.
 //
 #define DEFAULT_FAR_RADIUS  2000
 #define DEFAULT_NEAR_RADIUS 350
+
+// Fraction of the window's width and height used by the "Add Using Map"
+// sheet on iPad; see +sheetSizeForWindowSize:.
+//
+#define MAP_SHEET_FRACTION_OF_WINDOW ( double ) 0.8
 
 @implementation StopMapViewController
 
@@ -70,38 +92,97 @@
     [ self scheduleStopLocationUpdate     ];
 }
 
-// The detail view used for showing schedules when previewing a stop for
-// addition includes a toolbar that's normally hidden, though we use it
-// when pushed onto the stack in this context for an 'Add stop' button.
-// When the map is visible, though, the stack's toolbar should be hidden.
+// See header for details.
 //
-// This is also a good time to ask Location Services to start updates.
++ ( CGSize ) sheetSizeForWindowSize: ( CGSize ) windowSize
+{
+    return CGSizeMake( floor( windowSize.width  * MAP_SHEET_FRACTION_OF_WINDOW ),
+                       floor( windowSize.height * MAP_SHEET_FRACTION_OF_WINDOW ) );
+}
+
+// Keep the "Add Using Map" sheet in proportion to the window it was
+// presented over when that changes size - e.g. on rotation, or when resizing
+// an iPad window. Only applies when presented as a form sheet; see
+// MasterViewController.
+//
+// The size comes from the *presenting* view controller's window. Using this
+// view's own window would be wrong on Mac Catalyst, where a sheet is a
+// separate window. Each resize would shrink it to a fraction of itself,
+// causing another resize, until AppKit gave up and terminated the app!
+//
+- ( void ) viewWillTransitionToSize: ( CGSize ) size
+          withTransitionCoordinator: ( id <UIViewControllerTransitionCoordinator> ) coordinator
+{
+    [ super viewWillTransitionToSize: size withTransitionCoordinator: coordinator ];
+
+    UINavigationController * navigationController = self.navigationController;
+
+    if ( NSProcessInfo.processInfo.isMacCatalystApp                                    ||
+         navigationController.presentingViewController == nil                          ||
+         navigationController.modalPresentationStyle   != UIModalPresentationFormSheet )
+    {
+        return;
+    }
+
+    [
+        coordinator animateAlongsideTransition: nil
+                                    completion: ^ ( id <UIViewControllerTransitionCoordinatorContext> context )
+        {
+            CGSize windowSize = navigationController.presentingViewController.view.window.bounds.size;
+            CGSize sheetSize  = [ StopMapViewController sheetSizeForWindowSize: windowSize ];
+
+            if ( windowSize.width > 0 && windowSize.height > 0 &&
+                 CGSizeEqualToSize( sheetSize, navigationController.preferredContentSize ) == NO )
+            {
+                navigationController.preferredContentSize = sheetSize;
+            }
+        }
+    ];
+}
+
+// For "Add Using Map", when this view's navigation controller is presented
+// modally, put Cancel and Refresh buttons in the navigation bar.
+//
+// This is also a good time to tell Location Services to start updates.
 //
 - ( void ) viewWillAppear: ( BOOL ) animated
 {
     [ super viewWillAppear: animated ];
 
-    [ self.navigationController setToolbarHidden: YES animated: NO ];
+    BOOL isModal = ( self.navigationController.presentingViewController != nil );
 
-    if ( [ CLLocationManager authorizationStatus ] == kCLAuthorizationStatusAuthorizedWhenInUse )
+    if ( isModal && self.navigationItem.leftBarButtonItem == nil )
+    {
+        self.navigationItem.leftBarButtonItem =
+        [
+            [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemCancel
+                                                           target: self
+                                                           action: @selector( cancelPressed: )
+        ];
+
+        self.navigationItem.rightBarButtonItem =
+        [
+            [ UIBarButtonItem alloc ] initWithBarButtonSystemItem: UIBarButtonSystemItemRefresh
+                                                           target: self
+                                                           action: @selector( refreshPressed: )
+        ];
+    }
+
+    if ( self.locationManager.authorizationStatus == kCLAuthorizationStatusAuthorizedWhenInUse )
     {
         [ self.locationManager startUpdatingLocation ];
     }
 }
 
-// As a precaution, make sure the network spinner is definitely cancelled
-// when the application is closed.
-//
-// This is also a good time to ask Location Services to stop updates.
+// Tell Location Services to stop updates.
 //
 - ( void ) viewWillDisappear: ( BOOL ) animated
 {
     [ super viewWillDisappear: animated ];
 
     [ self cancelStopLocationUpdate ];
-    [ self spinnerOff               ];
 
-    if ( [ CLLocationManager authorizationStatus ] == kCLAuthorizationStatusAuthorizedWhenInUse )
+    if ( self.locationManager.authorizationStatus == kCLAuthorizationStatusAuthorizedWhenInUse )
     {
         [ self.locationManager stopUpdatingLocation ];
     }
@@ -125,22 +206,6 @@
     }
 }
 
-// Turn on an activity indicator of some sort. At the time of writing this
-// comment, the network activity indicator in the status bar is used. See
-// also -spinnerOff.
-//
-- ( void ) spinnerOn
-{
-    UIApplication.sharedApplication.networkActivityIndicatorVisible = YES;
-}
-
-// Turn off the activity indicator started with -spinnerOn.
-//
-- ( void ) spinnerOff
-{
-    UIApplication.sharedApplication.networkActivityIndicatorVisible = NO;
-}
-
 // Permanently set this instance up so that its initial map view state will
 // be for a close zoomed-in "nearby stops" view.
 //
@@ -150,7 +215,7 @@
     [ self updateMapWithOrWithoutLocation ];
 }
 
-// In STOP_LOCATION_UPDATE_TIMER_DELAY seconds, call method
+// After a short delay (see STOP_LOCATION_UPDATE_DELAY_...), call method
 // -getStopsForCurrentMapRange. Cancels any prior scheduled calls first.
 //
 // In passing, any cached stops within the map's visible range are added
@@ -166,7 +231,9 @@
 
     self.stopLocationUpdateTimer =
     [
-        NSTimer scheduledTimerWithTimeInterval: STOP_LOCATION_UPDATE_TIMER_DELAY
+        NSTimer scheduledTimerWithTimeInterval: [ StopInfoFetcher hasCachedStops ]
+                                                ? STOP_LOCATION_UPDATE_DELAY_CACHED
+                                                : STOP_LOCATION_UPDATE_DELAY_UNCACHED
                                         target: self
                                       selector: @selector( getStopsForCurrentMapRange )
                                       userInfo: nil
@@ -199,7 +266,29 @@
 
     radius = MKMetersBetweenMapPoints( minCorner, maxCorner ) / 2;
 
-    [ self spinnerOn ];
+    // Skip the request if it's for essentially the same region as last time.
+    // Map region changes are reported even when the map doesn't really move,
+    // e.g. when several things ask it to show the user's location in turn.
+
+    if ( self.lastRequestRadius > 0 )
+    {
+        CLLocation * lastCentre = [ [ CLLocation alloc ] initWithLatitude: self.lastRequestCentre.latitude
+                                                                longitude: self.lastRequestCentre.longitude ];
+        CLLocation * thisCentre = [ [ CLLocation alloc ] initWithLatitude: centerLocation.latitude
+                                                                longitude: centerLocation.longitude ];
+
+        CLLocationDistance centreMoved   = [ thisCentre distanceFromLocation: lastCentre ];
+        CLLocationDistance radiusChanged = fabs( radius - self.lastRequestRadius );
+
+        if ( centreMoved   < self.lastRequestRadius * STOP_REQUEST_SAME_REGION_TOLERANCE &&
+             radiusChanged < self.lastRequestRadius * STOP_REQUEST_SAME_REGION_TOLERANCE )
+        {
+            return;
+        }
+    }
+
+    self.lastRequestCentre = centerLocation;
+    self.lastRequestRadius = radius;
 
     [
         StopInfoFetcher getStopsWithinRadius: radius
@@ -210,7 +299,9 @@
         {
             if ( error != nil )
             {
-                [ self spinnerOff ];
+                // Allow a retry of the same region.
+                //
+                self.lastRequestRadius = 0;
 
                 [
                     ErrorPresenter showModalAlertFor: self
@@ -236,8 +327,6 @@
 //
 - ( void ) addStopsToMap: ( NSArray * ) stops
 {
-    BOOL anyAdded = NO;
-
     // Lazy-initialise the local stop-added-to-map flag store and get hold of
     // the AppDelegate's full stop information cache.
 
@@ -321,16 +410,8 @@
         {
             [ self.mapView addAnnotation: existingAnnotationInfo[ @"annotation" ] ];
             self.stopsAddedToMap[ stopID ] = @( YES );
-
-            anyAdded = YES;
         }
     }
-
-    // If no stops were ultimately added, the 'stop network activity spinner
-    // when the views-were-all-added call happens' thing won't work, obviously.
-    // So stop it here instead.
-    //
-    if ( anyAdded == NO ) [ self spinnerOff ];
 }
 
 // Add any stops cached in the AppDelegate's storage via a prior call to
@@ -395,7 +476,7 @@
 {
     CLLocationCoordinate2D zoomLocation;
 
-    if ( [ CLLocationManager authorizationStatus ] == kCLAuthorizationStatusAuthorizedWhenInUse )
+    if ( self.locationManager.authorizationStatus == kCLAuthorizationStatusAuthorizedWhenInUse )
     {
         [ self.mapView setShowsUserLocation: YES ];
 
@@ -430,17 +511,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma mark MKMapViewDelegate protocol
 ///////////////////////////////////////////////////////////////////////////////
-
-// MKMapViewDelegate protocol. Called when annotations have been added. This is
-// in theory going to happen possibly a while after the stop location URI fetch
-// completes, while iOS's map engine crunches through the additions; so we use
-// this as a last-possible time to stop the network indicator.
-//
-- ( void )      mapView: ( MKMapView                            * ) mapView
-  didAddAnnotationViews: ( nonnull NSArray <MKAnnotationView *> * ) views
-{
-    [ self spinnerOff ];
-}
 
 // MKMapViewDelegate protocol. Called when the map changes position / zoom.
 //
@@ -553,8 +623,7 @@ calloutAccessoryControlTapped: ( UIControl        * ) control
 // user's location changes. We update the map to either show that location,
 // or reset it to the default 'centre of wellington' coordinates.
 //
-- ( void )     locationManager: ( CLLocationManager     * ) manager
-  didChangeAuthorizationStatus: ( CLAuthorizationStatus   ) status
+- ( void ) locationManagerDidChangeAuthorization: ( CLLocationManager * ) manager
 {
     [ self updateMapWithOrWithoutLocation ];
 }
@@ -580,19 +649,20 @@ calloutAccessoryControlTapped: ( UIControl        * ) control
 
 // Via the superclass, cancel this view.
 //
-- ( IBAction ) toolbarCancelPressed: ( id ) sender
+- ( IBAction ) cancelPressed: ( id ) sender
 {
     [ self dismissAdditionView ];
 }
 
 // Dump the local stop location cache, empty all map pins and reload.
 //
-- ( IBAction ) toolbarReloadPressed: ( id ) sender
+- ( IBAction ) refreshPressed: ( id ) sender
 {
     [ self cancelStopLocationUpdate ];
 
     [ self.mapView removeAnnotations: self.mapView.annotations ];
-    self.stopsAddedToMap = nil;
+    self.stopsAddedToMap   = nil;
+    self.lastRequestRadius = 0; // Always fetch, even for the same region
 
     [ DataManager.dataManager clearCachedStops ];
 

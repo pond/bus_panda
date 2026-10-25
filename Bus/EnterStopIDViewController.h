@@ -14,7 +14,4 @@
 @property ( weak,   nonatomic ) IBOutlet UITextField * numberField;
 @property ( weak,   nonatomic ) IBOutlet UITextField * descriptionField;
 
-@property ( retain, nonatomic )          UIToolbar   * numberToolbar;
-@property ( retain, nonatomic )          UIToolbar   * descriptionToolbar;
-
 @end
